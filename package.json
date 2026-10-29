@@ -1,8 +1,8 @@
 {
-  "name": "tcs",
-  "displayName": "Tcs",
+  "name": "trust-contract-studio",
+  "displayName": "Trust Contract Studio",
   "private": true,
-  "description": "Workspace app for Tcs.",
+  "description": "Human-agent workspace that turns AI agent promises into independently verified commitments.",
   "type": "module",
   "scripts": {
     "migrate:production": "tsx scripts/migrate-production.ts",
@@ -12,7 +12,7 @@
     "typecheck": "agent-native typecheck",
     "action": "agent-native action",
     "script": "agent-native script",
-    "test": "vitest --run --passWithNoTests",
+    "test": "vitest --run",
     "agent-native:doctor": "agent-native doctor"
   },
   "dependencies": {

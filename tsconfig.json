@@ -23,6 +23,8 @@
     "server/**/*",
     "shared/**/*",
     "scripts/**/*",
+    "tests/**/*",
+    "actions/**/*",
     "vite.config.ts",
     "react-router.config.ts",
     ".react-router/types/**/*",

@@ -1,5 +1,5 @@
-const rawAppName = "tcs";
-const rawAppTitle = "Tcs";
+const rawAppName = "trust-contract-studio";
+const rawAppTitle = "Trust Contract Studio";
 
 const APP_NAME_PLACEHOLDER = "{" + "{APP_NAME}}";
 const APP_TITLE_PLACEHOLDER = "{" + "{APP_TITLE}}";
