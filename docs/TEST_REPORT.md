@@ -2,15 +2,15 @@
 
 Last run: **2026-10-29** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
 
-| Check              | Command                                                                   | Result                                                       |
-| ------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Typecheck          | `pnpm typecheck`                                                          | ✅ 0 errors                                                  |
-| Lint               | `pnpm lint` (oxlint 1.90.0)                                               | ✅ 0 errors (1 warning in an unmodified starter file)        |
-| Format             | `pnpm format:check` (oxfmt)                                               | ✅                                                           |
-| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                       | ✅ **53 / 53 passed**                                        |
-| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB) | ✅ **6 / 6 passed**                                          |
-| Production build   | `pnpm build`                                                              | ✅ Nitro node preset                                         |
-| GitHub Actions     | `.github/workflows/ci.yml`                                                | ⏳ First run triggers on push. Status will be recorded here. |
+| Check              | Command                                                                   | Result                                                                 |
+| ------------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Typecheck          | `pnpm typecheck`                                                          | ✅ 0 errors                                                            |
+| Lint               | `pnpm lint` (oxlint 1.90.0)                                               | ✅ 0 errors (1 warning in an unmodified starter file)                  |
+| Format             | `pnpm format:check` (oxfmt)                                               | ✅                                                                     |
+| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                       | ✅ **53 / 53 passed**                                                  |
+| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB) | ✅ **6 / 6 passed**                                                    |
+| Production build   | `pnpm build`                                                              | ✅ Nitro node preset                                                   |
+| GitHub Actions     | `.github/workflows/ci.yml`                                                | ✅ run 40826383944 (commit `cab02d4`): checks job + E2E job both green |
 
 ## Coverage of required scenarios
 

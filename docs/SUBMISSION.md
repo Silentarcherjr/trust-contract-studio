@@ -19,7 +19,7 @@ All application code in this repository after commit `6511b5f` was written durin
 - [x] Working end-to-end demo flow (local)
 - [x] Test report with actual results
 - [x] Threat model
-- [ ] CI green on GitHub Actions
+- [x] CI green on GitHub Actions (run 40826383944)
 - [ ] Live agent conversation tested with an LLM
 - [ ] Safe public preview deployment (needs owner approval: hosting, cost, exposure)
 - [ ] Public Clips recording (~90 s: request → obligations → approval → failure the agent missed → repair → re-verify → receipt)
