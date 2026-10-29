@@ -1,6 +1,10 @@
-import { IconCheck, IconQuestionMark, IconX, IconMinus } from "@tabler/icons-react";
-
 import type { Verdict } from "@shared/domain";
+import {
+  IconCheck,
+  IconQuestionMark,
+  IconX,
+  IconMinus,
+} from "@tabler/icons-react";
 
 const ICONS = {
   VERIFIED: IconCheck,
@@ -21,9 +25,19 @@ export function Seal({
 }) {
   const v = verdict ?? "PENDING";
   const Icon = ICONS[v];
-  const text = label ?? (v === "PENDING" ? "Not verified yet" : v === "NOT_PURSUED" ? "Not pursued" : v);
+  const text =
+    label ??
+    (v === "PENDING"
+      ? "Not verified yet"
+      : v === "NOT_PURSUED"
+        ? "Not pursued"
+        : v);
   return (
-    <span className="tcs-seal" data-verdict={v === "NOT_PURSUED" ? "PENDING" : v} data-size={size}>
+    <span
+      className="tcs-seal"
+      data-verdict={v === "NOT_PURSUED" ? "PENDING" : v}
+      data-size={size}
+    >
       <Icon size={size === "lg" ? 14 : 11} stroke={2.6} aria-hidden />
       {text}
     </span>

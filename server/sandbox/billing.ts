@@ -29,10 +29,18 @@ export async function cancelSubscription(
       ),
     );
   if (!sub) {
-    throw new ContractError("Subscription not found", "provider_not_found", 404);
+    throw new ContractError(
+      "Subscription not found",
+      "provider_not_found",
+      404,
+    );
   }
   if (sub.status === "canceled") {
-    return { subscriptionId: sub.id, status: "canceled", canceledAt: sub.canceledAt };
+    return {
+      subscriptionId: sub.id,
+      status: "canceled",
+      canceledAt: sub.canceledAt,
+    };
   }
   // Fault: provider answers 200 OK but never applies the change.
   if (await takeFault(db, owner, "billing.cancel_noop")) {
@@ -92,7 +100,11 @@ export async function refundCharge(
     );
   // Fault: on a genuine retry, the provider fails to honor the key.
   if (existing && !(await takeFault(db, owner, "billing.ignore_idempotency"))) {
-    return { refundId: existing.id, amountCents: existing.amountCents, replayed: true };
+    return {
+      refundId: existing.id,
+      amountCents: existing.amountCents,
+      replayed: true,
+    };
   }
   const refundId = newId("re");
   await db.insert(sbxRefunds).values({
@@ -130,12 +142,21 @@ export async function voidRefunds(
       ),
     );
   if (rows.length !== input.refundIds.length) {
-    throw new ContractError("Some refunds were not found", "provider_not_found", 404);
+    throw new ContractError(
+      "Some refunds were not found",
+      "provider_not_found",
+      404,
+    );
   }
   const voidedAt = nowIso();
   await db
     .update(sbxRefunds)
     .set({ status: "voided", voidedAt })
-    .where(and(eq(sbxRefunds.ownerEmail, owner), inArray(sbxRefunds.id, input.refundIds)));
+    .where(
+      and(
+        eq(sbxRefunds.ownerEmail, owner),
+        inArray(sbxRefunds.id, input.refundIds),
+      ),
+    );
   return { voided: input.refundIds, voidedAt };
 }

@@ -54,10 +54,20 @@ import {
   safeEqualHex,
   sha256,
 } from "./integrity.js";
-import { loadSubject, planFromGoal, type PlannedObligation, type SubjectContext } from "./planner.js";
+import {
+  loadSubject,
+  planFromGoal,
+  type PlannedObligation,
+  type SubjectContext,
+} from "./planner.js";
 import { planRepairs } from "./repair.js";
 import { EDITABLE_STATUSES, assertTransition } from "./state-machine.js";
-import { VERIFIER_VERSION, combine, verifyObligation, type ObservationSet } from "./verifier.js";
+import {
+  VERIFIER_VERSION,
+  combine,
+  verifyObligation,
+  type ObservationSet,
+} from "./verifier.js";
 
 export interface Actor {
   email: string;
@@ -77,7 +87,13 @@ type ObligationRow = typeof obligations.$inferSelect;
 export async function appendAudit(
   db: Db,
   owner: string,
-  e: { contractId?: string | null; actor: string; caller: string; type: string; payload?: Record<string, unknown> },
+  e: {
+    contractId?: string | null;
+    actor: string;
+    caller: string;
+    type: string;
+    payload?: Record<string, unknown>;
+  },
 ) {
   for (let i = 0; i < 4; i++) {
     const [last] = await db
@@ -90,7 +106,18 @@ export async function appendAudit(
     const prevHash = last?.hash ?? "genesis";
     const createdAt = nowIso();
     const payload = e.payload ?? {};
-    const hash = sha256(prevHash + canonicalJson({ seq, contractId: e.contractId ?? null, actor: e.actor, caller: e.caller, type: e.type, payload, createdAt }));
+    const hash = sha256(
+      prevHash +
+        canonicalJson({
+          seq,
+          contractId: e.contractId ?? null,
+          actor: e.actor,
+          caller: e.caller,
+          type: e.type,
+          payload,
+          createdAt,
+        }),
+    );
     try {
       await db.insert(auditEvents).values({
         id: newId("evt"),
@@ -120,13 +147,34 @@ export async function verifyAuditChain(db: Db, owner: string) {
     .orderBy(asc(auditEvents.seq));
   let prev = "genesis";
   for (const r of rows) {
-    const expected = sha256(prev + canonicalJson({ seq: r.seq, contractId: r.contractId, actor: r.actor, caller: r.caller, type: r.type, payload: r.payload, createdAt: r.createdAt }));
+    const expected = sha256(
+      prev +
+        canonicalJson({
+          seq: r.seq,
+          contractId: r.contractId,
+          actor: r.actor,
+          caller: r.caller,
+          type: r.type,
+          payload: r.payload,
+          createdAt: r.createdAt,
+        }),
+    );
     if (r.prevHash !== prev || r.hash !== expected) {
-      return { intact: false, events: rows.length, brokenAtSeq: r.seq, head: last(rows)?.hash ?? null };
+      return {
+        intact: false,
+        events: rows.length,
+        brokenAtSeq: r.seq,
+        head: last(rows)?.hash ?? null,
+      };
     }
     prev = r.hash;
   }
-  return { intact: true, events: rows.length, brokenAtSeq: null, head: last(rows)?.hash ?? null };
+  return {
+    intact: true,
+    events: rows.length,
+    brokenAtSeq: null,
+    head: last(rows)?.hash ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -142,7 +190,11 @@ export function requireHuman(actor: Actor, what: string) {
   }
 }
 
-async function requireContract(db: Db, owner: string, contractId: string): Promise<ContractRow> {
+async function requireContract(
+  db: Db,
+  owner: string,
+  contractId: string,
+): Promise<ContractRow> {
   const [row] = await db
     .select()
     .from(contracts)
@@ -156,34 +208,78 @@ async function contractObligations(db: Db, owner: string, contractId: string) {
   return db
     .select()
     .from(obligations)
-    .where(and(eq(obligations.ownerEmail, owner), eq(obligations.contractId, contractId)))
+    .where(
+      and(
+        eq(obligations.ownerEmail, owner),
+        eq(obligations.contractId, contractId),
+      ),
+    )
     .orderBy(asc(obligations.round), asc(obligations.position));
 }
 
 /** Optimistic-concurrency status change, validated by the state machine. */
-async function transition(db: Db, contract: ContractRow, to: ContractStatus, extra: Partial<ContractRow> = {}) {
+async function transition(
+  db: Db,
+  contract: ContractRow,
+  to: ContractStatus,
+  extra: Partial<ContractRow> = {},
+) {
   assertTransition(contract.status as ContractStatus, to);
   const [updated] = await db
     .update(contracts)
-    .set({ ...extra, status: to, version: contract.version + 1, updatedAt: nowIso() })
-    .where(and(eq(contracts.id, contract.id), eq(contracts.ownerEmail, contract.ownerEmail), eq(contracts.version, contract.version)))
+    .set({
+      ...extra,
+      status: to,
+      version: contract.version + 1,
+      updatedAt: nowIso(),
+    })
+    .where(
+      and(
+        eq(contracts.id, contract.id),
+        eq(contracts.ownerEmail, contract.ownerEmail),
+        eq(contracts.version, contract.version),
+      ),
+    )
     .returning();
   if (!updated) {
-    throw new ContractError("The contract changed while you were working. Reload and try again.", "version_conflict", 409);
+    throw new ContractError(
+      "The contract changed while you were working. Reload and try again.",
+      "version_conflict",
+      409,
+    );
   }
   return updated;
 }
 
-async function bumpVersion(db: Db, contract: ContractRow, expectedVersion?: number) {
+async function bumpVersion(
+  db: Db,
+  contract: ContractRow,
+  expectedVersion?: number,
+) {
   if (expectedVersion !== undefined && expectedVersion !== contract.version) {
-    throw new ContractError("The contract changed while you were working. Reload and try again.", "version_conflict", 409, { currentVersion: contract.version });
+    throw new ContractError(
+      "The contract changed while you were working. Reload and try again.",
+      "version_conflict",
+      409,
+      { currentVersion: contract.version },
+    );
   }
   const [updated] = await db
     .update(contracts)
     .set({ version: contract.version + 1, updatedAt: nowIso() })
-    .where(and(eq(contracts.id, contract.id), eq(contracts.version, contract.version)))
+    .where(
+      and(
+        eq(contracts.id, contract.id),
+        eq(contracts.version, contract.version),
+      ),
+    )
     .returning();
-  if (!updated) throw new ContractError("The contract changed while you were working. Reload and try again.", "version_conflict", 409);
+  if (!updated)
+    throw new ContractError(
+      "The contract changed while you were working. Reload and try again.",
+      "version_conflict",
+      409,
+    );
   return updated;
 }
 
@@ -191,25 +287,43 @@ function paramsHashOf(kind: string, params: Record<string, unknown>) {
   return digestOf({ kind, params });
 }
 
-function defaultsFor(kind: ObligationKind, subject: SubjectContext): Record<string, unknown> {
+function defaultsFor(
+  kind: ObligationKind,
+  subject: SubjectContext,
+): Record<string, unknown> {
   switch (kind) {
     case "cancel_subscription":
-      return { customerId: subject.customerId, subscriptionId: subject.subscriptionId };
+      return {
+        customerId: subject.customerId,
+        subscriptionId: subject.subscriptionId,
+      };
     case "refund_charge": {
       const latest = last(subject.charges);
-      return { customerId: subject.customerId, chargeId: latest?.id, amountCents: latest?.amountCents };
+      return {
+        customerId: subject.customerId,
+        chargeId: latest?.id,
+        amountCents: latest?.amountCents,
+      };
     }
     case "erase_personal_data":
       return { customerId: subject.customerId, stores: ["profile_db"] };
     case "purge_derived_memories":
-      return { customerId: subject.customerId, stores: ["memory_store", "vector_index"] };
+      return {
+        customerId: subject.customerId,
+        stores: ["memory_store", "vector_index"],
+      };
     default:
       return { customerId: subject.customerId };
   }
 }
 
 /** Validates params by kind and checks every referenced id belongs to the subject. */
-async function validateParams(db: Db, owner: string, kind: ObligationKind, params: Record<string, unknown>) {
+async function validateParams(
+  db: Db,
+  owner: string,
+  kind: ObligationKind,
+  params: Record<string, unknown>,
+) {
   const parsed = obligationParamsSchemas[kind].safeParse(params);
   if (!parsed.success) {
     throw new ContractError(
@@ -221,19 +335,42 @@ async function validateParams(db: Db, owner: string, kind: ObligationKind, param
   const p = parsed.data as Record<string, unknown>;
   const subject = await loadSubject(db, owner);
   if (p.customerId !== subject.customerId) {
-    throw new ContractError("Obligations may only target the requesting customer.", "invalid_params", 422);
+    throw new ContractError(
+      "Obligations may only target the requesting customer.",
+      "invalid_params",
+      422,
+    );
   }
   if ("subscriptionId" in p && p.subscriptionId !== subject.subscriptionId) {
-    throw new ContractError("Unknown subscription for this customer.", "invalid_params", 422);
+    throw new ContractError(
+      "Unknown subscription for this customer.",
+      "invalid_params",
+      422,
+    );
   }
   if ("chargeId" in p) {
     const [charge] = await db
       .select()
       .from(sbxCharges)
-      .where(and(eq(sbxCharges.ownerEmail, owner), eq(sbxCharges.id, p.chargeId as string), eq(sbxCharges.customerId, subject.customerId)));
-    if (!charge) throw new ContractError("Unknown charge for this customer.", "invalid_params", 422);
+      .where(
+        and(
+          eq(sbxCharges.ownerEmail, owner),
+          eq(sbxCharges.id, p.chargeId as string),
+          eq(sbxCharges.customerId, subject.customerId),
+        ),
+      );
+    if (!charge)
+      throw new ContractError(
+        "Unknown charge for this customer.",
+        "invalid_params",
+        422,
+      );
     if ("amountCents" in p && (p.amountCents as number) > charge.amountCents) {
-      throw new ContractError("A refund cannot exceed the original charge.", "invalid_params", 422);
+      throw new ContractError(
+        "A refund cannot exceed the original charge.",
+        "invalid_params",
+        422,
+      );
     }
   }
   return p;
@@ -242,36 +379,127 @@ async function validateParams(db: Db, owner: string, kind: ObligationKind, param
 // ---------------------------------------------------------------------------
 // Workspace / demo
 // ---------------------------------------------------------------------------
-export async function resetDemo(db: Db, actor: Actor, input: { scenario: Scenario }) {
+export async function resetDemo(
+  db: Db,
+  actor: Actor,
+  input: { scenario: Scenario },
+) {
   const owner = actor.email;
-  const tables = [contracts, obligations, approvals, runs, attempts, evidence, verifications, receipts, auditEvents, sbxCustomers, sbxSubscriptions, sbxCharges, sbxRefunds, sbxMemories, sbxFaults] as const;
+  const tables = [
+    contracts,
+    obligations,
+    approvals,
+    runs,
+    attempts,
+    evidence,
+    verifications,
+    receipts,
+    auditEvents,
+    sbxCustomers,
+    sbxSubscriptions,
+    sbxCharges,
+    sbxRefunds,
+    sbxMemories,
+    sbxFaults,
+  ] as const;
   for (const t of tables) {
     await db.delete(t).where(eq(t.ownerEmail, owner));
   }
   const seeded = await seedSandbox(db, owner);
   await setScenario(db, owner, input.scenario);
-  await appendAudit(db, owner, { actor: owner, caller: actor.caller, type: "workspace.reset", payload: { scenario: input.scenario } });
+  await appendAudit(db, owner, {
+    actor: owner,
+    caller: actor.caller,
+    type: "workspace.reset",
+    payload: { scenario: input.scenario },
+  });
   return { scenario: input.scenario, requesterId: seeded.requesterId };
 }
 
 export async function getWorkspace(db: Db, owner: string) {
   const scenario = await getScenario(db, owner);
-  const customers = await db.select().from(sbxCustomers).where(eq(sbxCustomers.ownerEmail, owner)).orderBy(asc(sbxCustomers.createdAt));
+  const customers = await db
+    .select()
+    .from(sbxCustomers)
+    .where(eq(sbxCustomers.ownerEmail, owner))
+    .orderBy(asc(sbxCustomers.createdAt));
   const [subject, ...bystanders] = customers;
-  if (!subject) return { seeded: false as const, scenario, scenarioInfo: SCENARIO_INFO[scenario] };
-  const [sub] = await db.select().from(sbxSubscriptions).where(and(eq(sbxSubscriptions.ownerEmail, owner), eq(sbxSubscriptions.customerId, subject.id)));
-  const charges = await db.select().from(sbxCharges).where(and(eq(sbxCharges.ownerEmail, owner), eq(sbxCharges.customerId, subject.id))).orderBy(asc(sbxCharges.createdAt));
-  const refunds = await db.select().from(sbxRefunds).where(and(eq(sbxRefunds.ownerEmail, owner), eq(sbxRefunds.customerId, subject.id))).orderBy(asc(sbxRefunds.createdAt));
-  const mems = await db.select().from(sbxMemories).where(and(eq(sbxMemories.ownerEmail, owner), eq(sbxMemories.customerId, subject.id))).orderBy(asc(sbxMemories.createdAt), asc(sbxMemories.id));
+  if (!subject)
+    return {
+      seeded: false as const,
+      scenario,
+      scenarioInfo: SCENARIO_INFO[scenario],
+    };
+  const [sub] = await db
+    .select()
+    .from(sbxSubscriptions)
+    .where(
+      and(
+        eq(sbxSubscriptions.ownerEmail, owner),
+        eq(sbxSubscriptions.customerId, subject.id),
+      ),
+    );
+  const charges = await db
+    .select()
+    .from(sbxCharges)
+    .where(
+      and(
+        eq(sbxCharges.ownerEmail, owner),
+        eq(sbxCharges.customerId, subject.id),
+      ),
+    )
+    .orderBy(asc(sbxCharges.createdAt));
+  const refunds = await db
+    .select()
+    .from(sbxRefunds)
+    .where(
+      and(
+        eq(sbxRefunds.ownerEmail, owner),
+        eq(sbxRefunds.customerId, subject.id),
+      ),
+    )
+    .orderBy(asc(sbxRefunds.createdAt));
+  const mems = await db
+    .select()
+    .from(sbxMemories)
+    .where(
+      and(
+        eq(sbxMemories.ownerEmail, owner),
+        eq(sbxMemories.customerId, subject.id),
+      ),
+    )
+    .orderBy(asc(sbxMemories.createdAt), asc(sbxMemories.id));
   return {
     seeded: true as const,
     scenario,
     scenarioInfo: SCENARIO_INFO[scenario],
     subject: { id: subject.id, displayName: subject.displayName },
-    bystanders: bystanders.map((c) => ({ id: c.id, displayName: c.displayName })),
-    subscription: sub ? { id: sub.id, plan: sub.plan, status: sub.status, canceledAt: sub.canceledAt, priceCents: sub.priceCents } : null,
-    charges: charges.map((c) => ({ id: c.id, amountCents: c.amountCents, description: c.description, createdAt: c.createdAt })),
-    refunds: refunds.map((r) => ({ id: r.id, chargeId: r.chargeId, amountCents: r.amountCents, status: r.status, createdAt: r.createdAt })),
+    bystanders: bystanders.map((c) => ({
+      id: c.id,
+      displayName: c.displayName,
+    })),
+    subscription: sub
+      ? {
+          id: sub.id,
+          plan: sub.plan,
+          status: sub.status,
+          canceledAt: sub.canceledAt,
+          priceCents: sub.priceCents,
+        }
+      : null,
+    charges: charges.map((c) => ({
+      id: c.id,
+      amountCents: c.amountCents,
+      description: c.description,
+      createdAt: c.createdAt,
+    })),
+    refunds: refunds.map((r) => ({
+      id: r.id,
+      chargeId: r.chargeId,
+      amountCents: r.amountCents,
+      status: r.status,
+      createdAt: r.createdAt,
+    })),
     // Lineage registry: labels and links only. Content is never returned, and
     // the third-party export's live state is unknown by construction.
     lineage: mems.map((m) => ({
@@ -280,20 +508,41 @@ export async function getWorkspace(db: Db, owner: string) {
       kind: m.kind,
       label: m.label,
       derivedFrom: m.derivedFrom,
-      state: m.store === "analytics_export" ? "unobservable" : m.deletedAt ? "deleted" : "live",
+      state:
+        m.store === "analytics_export"
+          ? "unobservable"
+          : m.deletedAt
+            ? "deleted"
+            : "live",
     })),
   };
 }
 
 export async function listContracts(db: Db, owner: string) {
-  const rows = await db.select().from(contracts).where(eq(contracts.ownerEmail, owner)).orderBy(desc(contracts.createdAt)).limit(50);
-  return rows.map((c) => ({ id: c.id, goal: c.goal, status: c.status, scenario: c.scenario, round: c.round, createdAt: c.createdAt }));
+  const rows = await db
+    .select()
+    .from(contracts)
+    .where(eq(contracts.ownerEmail, owner))
+    .orderBy(desc(contracts.createdAt))
+    .limit(50);
+  return rows.map((c) => ({
+    id: c.id,
+    goal: c.goal,
+    status: c.status,
+    scenario: c.scenario,
+    round: c.round,
+    createdAt: c.createdAt,
+  }));
 }
 
 // ---------------------------------------------------------------------------
 // Drafting & editing (Promise Canvas)
 // ---------------------------------------------------------------------------
-export async function draftContract(db: Db, actor: Actor, input: { goal: string; obligations?: ObligationDraft[] | undefined }) {
+export async function draftContract(
+  db: Db,
+  actor: Actor,
+  input: { goal: string; obligations?: ObligationDraft[] | undefined },
+) {
   const owner = actor.email;
   const subject = await loadSubject(db, owner);
   let planned: PlannedObligation[];
@@ -328,7 +577,11 @@ export async function draftContract(db: Db, actor: Actor, input: { goal: string;
   for (const [i, p] of planned.entries()) {
     p.params = await validateParams(db, owner, p.kind, p.params);
     if (p.dependsOn.some((d) => d < 0 || d >= i)) {
-      throw new ContractError("dependsOn may only reference earlier obligations.", "invalid_dependencies", 422);
+      throw new ContractError(
+        "dependsOn may only reference earlier obligations.",
+        "invalid_dependencies",
+        422,
+      );
     }
   }
 
@@ -372,7 +625,17 @@ export async function draftContract(db: Db, actor: Actor, input: { goal: string;
       updatedAt: now,
     })),
   );
-  await appendAudit(db, owner, { contractId, actor: owner, caller: actor.caller, type: "contract.drafted", payload: { plannedBy, obligations: planned.length, unmatched: unmatched.length } });
+  await appendAudit(db, owner, {
+    contractId,
+    actor: owner,
+    caller: actor.caller,
+    type: "contract.drafted",
+    payload: {
+      plannedBy,
+      obligations: planned.length,
+      unmatched: unmatched.length,
+    },
+  });
   await refreshReadiness(db, owner, contractId);
   return getContractView(db, owner, contractId);
 }
@@ -393,34 +656,66 @@ export async function updateObligation(
   const owner = actor.email;
   let contract = await requireContract(db, owner, input.contractId);
   if (!EDITABLE_STATUSES.includes(contract.status as ContractStatus)) {
-    throw new ContractError(`Obligations cannot be edited while the contract is "${contract.status}".`, "not_editable", 409);
+    throw new ContractError(
+      `Obligations cannot be edited while the contract is "${contract.status}".`,
+      "not_editable",
+      409,
+    );
   }
   const all = await contractObligations(db, owner, contract.id);
   const ob = all.find((o) => o.id === input.obligationId);
   if (!ob) throw new ContractError("Obligation not found.", "not_found", 404);
   if (ob.execution === "succeeded") {
-    throw new ContractError("This obligation already ran; edit a repair instead.", "already_executed", 409);
+    throw new ContractError(
+      "This obligation already ran; edit a repair instead.",
+      "already_executed",
+      409,
+    );
   }
   contract = await bumpVersion(db, contract, input.expectedVersion);
 
   if (input.remove) {
-    await db.delete(obligations).where(and(eq(obligations.ownerEmail, owner), eq(obligations.id, ob.id)));
+    await db
+      .delete(obligations)
+      .where(and(eq(obligations.ownerEmail, owner), eq(obligations.id, ob.id)));
     for (const other of all.filter((o) => o.dependsOn.includes(ob.id))) {
-      await db.update(obligations).set({ dependsOn: other.dependsOn.filter((d) => d !== ob.id), updatedAt: nowIso() }).where(eq(obligations.id, other.id));
+      await db
+        .update(obligations)
+        .set({
+          dependsOn: other.dependsOn.filter((d) => d !== ob.id),
+          updatedAt: nowIso(),
+        })
+        .where(eq(obligations.id, other.id));
     }
-    await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "obligation.removed", payload: { obligationId: ob.id, kind: ob.kind } });
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: owner,
+      caller: actor.caller,
+      type: "obligation.removed",
+      payload: { obligationId: ob.id, kind: ob.kind },
+    });
     await refreshReadiness(db, owner, contract.id);
     return getContractView(db, owner, contract.id);
   }
 
-  const patch: Partial<ObligationRow> = { updatedAt: nowIso(), version: ob.version + 1 };
+  const patch: Partial<ObligationRow> = {
+    updatedAt: nowIso(),
+    version: ob.version + 1,
+  };
   const changed: string[] = [];
-  if (input.title !== undefined && input.title.trim() && input.title !== ob.title) {
+  if (
+    input.title !== undefined &&
+    input.title.trim() &&
+    input.title !== ob.title
+  ) {
     patch.title = input.title.trim().slice(0, 140);
     changed.push("title");
   }
   if (input.params) {
-    const merged = await validateParams(db, owner, ob.kind as ObligationKind, { ...ob.params, ...input.params });
+    const merged = await validateParams(db, owner, ob.kind as ObligationKind, {
+      ...ob.params,
+      ...input.params,
+    });
     const hash = paramsHashOf(ob.kind, merged);
     if (hash !== ob.paramsHash) {
       patch.params = merged;
@@ -433,26 +728,62 @@ export async function updateObligation(
   if (input.dependsOn) {
     const ids = new Set(all.map((o) => o.id));
     if (input.dependsOn.some((d) => !ids.has(d) || d === ob.id)) {
-      throw new ContractError("Dependencies must reference other obligations in this contract.", "invalid_dependencies", 422);
+      throw new ContractError(
+        "Dependencies must reference other obligations in this contract.",
+        "invalid_dependencies",
+        422,
+      );
     }
-    executionOrder(all.map((o) => (o.id === ob.id ? { ...o, dependsOn: input.dependsOn! } : o)));
+    executionOrder(
+      all.map((o) =>
+        o.id === ob.id ? { ...o, dependsOn: input.dependsOn! } : o,
+      ),
+    );
     patch.dependsOn = input.dependsOn;
     changed.push("dependsOn");
   }
-  await db.update(obligations).set(patch).where(and(eq(obligations.ownerEmail, owner), eq(obligations.id, ob.id)));
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "obligation.updated", payload: { obligationId: ob.id, changed, approvalReset: patch.approval === "pending" && ob.approval !== "pending" } });
+  await db
+    .update(obligations)
+    .set(patch)
+    .where(and(eq(obligations.ownerEmail, owner), eq(obligations.id, ob.id)));
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "obligation.updated",
+    payload: {
+      obligationId: ob.id,
+      changed,
+      approvalReset: patch.approval === "pending" && ob.approval !== "pending",
+    },
+  });
   await refreshReadiness(db, owner, contract.id);
   return getContractView(db, owner, contract.id);
 }
 
-export async function addObligation(db: Db, actor: Actor, input: { contractId: string; draft: ObligationDraft; expectedVersion?: number | undefined }) {
+export async function addObligation(
+  db: Db,
+  actor: Actor,
+  input: {
+    contractId: string;
+    draft: ObligationDraft;
+    expectedVersion?: number | undefined;
+  },
+) {
   const owner = actor.email;
   let contract = await requireContract(db, owner, input.contractId);
   if (!EDITABLE_STATUSES.includes(contract.status as ContractStatus)) {
-    throw new ContractError(`Obligations cannot be added while the contract is "${contract.status}".`, "not_editable", 409);
+    throw new ContractError(
+      `Obligations cannot be added while the contract is "${contract.status}".`,
+      "not_editable",
+      409,
+    );
   }
   const subject = await loadSubject(db, owner);
-  const params = await validateParams(db, owner, input.draft.kind, { ...defaultsFor(input.draft.kind, subject), ...input.draft.params });
+  const params = await validateParams(db, owner, input.draft.kind, {
+    ...defaultsFor(input.draft.kind, subject),
+    ...input.draft.params,
+  });
   contract = await bumpVersion(db, contract, input.expectedVersion);
   const all = await contractObligations(db, owner, contract.id);
   const now = nowIso();
@@ -477,7 +808,13 @@ export async function addObligation(db: Db, actor: Actor, input: { contractId: s
     createdAt: now,
     updatedAt: now,
   });
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "obligation.added", payload: { obligationId: id, kind: input.draft.kind } });
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "obligation.added",
+    payload: { obligationId: id, kind: input.draft.kind },
+  });
   await refreshReadiness(db, owner, contract.id);
   return getContractView(db, owner, contract.id);
 }
@@ -485,11 +822,16 @@ export async function addObligation(db: Db, actor: Actor, input: { contractId: s
 /** awaiting_approval ⇄ ready, depending on whether any decision is pending. */
 async function refreshReadiness(db: Db, owner: string, contractId: string) {
   const contract = await requireContract(db, owner, contractId);
-  if (!EDITABLE_STATUSES.includes(contract.status as ContractStatus)) return contract;
+  if (!EDITABLE_STATUSES.includes(contract.status as ContractStatus))
+    return contract;
   const obs = await contractObligations(db, owner, contractId);
-  const pending = obs.some((o) => o.execution !== "succeeded" && o.approval === "pending");
+  const pending = obs.some(
+    (o) => o.execution !== "succeeded" && o.approval === "pending",
+  );
   const target: ContractStatus = pending ? "awaiting_approval" : "ready";
-  return target === contract.status ? contract : transition(db, contract, target);
+  return target === contract.status
+    ? contract
+    : transition(db, contract, target);
 }
 
 // ---------------------------------------------------------------------------
@@ -498,23 +840,63 @@ async function refreshReadiness(db: Db, owner: string, contractId: string) {
 export async function decideApproval(
   db: Db,
   actor: Actor,
-  input: { contractId: string; obligationId: string; decision: "approved" | "rejected"; paramsHash: string; note?: string | undefined },
+  input: {
+    contractId: string;
+    obligationId: string;
+    decision: "approved" | "rejected";
+    paramsHash: string;
+    note?: string | undefined;
+  },
 ) {
   const owner = actor.email;
   const contract = await requireContract(db, owner, input.contractId);
   if (!HUMAN_CALLERS.has(actor.caller)) {
-    await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "approval.refused_non_human", payload: { obligationId: input.obligationId, decision: input.decision } });
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: owner,
+      caller: actor.caller,
+      type: "approval.refused_non_human",
+      payload: { obligationId: input.obligationId, decision: input.decision },
+    });
     requireHuman(actor, "Approving or rejecting an obligation");
   }
   if (!EDITABLE_STATUSES.includes(contract.status as ContractStatus)) {
-    throw new ContractError(`Decisions are closed while the contract is "${contract.status}".`, "not_decidable", 409);
+    throw new ContractError(
+      `Decisions are closed while the contract is "${contract.status}".`,
+      "not_decidable",
+      409,
+    );
   }
-  const [ob] = await db.select().from(obligations).where(and(eq(obligations.ownerEmail, owner), eq(obligations.id, input.obligationId), eq(obligations.contractId, contract.id)));
+  const [ob] = await db
+    .select()
+    .from(obligations)
+    .where(
+      and(
+        eq(obligations.ownerEmail, owner),
+        eq(obligations.id, input.obligationId),
+        eq(obligations.contractId, contract.id),
+      ),
+    );
   if (!ob) throw new ContractError("Obligation not found.", "not_found", 404);
-  if (!ob.requiresApproval) throw new ContractError("This obligation does not need a decision.", "not_required", 409);
-  if (ob.execution === "succeeded") throw new ContractError("This obligation already ran.", "already_executed", 409);
+  if (!ob.requiresApproval)
+    throw new ContractError(
+      "This obligation does not need a decision.",
+      "not_required",
+      409,
+    );
+  if (ob.execution === "succeeded")
+    throw new ContractError(
+      "This obligation already ran.",
+      "already_executed",
+      409,
+    );
   if (input.paramsHash !== ob.paramsHash) {
-    throw new ContractError("The obligation changed after you reviewed it. Review the new parameters and decide again.", "stale_approval", 409, { currentParamsHash: ob.paramsHash });
+    throw new ContractError(
+      "The obligation changed after you reviewed it. Review the new parameters and decide again.",
+      "stale_approval",
+      409,
+      { currentParamsHash: ob.paramsHash },
+    );
   }
   await db.insert(approvals).values({
     id: newId("apr"),
@@ -528,8 +910,21 @@ export async function decideApproval(
     note: input.note?.slice(0, 500) ?? null,
     createdAt: nowIso(),
   });
-  await db.update(obligations).set({ approval: input.decision, version: ob.version + 1, updatedAt: nowIso() }).where(eq(obligations.id, ob.id));
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: `approval.${input.decision}`, payload: { obligationId: ob.id, paramsHash: ob.paramsHash } });
+  await db
+    .update(obligations)
+    .set({
+      approval: input.decision,
+      version: ob.version + 1,
+      updatedAt: nowIso(),
+    })
+    .where(eq(obligations.id, ob.id));
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: `approval.${input.decision}`,
+    payload: { obligationId: ob.id, paramsHash: ob.paramsHash },
+  });
   await refreshReadiness(db, owner, contract.id);
   return getContractView(db, owner, contract.id);
 }
@@ -537,7 +932,11 @@ export async function decideApproval(
 // ---------------------------------------------------------------------------
 // Execution & verification
 // ---------------------------------------------------------------------------
-export async function executeContract(db: Db, actor: Actor, input: { contractId: string; paceMs?: number | undefined }) {
+export async function executeContract(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string; paceMs?: number | undefined },
+) {
   const owner = actor.email;
   let contract = await requireContract(db, owner, input.contractId);
   const status = contract.status as ContractStatus;
@@ -546,14 +945,33 @@ export async function executeContract(db: Db, actor: Actor, input: { contractId:
       status === "awaiting_approval"
         ? "Some obligations still need a human decision."
         : `A contract that is "${status}" cannot be executed.`,
-      status === "awaiting_approval" ? "approval_pending" : "invalid_transition",
+      status === "awaiting_approval"
+        ? "approval_pending"
+        : "invalid_transition",
       409,
     );
   }
   contract = await transition(db, contract, "executing");
   const runId = newId("run");
-  await db.insert(runs).values({ id: runId, ownerEmail: owner, contractId: contract.id, kind: "execute", round: contract.round, status: "running", triggeredBy: owner, caller: actor.caller, startedAt: nowIso(), finishedAt: null });
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: status === "interrupted" ? "execution.resumed" : "execution.started", payload: { runId, round: contract.round } });
+  await db.insert(runs).values({
+    id: runId,
+    ownerEmail: owner,
+    contractId: contract.id,
+    kind: "execute",
+    round: contract.round,
+    status: "running",
+    triggeredBy: owner,
+    caller: actor.caller,
+    startedAt: nowIso(),
+    finishedAt: null,
+  });
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: status === "interrupted" ? "execution.resumed" : "execution.started",
+    payload: { runId, round: contract.round },
+  });
 
   const result = await executeObligations(db, {
     owner,
@@ -565,19 +983,41 @@ export async function executeContract(db: Db, actor: Actor, input: { contractId:
 
   contract = await requireContract(db, owner, contract.id);
   if (result.interrupted) {
-    await db.update(runs).set({ status: "interrupted", finishedAt: nowIso() }).where(eq(runs.id, runId));
+    await db
+      .update(runs)
+      .set({ status: "interrupted", finishedAt: nowIso() })
+      .where(eq(runs.id, runId));
     await transition(db, contract, "interrupted");
-    await appendAudit(db, owner, { contractId: contract.id, actor: "worker", caller: actor.caller, type: "execution.interrupted", payload: { runId } });
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: "worker",
+      caller: actor.caller,
+      type: "execution.interrupted",
+      payload: { runId },
+    });
     return getContractView(db, owner, contract.id);
   }
-  await db.update(runs).set({ status: "completed", finishedAt: nowIso() }).where(eq(runs.id, runId));
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "execution.completed", payload: { runId } });
+  await db
+    .update(runs)
+    .set({ status: "completed", finishedAt: nowIso() })
+    .where(eq(runs.id, runId));
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "execution.completed",
+    payload: { runId },
+  });
   contract = await transition(db, contract, "verifying");
   await runVerification(db, actor, contract);
   return getContractView(db, owner, contract.id);
 }
 
-export async function verifyContract(db: Db, actor: Actor, input: { contractId: string }) {
+export async function verifyContract(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string },
+) {
   const owner = actor.email;
   let contract = await requireContract(db, owner, input.contractId);
   contract = await transition(db, contract, "verifying");
@@ -588,7 +1028,18 @@ export async function verifyContract(db: Db, actor: Actor, input: { contractId: 
 async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
   const owner = actor.email;
   const runId = newId("run");
-  await db.insert(runs).values({ id: runId, ownerEmail: owner, contractId: contract.id, kind: "verify", round: contract.round, status: "running", triggeredBy: owner, caller: actor.caller, startedAt: nowIso(), finishedAt: null });
+  await db.insert(runs).values({
+    id: runId,
+    ownerEmail: owner,
+    contractId: contract.id,
+    kind: "verify",
+    round: contract.round,
+    status: "running",
+    triggeredBy: owner,
+    caller: actor.caller,
+    startedAt: nowIso(),
+    finishedAt: null,
+  });
 
   const all = await contractObligations(db, owner, contract.id);
   const pursued = all.filter((o) => o.approval !== "rejected");
@@ -600,18 +1051,28 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
 
   const verdicts: Verdict[] = [];
   for (const ob of pursued) {
-    const p = ob.params as { subscriptionId: string; chargeId: string; customerId: string };
+    const p = ob.params as {
+      subscriptionId: string;
+      chargeId: string;
+      customerId: string;
+    };
     const set: ObservationSet = {};
     switch (ob.kind as ObligationKind) {
       case "cancel_subscription":
-        set.subscription = await observe(`sub:${p.subscriptionId}`, () => observeSubscription(db, owner, p.subscriptionId));
+        set.subscription = await observe(`sub:${p.subscriptionId}`, () =>
+          observeSubscription(db, owner, p.subscriptionId),
+        );
         break;
       case "refund_charge":
       case "void_refunds":
-        set.refunds = await observe(`ref:${p.chargeId}`, () => observeRefunds(db, owner, p.chargeId));
+        set.refunds = await observe(`ref:${p.chargeId}`, () =>
+          observeRefunds(db, owner, p.chargeId),
+        );
         break;
       default:
-        set.memories = await observe(`mem:${p.customerId}`, () => observeMemories(db, owner, p.customerId));
+        set.memories = await observe(`mem:${p.customerId}`, () =>
+          observeMemories(db, owner, p.customerId),
+        );
     }
     const result = verifyObligation(ob.kind as ObligationKind, ob.params, set);
     const verificationId = newId("ver");
@@ -642,7 +1103,10 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
         digest: digestOf(observed),
       });
     }
-    await db.update(obligations).set({ verdict: result.verdict, updatedAt: nowIso() }).where(eq(obligations.id, ob.id));
+    await db
+      .update(obligations)
+      .set({ verdict: result.verdict, updatedAt: nowIso() })
+      .where(eq(obligations.id, ob.id));
     verdicts.push(result.verdict);
   }
   // Observation faults model transient conditions: they clear after one pass.
@@ -651,14 +1115,31 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
 
   const overall = combine(verdicts);
   const fresh = await requireContract(db, owner, contract.id);
-  await transition(db, fresh, overall === "VERIFIED" ? "verified" : overall === "FAILED" ? "failed" : "unknown");
-  await db.update(runs).set({ status: "completed", finishedAt: nowIso() }).where(eq(runs.id, runId));
+  await transition(
+    db,
+    fresh,
+    overall === "VERIFIED"
+      ? "verified"
+      : overall === "FAILED"
+        ? "failed"
+        : "unknown",
+  );
+  await db
+    .update(runs)
+    .set({ status: "completed", finishedAt: nowIso() })
+    .where(eq(runs.id, runId));
   await appendAudit(db, owner, {
     contractId: contract.id,
     actor: "verifier",
     caller: actor.caller,
     type: "verification.completed",
-    payload: { runId, overall, verified: verdicts.filter((v) => v === "VERIFIED").length, failed: verdicts.filter((v) => v === "FAILED").length, unknown: verdicts.filter((v) => v === "UNKNOWN").length },
+    payload: {
+      runId,
+      overall,
+      verified: verdicts.filter((v) => v === "VERIFIED").length,
+      failed: verdicts.filter((v) => v === "FAILED").length,
+      unknown: verdicts.filter((v) => v === "UNKNOWN").length,
+    },
   });
   return overall;
 }
@@ -666,19 +1147,39 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
 // ---------------------------------------------------------------------------
 // Repair (Human Repair Studio)
 // ---------------------------------------------------------------------------
-export async function proposeRepair(db: Db, actor: Actor, input: { contractId: string }) {
+export async function proposeRepair(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string },
+) {
   const owner = actor.email;
   let contract = await requireContract(db, owner, input.contractId);
   if (contract.status !== "failed" && contract.status !== "unknown") {
-    throw new ContractError("Repairs can only be proposed for FAILED or UNKNOWN contracts.", "invalid_transition", 409);
+    throw new ContractError(
+      "Repairs can only be proposed for FAILED or UNKNOWN contracts.",
+      "invalid_transition",
+      409,
+    );
   }
   const all = await contractObligations(db, owner, contract.id);
   const latest = await latestVerifications(db, owner, contract.id);
   const failing = all
     .filter((o) => o.verdict === "FAILED" || o.verdict === "UNKNOWN")
-    .map((o) => ({ id: o.id, kind: o.kind as ObligationKind, params: o.params, verdict: o.verdict!, reasons: latest.get(o.id)?.reasons ?? [] }));
-  const charges = await db.select().from(sbxCharges).where(eq(sbxCharges.ownerEmail, owner));
-  const plan = planRepairs(failing, new Map(charges.map((c) => [c.id, c.amountCents])));
+    .map((o) => ({
+      id: o.id,
+      kind: o.kind as ObligationKind,
+      params: o.params,
+      verdict: o.verdict!,
+      reasons: latest.get(o.id)?.reasons ?? [],
+    }));
+  const charges = await db
+    .select()
+    .from(sbxCharges)
+    .where(eq(sbxCharges.ownerEmail, owner));
+  const plan = planRepairs(
+    failing,
+    new Map(charges.map((c) => [c.id, c.amountCents])),
+  );
 
   if (plan.proposals.length) {
     const round = contract.round + 1;
@@ -710,13 +1211,35 @@ export async function proposeRepair(db: Db, actor: Actor, input: { contractId: s
       });
     }
     await db.insert(obligations).values(rows);
-    await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "repair.proposed", payload: { round, proposals: rows.map((r) => ({ id: r.id, kind: r.kind, repairOf: r.repairOf })) } });
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: owner,
+      caller: actor.caller,
+      type: "repair.proposed",
+      payload: {
+        round,
+        proposals: rows.map((r) => ({
+          id: r.id,
+          kind: r.kind,
+          repairOf: r.repairOf,
+        })),
+      },
+    });
   }
   return { plan, view: await getContractView(db, owner, contract.id) };
 }
 
 async function latestVerifications(db: Db, owner: string, contractId: string) {
-  const rows = await db.select().from(verifications).where(and(eq(verifications.ownerEmail, owner), eq(verifications.contractId, contractId))).orderBy(asc(verifications.checkedAt));
+  const rows = await db
+    .select()
+    .from(verifications)
+    .where(
+      and(
+        eq(verifications.ownerEmail, owner),
+        eq(verifications.contractId, contractId),
+      ),
+    )
+    .orderBy(asc(verifications.checkedAt));
   const map = new Map<string, (typeof rows)[number]>();
   for (const r of rows) map.set(r.obligationId, r);
   return map;
@@ -725,17 +1248,69 @@ async function latestVerifications(db: Db, owner: string, contractId: string) {
 // ---------------------------------------------------------------------------
 // Views
 // ---------------------------------------------------------------------------
-export async function getContractView(db: Db, owner: string, contractId: string) {
+export async function getContractView(
+  db: Db,
+  owner: string,
+  contractId: string,
+) {
   const contract = await requireContract(db, owner, contractId);
   const obs = await contractObligations(db, owner, contractId);
-  const decisions = await db.select().from(approvals).where(and(eq(approvals.ownerEmail, owner), eq(approvals.contractId, contractId))).orderBy(asc(approvals.createdAt));
-  const runRows = await db.select().from(runs).where(and(eq(runs.ownerEmail, owner), eq(runs.contractId, contractId))).orderBy(asc(runs.startedAt));
-  const attemptRows = await db.select().from(attempts).where(and(eq(attempts.ownerEmail, owner), eq(attempts.contractId, contractId))).orderBy(asc(attempts.createdAt));
-  const verRows = await db.select().from(verifications).where(and(eq(verifications.ownerEmail, owner), eq(verifications.contractId, contractId))).orderBy(asc(verifications.checkedAt));
+  const decisions = await db
+    .select()
+    .from(approvals)
+    .where(
+      and(
+        eq(approvals.ownerEmail, owner),
+        eq(approvals.contractId, contractId),
+      ),
+    )
+    .orderBy(asc(approvals.createdAt));
+  const runRows = await db
+    .select()
+    .from(runs)
+    .where(and(eq(runs.ownerEmail, owner), eq(runs.contractId, contractId)))
+    .orderBy(asc(runs.startedAt));
+  const attemptRows = await db
+    .select()
+    .from(attempts)
+    .where(
+      and(eq(attempts.ownerEmail, owner), eq(attempts.contractId, contractId)),
+    )
+    .orderBy(asc(attempts.createdAt));
+  const verRows = await db
+    .select()
+    .from(verifications)
+    .where(
+      and(
+        eq(verifications.ownerEmail, owner),
+        eq(verifications.contractId, contractId),
+      ),
+    )
+    .orderBy(asc(verifications.checkedAt));
   const evRows = verRows.length
-    ? await db.select().from(evidence).where(and(eq(evidence.ownerEmail, owner), inArray(evidence.verificationId, verRows.map((v) => v.id))))
+    ? await db
+        .select()
+        .from(evidence)
+        .where(
+          and(
+            eq(evidence.ownerEmail, owner),
+            inArray(
+              evidence.verificationId,
+              verRows.map((v) => v.id),
+            ),
+          ),
+        )
     : [];
-  const audit = await db.select().from(auditEvents).where(and(eq(auditEvents.ownerEmail, owner), eq(auditEvents.contractId, contractId))).orderBy(asc(auditEvents.seq));
+  const audit = await db
+    .select()
+    .from(auditEvents)
+    .where(
+      and(
+        eq(auditEvents.ownerEmail, owner),
+        eq(auditEvents.contractId, contractId),
+      ),
+    )
+    .orderBy(asc(auditEvents.seq));
   const latest = new Map<string, (typeof verRows)[number]>();
   for (const v of verRows) latest.set(v.obligationId, v);
 
@@ -766,7 +1341,8 @@ export async function getContractView(db: Db, owner: string, contractId: string)
     },
     obligations: obs.map((o) => {
       const v = latest.get(o.id);
-      const lastDecision = last(decisions.filter((d) => d.obligationId === o.id)) ?? null;
+      const lastDecision =
+        last(decisions.filter((d) => d.obligationId === o.id)) ?? null;
       return {
         id: o.id,
         position: o.position,
@@ -791,14 +1367,45 @@ export async function getContractView(db: Db, owner: string, contractId: string)
           createdAt: lastDecision.createdAt,
           matchesCurrentParams: lastDecision.paramsHash === o.paramsHash,
         },
-        evidenceIntact: evidenceView.filter((e) => e.verificationId === v?.id).every((e) => e.intact),
+        evidenceIntact: evidenceView
+          .filter((e) => e.verificationId === v?.id)
+          .every((e) => e.intact),
       };
     }),
     runs: runRows,
-    attempts: attemptRows.map((a) => ({ id: a.id, runId: a.runId, obligationId: a.obligationId, attemptNo: a.attemptNo, provider: a.provider, operation: a.operation, outcome: a.outcome, claim: a.claim, idempotencyKey: a.idempotencyKey, durationMs: a.durationMs, createdAt: a.createdAt, response: a.response })),
-    verifications: verRows.map((v) => ({ id: v.id, obligationId: v.obligationId, runId: v.runId, round: v.round, verdict: v.verdict as Verdict, reasons: v.reasons, checkedAt: v.checkedAt })),
+    attempts: attemptRows.map((a) => ({
+      id: a.id,
+      runId: a.runId,
+      obligationId: a.obligationId,
+      attemptNo: a.attemptNo,
+      provider: a.provider,
+      operation: a.operation,
+      outcome: a.outcome,
+      claim: a.claim,
+      idempotencyKey: a.idempotencyKey,
+      durationMs: a.durationMs,
+      createdAt: a.createdAt,
+      response: a.response,
+    })),
+    verifications: verRows.map((v) => ({
+      id: v.id,
+      obligationId: v.obligationId,
+      runId: v.runId,
+      round: v.round,
+      verdict: v.verdict as Verdict,
+      reasons: v.reasons,
+      checkedAt: v.checkedAt,
+    })),
     evidence: evidenceView,
-    audit: audit.map((a) => ({ seq: a.seq, type: a.type, actor: a.actor, caller: a.caller, payload: a.payload, createdAt: a.createdAt, hash: a.hash })),
+    audit: audit.map((a) => ({
+      seq: a.seq,
+      type: a.type,
+      actor: a.actor,
+      caller: a.caller,
+      payload: a.payload,
+      createdAt: a.createdAt,
+      hash: a.hash,
+    })),
   };
 }
 
@@ -807,11 +1414,19 @@ export type ContractView = Awaited<ReturnType<typeof getContractView>>;
 // ---------------------------------------------------------------------------
 // Proof receipts
 // ---------------------------------------------------------------------------
-export async function exportReceipt(db: Db, actor: Actor, input: { contractId: string }) {
+export async function exportReceipt(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string },
+) {
   const owner = actor.email;
   const view = await getContractView(db, owner, input.contractId);
   if (!["verified", "failed", "unknown"].includes(view.contract.status)) {
-    throw new ContractError("Run verification before exporting a receipt.", "not_verified", 409);
+    throw new ContractError(
+      "Run verification before exporting a receipt.",
+      "not_verified",
+      409,
+    );
   }
   const chain = await verifyAuditChain(db, owner);
   const { key, ephemeral } = receiptKey();
@@ -822,11 +1437,18 @@ export async function exportReceipt(db: Db, actor: Actor, input: { contractId: s
     const v = latestVer.get(o.id);
     const ev = view.evidence.filter((e) => e.verificationId === v?.id);
     const intact = ev.every((e) => e.intact);
-    let verdict: Verdict | "NOT_PURSUED" = o.approval === "rejected" ? "NOT_PURSUED" : ((v?.verdict ?? "UNKNOWN") as Verdict);
+    let verdict: Verdict | "NOT_PURSUED" =
+      o.approval === "rejected"
+        ? "NOT_PURSUED"
+        : ((v?.verdict ?? "UNKNOWN") as Verdict);
     const reasons = [...(v?.reasons ?? [])];
     if (verdict !== "NOT_PURSUED" && !intact) {
       verdict = "UNKNOWN";
-      reasons.push({ code: "evidence_integrity_failed", message: "Stored evidence no longer matches its digest; this result cannot be relied on. Re-run verification." });
+      reasons.push({
+        code: "evidence_integrity_failed",
+        message:
+          "Stored evidence no longer matches its digest; this result cannot be relied on. Re-run verification.",
+      });
     }
     return {
       id: o.id,
@@ -836,23 +1458,46 @@ export async function exportReceipt(db: Db, actor: Actor, input: { contractId: s
       repairOf: o.repairOf,
       params: o.params,
       paramsHash: o.paramsHash,
-      approval: o.lastDecision ? { ...o.lastDecision, state: o.approval } : { state: o.approval },
+      approval: o.lastDecision
+        ? { ...o.lastDecision, state: o.approval }
+        : { state: o.approval },
       execution: o.execution,
       verdict,
       reasons,
       verifiedAt: v?.checkedAt ?? null,
-      evidence: ev.map((e) => ({ id: e.id, source: e.source, observedAt: e.observedAt, digest: e.digest, integrity: e.intact ? "intact" : "MISMATCH" })),
-      history: view.verifications.filter((x) => x.obligationId === o.id).map((x) => ({ round: x.round, verdict: x.verdict, checkedAt: x.checkedAt })),
+      evidence: ev.map((e) => ({
+        id: e.id,
+        source: e.source,
+        observedAt: e.observedAt,
+        digest: e.digest,
+        integrity: e.intact ? "intact" : "MISMATCH",
+      })),
+      history: view.verifications
+        .filter((x) => x.obligationId === o.id)
+        .map((x) => ({
+          round: x.round,
+          verdict: x.verdict,
+          checkedAt: x.checkedAt,
+        })),
     };
   });
-  const pursued = obligationEntries.filter((o) => o.verdict !== "NOT_PURSUED").map((o) => o.verdict as Verdict);
+  const pursued = obligationEntries
+    .filter((o) => o.verdict !== "NOT_PURSUED")
+    .map((o) => o.verdict as Verdict);
   const body = {
     schema: "tcs.proof-receipt/v1",
     receiptId: newId("rcpt"),
     issuedAt: nowIso(),
     issuer: "Trust Contract Studio — sandbox workspace",
     verifierVersion: VERIFIER_VERSION,
-    contract: { id: view.contract.id, goal: view.contract.goal, plannedBy: view.contract.plannedBy, scenario: view.contract.scenario, rounds: view.contract.round, createdAt: view.contract.createdAt },
+    contract: {
+      id: view.contract.id,
+      goal: view.contract.goal,
+      plannedBy: view.contract.plannedBy,
+      scenario: view.contract.scenario,
+      rounds: view.contract.round,
+      createdAt: view.contract.createdAt,
+    },
     overall: combine(pursued),
     summary: {
       VERIFIED: pursued.filter((v) => v === "VERIFIED").length,
@@ -871,25 +1516,59 @@ export async function exportReceipt(db: Db, actor: Actor, input: { contractId: s
       ...view.contract.limitations,
       "This receipt describes sandbox providers with synthetic data. It is not a legal compliance attestation.",
       "Integrity: HMAC-SHA256 lets the issuing server detect edits to this receipt. It is not a public-key signature or a trusted timestamp.",
-      ...(ephemeral ? ["The signing key is ephemeral (RECEIPT_SIGNING_KEY not set); this receipt can only be checked until the server restarts."] : []),
+      ...(ephemeral
+        ? [
+            "The signing key is ephemeral (RECEIPT_SIGNING_KEY not set); this receipt can only be checked until the server restarts.",
+          ]
+        : []),
     ],
   };
   const digest = sha256(canonicalJson(body));
   const signature = hmac(digest, key);
-  await db.insert(receipts).values({ id: body.receiptId, ownerEmail: owner, contractId: view.contract.id, body, digest, signature, createdAt: body.issuedAt });
-  await appendAudit(db, owner, { contractId: view.contract.id, actor: owner, caller: actor.caller, type: "receipt.exported", payload: { receiptId: body.receiptId, digest, overall: body.overall } });
-  return { ...body, integrity: { algorithm: "HMAC-SHA256(SHA-256(canonical JSON))", digest, signature } };
+  await db.insert(receipts).values({
+    id: body.receiptId,
+    ownerEmail: owner,
+    contractId: view.contract.id,
+    body,
+    digest,
+    signature,
+    createdAt: body.issuedAt,
+  });
+  await appendAudit(db, owner, {
+    contractId: view.contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "receipt.exported",
+    payload: { receiptId: body.receiptId, digest, overall: body.overall },
+  });
+  return {
+    ...body,
+    integrity: {
+      algorithm: "HMAC-SHA256(SHA-256(canonical JSON))",
+      digest,
+      signature,
+    },
+  };
 }
 
 export function checkReceipt(receipt: Record<string, unknown>) {
-  const { integrity, ...body } = receipt as { integrity?: { digest?: string; signature?: string } } & Record<string, unknown>;
+  const { integrity, ...body } = receipt as {
+    integrity?: { digest?: string; signature?: string };
+  } & Record<string, unknown>;
   if (!integrity?.digest || !integrity.signature) {
-    return { digestMatches: false, signatureValid: false, message: "Receipt has no integrity block." };
+    return {
+      digestMatches: false,
+      signatureValid: false,
+      message: "Receipt has no integrity block.",
+    };
   }
   const digest = sha256(canonicalJson(body));
   const digestMatches = digest === integrity.digest;
   const { key, ephemeral } = receiptKey();
-  const signatureValid = digestMatches && /^[0-9a-f]+$/.test(integrity.signature) && safeEqualHex(hmac(digest, key), integrity.signature);
+  const signatureValid =
+    digestMatches &&
+    /^[0-9a-f]+$/.test(integrity.signature) &&
+    safeEqualHex(hmac(digest, key), integrity.signature);
   return {
     digestMatches,
     signatureValid,
@@ -905,14 +1584,43 @@ export function checkReceipt(receipt: Record<string, unknown>) {
 // ---------------------------------------------------------------------------
 // Replay Lab adversary: edit stored evidence without fixing its digest.
 // ---------------------------------------------------------------------------
-export async function tamperEvidence(db: Db, actor: Actor, input: { contractId: string }) {
+export async function tamperEvidence(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string },
+) {
   requireHuman(actor, "The evidence-tampering drill");
   const owner = actor.email;
   const contract = await requireContract(db, owner, input.contractId);
-  const [target] = await db.select().from(evidence).where(and(eq(evidence.ownerEmail, owner), eq(evidence.contractId, contract.id))).orderBy(desc(evidence.observedAt)).limit(1);
-  if (!target) throw new ContractError("There is no evidence to tamper with yet.", "no_evidence", 409);
-  const forged = { ...target.observed, forged: true, note: "Edited to look like success" };
-  await db.update(evidence).set({ observed: forged }).where(eq(evidence.id, target.id));
-  await appendAudit(db, owner, { contractId: contract.id, actor: owner, caller: actor.caller, type: "lab.evidence_tampered", payload: { evidenceId: target.id } });
+  const [target] = await db
+    .select()
+    .from(evidence)
+    .where(
+      and(eq(evidence.ownerEmail, owner), eq(evidence.contractId, contract.id)),
+    )
+    .orderBy(desc(evidence.observedAt))
+    .limit(1);
+  if (!target)
+    throw new ContractError(
+      "There is no evidence to tamper with yet.",
+      "no_evidence",
+      409,
+    );
+  const forged = {
+    ...target.observed,
+    forged: true,
+    note: "Edited to look like success",
+  };
+  await db
+    .update(evidence)
+    .set({ observed: forged })
+    .where(eq(evidence.id, target.id));
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "lab.evidence_tampered",
+    payload: { evidenceId: target.id },
+  });
   return getContractView(db, owner, contract.id);
 }

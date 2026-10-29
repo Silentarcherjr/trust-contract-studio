@@ -11,7 +11,10 @@ import type { Actor } from "../domain/service.js";
 export function actorFrom(ctx: ActionRunContext | undefined): Actor {
   const email = ctx?.userEmail;
   if (!email) {
-    fail("Sign in to use Trust Contract Studio.", { errorCode: "unauthenticated", statusCode: 401 });
+    fail("Sign in to use Trust Contract Studio.", {
+      errorCode: "unauthenticated",
+      statusCode: 401,
+    });
   }
   return { email, caller: ctx?.caller ?? "unknown" };
 }

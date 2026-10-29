@@ -13,9 +13,17 @@ export default defineAction({
     obligationId: z.string(),
     expectedVersion: z.number().int().positive().optional(),
     title: z.string().max(140).optional(),
-    params: z.record(z.string(), z.unknown()).optional().describe("Partial params, merged and re-validated."),
-    dependsOn: z.array(z.string()).max(8).optional().describe("Obligation ids that must succeed first."),
+    params: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe("Partial params, merged and re-validated."),
+    dependsOn: z
+      .array(z.string())
+      .max(8)
+      .optional()
+      .describe("Obligation ids that must succeed first."),
     remove: z.boolean().optional(),
   }),
-  run: async (args, ctx) => guarded(() => updateObligation(getDb(), actorFrom(ctx), args)),
+  run: async (args, ctx) =>
+    guarded(() => updateObligation(getDb(), actorFrom(ctx), args)),
 });

@@ -12,7 +12,10 @@ export default defineAction({
     contractId: z.string(),
     obligationId: z.string(),
     decision: z.enum(["approved", "rejected"]),
-    paramsHash: z.string().length(64).describe("Hash of the parameters the person reviewed."),
+    paramsHash: z
+      .string()
+      .length(64)
+      .describe("Hash of the parameters the person reviewed."),
     note: z.string().max(500).optional(),
   }),
   // Never offered to any agent. The service also refuses non-human callers,
@@ -20,5 +23,6 @@ export default defineAction({
   agentTool: false,
   mcpTool: false,
   toolCallable: false,
-  run: async (args, ctx) => guarded(() => decideApproval(getDb(), actorFrom(ctx), args)),
+  run: async (args, ctx) =>
+    guarded(() => decideApproval(getDb(), actorFrom(ctx), args)),
 });

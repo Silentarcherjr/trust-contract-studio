@@ -50,7 +50,13 @@ const ACTOR_LABEL: Record<Actor, string> = {
   system: "System",
 };
 
-export function ExecutionTheater({ view, numberById }: { view: ContractView; numberById: Map<string, number> }) {
+export function ExecutionTheater({
+  view,
+  numberById,
+}: {
+  view: ContractView;
+  numberById: Map<string, number>;
+}) {
   const origin = view.contract.createdAt;
   const clause = (id: string) => `§${numberById.get(id) ?? "?"}`;
   const rows: Row[] = [];
@@ -63,8 +69,12 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
     if (a.type.startsWith("approval.") && typeof p.obligationId === "string") {
       detail = (
         <span>
-          {clause(p.obligationId)} · terms <span className="tcs-mono">#{shortHash(String(p.paramsHash ?? ""), 8)}</span>
-          {a.type === "approval.refused_non_human" && ` · caller "${a.caller}" is not a person`}
+          {clause(p.obligationId)} · terms{" "}
+          <span className="tcs-mono">
+            #{shortHash(String(p.paramsHash ?? ""), 8)}
+          </span>
+          {a.type === "approval.refused_non_human" &&
+            ` · caller "${a.caller}" is not a person`}
         </span>
       );
     } else if (a.type === "contract.drafted") {
@@ -76,10 +86,16 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
       key: `audit-${a.seq}`,
       at: a.createdAt,
       actor: who,
-      tone: a.type === "approval.refused_non_human" || a.type === "lab.evidence_tampered" || a.type === "execution.interrupted" ? "failed" : undefined,
+      tone:
+        a.type === "approval.refused_non_human" ||
+        a.type === "lab.evidence_tampered" ||
+        a.type === "execution.interrupted"
+          ? "failed"
+          : undefined,
       title: (
         <>
-          <strong className="font-semibold">{ACTOR_LABEL[who]}</strong> · {AUDIT_TITLES[a.type] ?? a.type}
+          <strong className="font-semibold">{ACTOR_LABEL[who]}</strong> ·{" "}
+          {AUDIT_TITLES[a.type] ?? a.type}
         </>
       ),
       detail,
@@ -95,7 +111,8 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
         tone: at.outcome === "unauthorized" ? "failed" : undefined,
         title: (
           <>
-            <strong className="font-semibold">Gate</strong> · {clause(at.obligationId)} {at.outcome}
+            <strong className="font-semibold">Gate</strong> ·{" "}
+            {clause(at.obligationId)} {at.outcome}
           </>
         ),
         detail: at.claim,
@@ -107,13 +124,23 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
       key: at.id,
       at: at.createdAt,
       actor: "provider",
-      tone: at.outcome === "timeout" ? "unknown" : at.outcome === "error" ? "failed" : undefined,
+      tone:
+        at.outcome === "timeout"
+          ? "unknown"
+          : at.outcome === "error"
+            ? "failed"
+            : undefined,
       title: (
         <>
           <strong className="font-semibold">{at.provider}</strong>
-          <span className="tcs-mono"> {at.operation}</span> · {clause(at.obligationId)} · attempt {at.attemptNo} ·{" "}
-          <span className={at.outcome === "ok" ? "" : "font-semibold"}>{at.outcome === "ok" ? "200 OK" : at.outcome}</span>
-          {res && typeof res.amountCents === "number" && ` · ${formatCents(res.amountCents)}`}
+          <span className="tcs-mono"> {at.operation}</span> ·{" "}
+          {clause(at.obligationId)} · attempt {at.attemptNo} ·{" "}
+          <span className={at.outcome === "ok" ? "" : "font-semibold"}>
+            {at.outcome === "ok" ? "200 OK" : at.outcome}
+          </span>
+          {res &&
+            typeof res.amountCents === "number" &&
+            ` · ${formatCents(res.amountCents)}`}
         </>
       ),
       detail: (
@@ -130,10 +157,16 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
       key: v.id,
       at: v.checkedAt,
       actor: "verifier",
-      tone: v.verdict === "FAILED" ? "failed" : v.verdict === "UNKNOWN" ? "unknown" : undefined,
+      tone:
+        v.verdict === "FAILED"
+          ? "failed"
+          : v.verdict === "UNKNOWN"
+            ? "unknown"
+            : undefined,
       title: (
         <span className="inline-flex flex-wrap items-center gap-2">
-          <strong className="font-semibold">Verifier</strong> · {clause(v.obligationId)} <Seal verdict={v.verdict} />
+          <strong className="font-semibold">Verifier</strong> ·{" "}
+          {clause(v.obligationId)} <Seal verdict={v.verdict} />
         </span>
       ),
       detail: v.reasons[0]?.message,
@@ -141,12 +174,17 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
   }
 
   rows.sort((a, b) => a.at.localeCompare(b.at));
-  const live = view.contract.status === "executing" || view.contract.status === "verifying";
+  const live =
+    view.contract.status === "executing" ||
+    view.contract.status === "verifying";
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <p className="tcs-soft text-xs">Every agent call, provider response, retry, human decision and verdict — in order.</p>
+        <p className="tcs-soft text-xs">
+          Every agent call, provider response, retry, human decision and verdict
+          — in order.
+        </p>
         {live && (
           <span className="tcs-chip tcs-live" data-tone="agent" role="status">
             ● live
@@ -159,12 +197,22 @@ export function ExecutionTheater({ view, numberById }: { view: ContractView; num
         <div className="tcs-timeline" role="list" aria-live="polite">
           <span className="tcs-tl-spine" aria-hidden />
           {rows.map((r) => (
-            <div key={r.key} className="tcs-tl-row" data-actor={r.actor} data-tone={r.tone} role="listitem">
-              <span className="tcs-tl-time">{relativeSeconds(origin, r.at)}</span>
+            <div
+              key={r.key}
+              className="tcs-tl-row"
+              data-actor={r.actor}
+              data-tone={r.tone}
+              role="listitem"
+            >
+              <span className="tcs-tl-time">
+                {relativeSeconds(origin, r.at)}
+              </span>
               <span className="tcs-tl-node" aria-hidden />
               <div className="tcs-tl-body">
                 <div>{r.title}</div>
-                {r.detail && <div className="tcs-soft mt-0.5 text-xs">{r.detail}</div>}
+                {r.detail && (
+                  <div className="tcs-soft mt-0.5 text-xs">{r.detail}</div>
+                )}
               </div>
             </div>
           ))}

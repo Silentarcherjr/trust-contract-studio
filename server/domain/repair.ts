@@ -29,7 +29,10 @@ interface FailedObligation {
   reasons: VerificationReason[];
 }
 
-export function planRepairs(failed: FailedObligation[], chargeAmounts: Map<string, number>): RepairPlan {
+export function planRepairs(
+  failed: FailedObligation[],
+  chargeAmounts: Map<string, number>,
+): RepairPlan {
   const plan: RepairPlan = { proposals: [], reverify: [], needsHuman: [] };
   for (const ob of failed) {
     const customerId = ob.params.customerId as string;
@@ -39,7 +42,11 @@ export function planRepairs(failed: FailedObligation[], chargeAmounts: Map<strin
           plan.proposals.push({
             kind: "void_refunds",
             title: `Void ${reason.refs?.length ?? 0} duplicate refund(s)`,
-            params: { customerId, chargeId: ob.params.chargeId, refundIds: reason.refs ?? [] },
+            params: {
+              customerId,
+              chargeId: ob.params.chargeId,
+              refundIds: reason.refs ?? [],
+            },
             repairOf: ob.id,
             rationale: reason.message,
           });
@@ -67,7 +74,11 @@ export function planRepairs(failed: FailedObligation[], chargeAmounts: Map<strin
             plan.proposals.push({
               kind: "refund_charge",
               title: "Refund the charge made after cancellation",
-              params: { customerId, chargeId, amountCents: chargeAmounts.get(chargeId) ?? 0 },
+              params: {
+                customerId,
+                chargeId,
+                amountCents: chargeAmounts.get(chargeId) ?? 0,
+              },
               repairOf: ob.id,
               rationale: reason.message,
             });
@@ -101,6 +112,9 @@ export function planRepairs(failed: FailedObligation[], chargeAmounts: Map<strin
     }
   }
   // De-duplicate reverify entries per obligation.
-  plan.reverify = plan.reverify.filter((r, i, arr) => arr.findIndex((x) => x.obligationId === r.obligationId) === i);
+  plan.reverify = plan.reverify.filter(
+    (r, i, arr) =>
+      arr.findIndex((x) => x.obligationId === r.obligationId) === i,
+  );
   return plan;
 }

@@ -9,5 +9,6 @@ export default defineAction({
   description: "List this workspace's trust contracts, newest first.",
   schema: z.object({}),
   http: { method: "GET" },
-  run: async (_args, ctx) => guarded(() => listContracts(getDb(), actorFrom(ctx).email)),
+  run: async (_args, ctx) =>
+    guarded(() => listContracts(getDb(), actorFrom(ctx).email)),
 });

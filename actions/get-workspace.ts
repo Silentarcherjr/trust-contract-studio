@@ -11,5 +11,6 @@ export default defineAction({
   schema: z.object({}),
   http: { method: "GET" },
   deferLoading: false,
-  run: async (_args, ctx) => guarded(() => getWorkspace(getDb(), actorFrom(ctx).email)),
+  run: async (_args, ctx) =>
+    guarded(() => getWorkspace(getDb(), actorFrom(ctx).email)),
 });

@@ -1,10 +1,10 @@
 import { defineAction } from "@agent-native/core/action";
 import { z } from "zod";
 
-import { SCENARIOS } from "../shared/domain.js";
 import { getDb } from "../server/db/index.js";
 import { resetDemo } from "../server/domain/service.js";
 import { actorFrom, guarded } from "../server/lib/action-kit.js";
+import { SCENARIOS } from "../shared/domain.js";
 
 export default defineAction({
   description:
@@ -17,5 +17,6 @@ export default defineAction({
   }),
   // Destructive for the whole workspace: the agent must get a person's OK.
   needsApproval: true,
-  run: async ({ scenario }, ctx) => guarded(() => resetDemo(getDb(), actorFrom(ctx), { scenario })),
+  run: async ({ scenario }, ctx) =>
+    guarded(() => resetDemo(getDb(), actorFrom(ctx), { scenario })),
 });

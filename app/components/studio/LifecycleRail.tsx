@@ -43,7 +43,9 @@ export function LifecycleRail({
           {i > 0 && <span className="tcs-rail-line" aria-hidden />}
           <span
             className="tcs-rail-step"
-            data-state={i < current ? "done" : i === current ? "current" : "todo"}
+            data-state={
+              i < current ? "done" : i === current ? "current" : "todo"
+            }
             aria-current={i === current ? "step" : undefined}
           >
             <span className="tcs-rail-dot" aria-hidden />
@@ -54,7 +56,9 @@ export function LifecycleRail({
       {round > 1 && (
         <li className="flex items-center">
           <span className="tcs-rail-line" aria-hidden />
-          <span className="tcs-chip" data-tone="human">Repair round {round}</span>
+          <span className="tcs-chip" data-tone="human">
+            Repair round {round}
+          </span>
         </li>
       )}
     </ol>

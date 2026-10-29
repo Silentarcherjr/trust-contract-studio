@@ -1,6 +1,19 @@
-# Chat — Agent Guide
+# Trust Contract Studio — Agent Guide
 
-Chat is the minimal chat-first agent-native app. `/` redirects to shared sign-in, then `/home`, the editable Get started page. Chat lives at `/chat`; new chats start there. Actions carry capabilities; screens exist only for durable workflows.
+Trust Contract Studio turns agent promises into verifiable commitments. `/studio` is home (`/home` redirects there); `/studio/<contractId>` is the contract workspace; chat lives at `/chat`. Read `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md` and `docs/DEVLOG.md` before changing domain code, and add a DEVLOG entry after each milestone.
+
+## Non-negotiable invariants
+
+- The verifier (`server/domain/verifier.ts`) stays pure: inputs are obligation terms + observations from `server/sandbox/observe.ts` only. Never pass attempts, claims or agent text into it.
+- `decide-approval` is human-only on every surface. Never expose it to agents.
+- Approvals bind to `params_hash`; execution re-checks it.
+- Every query is scoped by `owner_email`.
+- Never claim universal erasure, legal compliance, exactly-once execution or immutability.
+- Synthetic demo data only; no real personal data or secrets in the repo.
+
+## Checks before pushing
+
+`pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build`, plus `pnpm test:e2e` for UI changes. In IPv4-only containers set `DEV_HOST=127.0.0.1`.
 
 ## Skills
 
@@ -19,7 +32,7 @@ For custom branding, keep `server/plugins/agent-native-email-branding.ts` aligne
 
 ## Application state
 
-- `navigation` describes the view and selected ids. Chat is `chat` at `/chat` and `/chat/<threadId>`; the Get started page is `home` at `/home`; `/` opens shared sign-in/signup.
+- `navigation` describes the view and selected ids. The Studio is `studio` at `/studio` (with `contractId` at `/studio/<contractId>`); chat is `chat` at `/chat` and `/chat/<threadId>`; `/` opens shared sign-in/signup.
 - Use `navigate` when supported and `view-screen` for a fresh read of visible details; basic navigation is already in `<current-screen>`.
 
 ## Building a domain app

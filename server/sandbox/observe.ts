@@ -30,14 +30,28 @@ export type Observation<T> =
     };
 
 export interface SubscriptionObservation {
-  subscription: { id: string; status: string; canceledAt: string | null } | null;
+  subscription: {
+    id: string;
+    status: string;
+    canceledAt: string | null;
+  } | null;
   /** Charges created after cancellation, with how much of each was refunded. */
-  chargesAfterCancel: { id: string; amountCents: number; createdAt: string; refundedCents: number }[];
+  chargesAfterCancel: {
+    id: string;
+    amountCents: number;
+    createdAt: string;
+    refundedCents: number;
+  }[];
 }
 
 export interface RefundObservation {
   charge: { id: string; amountCents: number } | null;
-  refunds: { id: string; amountCents: number; status: string; createdAt: string }[];
+  refunds: {
+    id: string;
+    amountCents: number;
+    status: string;
+    createdAt: string;
+  }[];
 }
 
 export interface MemoryRecordObservation {
@@ -69,18 +83,34 @@ export async function observeSubscription(
 ): Promise<Observation<SubscriptionObservation>> {
   const source = "billing.subscriptions.read";
   if (await billingTimeout(db, owner)) {
-    return { source, ok: false, observedAt: nowIso(), error: "timeout", detail: "Billing read API did not answer within 5s" };
+    return {
+      source,
+      ok: false,
+      observedAt: nowIso(),
+      error: "timeout",
+      detail: "Billing read API did not answer within 5s",
+    };
   }
   const [sub] = await db
     .select()
     .from(sbxSubscriptions)
-    .where(and(eq(sbxSubscriptions.ownerEmail, owner), eq(sbxSubscriptions.id, subscriptionId)));
+    .where(
+      and(
+        eq(sbxSubscriptions.ownerEmail, owner),
+        eq(sbxSubscriptions.id, subscriptionId),
+      ),
+    );
   let chargesAfterCancel: SubscriptionObservation["chargesAfterCancel"] = [];
   if (sub?.canceledAt) {
     const charges = await db
       .select()
       .from(sbxCharges)
-      .where(and(eq(sbxCharges.ownerEmail, owner), eq(sbxCharges.customerId, sub.customerId)));
+      .where(
+        and(
+          eq(sbxCharges.ownerEmail, owner),
+          eq(sbxCharges.customerId, sub.customerId),
+        ),
+      );
     const late = charges.filter((c) => c.createdAt > sub.canceledAt!);
     const refunds = late.length
       ? await db
@@ -89,7 +119,10 @@ export async function observeSubscription(
           .where(
             and(
               eq(sbxRefunds.ownerEmail, owner),
-              inArray(sbxRefunds.chargeId, late.map((c) => c.id)),
+              inArray(
+                sbxRefunds.chargeId,
+                late.map((c) => c.id),
+              ),
               ne(sbxRefunds.status, "voided"),
             ),
           )
@@ -98,7 +131,9 @@ export async function observeSubscription(
       id: c.id,
       amountCents: c.amountCents,
       createdAt: c.createdAt,
-      refundedCents: refunds.filter((r) => r.chargeId === c.id).reduce((s, r) => s + r.amountCents, 0),
+      refundedCents: refunds
+        .filter((r) => r.chargeId === c.id)
+        .reduce((s, r) => s + r.amountCents, 0),
     }));
   }
   return {
@@ -106,7 +141,9 @@ export async function observeSubscription(
     ok: true,
     observedAt: nowIso(),
     data: {
-      subscription: sub ? { id: sub.id, status: sub.status, canceledAt: sub.canceledAt } : null,
+      subscription: sub
+        ? { id: sub.id, status: sub.status, canceledAt: sub.canceledAt }
+        : null,
       chargesAfterCancel,
     },
   };
@@ -119,7 +156,13 @@ export async function observeRefunds(
 ): Promise<Observation<RefundObservation>> {
   const source = "billing.refunds.list";
   if (await billingTimeout(db, owner)) {
-    return { source, ok: false, observedAt: nowIso(), error: "timeout", detail: "Billing read API did not answer within 5s" };
+    return {
+      source,
+      ok: false,
+      observedAt: nowIso(),
+      error: "timeout",
+      detail: "Billing read API did not answer within 5s",
+    };
   }
   const [charge] = await db
     .select()
@@ -128,16 +171,28 @@ export async function observeRefunds(
   const refunds = await db
     .select()
     .from(sbxRefunds)
-    .where(and(eq(sbxRefunds.ownerEmail, owner), eq(sbxRefunds.chargeId, chargeId)));
+    .where(
+      and(eq(sbxRefunds.ownerEmail, owner), eq(sbxRefunds.chargeId, chargeId)),
+    );
   return {
     source,
     ok: true,
     observedAt: nowIso(),
     data: {
-      charge: charge ? { id: charge.id, amountCents: charge.amountCents } : null,
+      charge: charge
+        ? { id: charge.id, amountCents: charge.amountCents }
+        : null,
       refunds: refunds
-        .map((r) => ({ id: r.id, amountCents: r.amountCents, status: r.status, createdAt: r.createdAt }))
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)),
+        .map((r) => ({
+          id: r.id,
+          amountCents: r.amountCents,
+          status: r.status,
+          createdAt: r.createdAt,
+        }))
+        .sort(
+          (a, b) =>
+            a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
+        ),
     },
   };
 }

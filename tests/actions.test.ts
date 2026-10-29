@@ -16,8 +16,10 @@ import type { Db } from "../server/db/index.js";
 import * as svc from "../server/domain/service.js";
 import { DEMO_GOAL, approveAllPending, freshDb, human } from "./harness.js";
 
-const ctx = (caller: ActionRunContext["caller"], userEmail = "alex@example.test") =>
-  ({ caller, userEmail, orgId: null }) as ActionRunContext;
+const ctx = (
+  caller: ActionRunContext["caller"],
+  userEmail = "alex@example.test",
+) => ({ caller, userEmail, orgId: null }) as ActionRunContext;
 
 let db: Db;
 let close: () => Promise<void>;
@@ -28,11 +30,19 @@ describe("one action, two callers", () => {
   it("the UI and the agent invoke the same draft-contract action and see the same state", async () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     const fromAgent = await draftContract.run({ goal: DEMO_GOAL }, ctx("tool"));
-    const fromUi = await getContract.run({ contractId: fromAgent.contract.id }, ctx("frontend"));
+    const fromUi = await getContract.run(
+      { contractId: fromAgent.contract.id },
+      ctx("frontend"),
+    );
     expect(fromUi.contract.id).toBe(fromAgent.contract.id);
-    expect(fromUi.obligations.map((o) => o.id)).toEqual(fromAgent.obligations.map((o) => o.id));
+    expect(fromUi.obligations.map((o) => o.id)).toEqual(
+      fromAgent.obligations.map((o) => o.id),
+    );
     // Same code path regardless of caller: planner output is identical.
-    const fromUiDraft = await draftContract.run({ goal: DEMO_GOAL }, ctx("frontend"));
+    const fromUiDraft = await draftContract.run(
+      { goal: DEMO_GOAL },
+      ctx("frontend"),
+    );
     expect(fromUiDraft.obligations.map((o) => [o.kind, o.params])).toEqual(
       fromAgent.obligations.map((o) => [o.kind, o.params]),
     );
@@ -44,7 +54,16 @@ describe("one action, two callers", () => {
   it("an agent-authored plan is accepted only for verifiable kinds and is attributed to the agent", async () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     const view = await draftContract.run(
-      { goal: "Refund my last charge", obligations: [{ kind: "refund_charge", params: { amountCents: 5000 }, dependsOn: [] }] },
+      {
+        goal: "Refund my last charge",
+        obligations: [
+          {
+            kind: "refund_charge",
+            params: { amountCents: 5000 },
+            dependsOn: [],
+          },
+        ],
+      },
       ctx("tool"),
     );
     expect(view.contract.plannedBy).toBe("agent");
@@ -54,9 +73,14 @@ describe("one action, two callers", () => {
   it("the agent can execute only after a person approved, and the execute action is shared", async () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     let view = await draftContract.run({ goal: DEMO_GOAL }, ctx("tool"));
-    await expect(executeContract.run({ contractId: view.contract.id }, ctx("tool"))).rejects.toMatchObject({ errorCode: "approval_pending" });
+    await expect(
+      executeContract.run({ contractId: view.contract.id }, ctx("tool")),
+    ).rejects.toMatchObject({ errorCode: "approval_pending" });
     view = await approveAllPending(db, view);
-    view = await executeContract.run({ contractId: view.contract.id }, ctx("tool"));
+    view = await executeContract.run(
+      { contractId: view.contract.id },
+      ctx("tool"),
+    );
     expect(view.contract.status).toBe("verified");
   });
 });
@@ -66,14 +90,33 @@ describe("authorization", () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     const view = await draftContract.run({ goal: DEMO_GOAL }, ctx("tool"));
     const ob = view.obligations[0]!;
-    for (const caller of ["tool", "mcp", "a2a", "http", "automation"] as const) {
+    for (const caller of [
+      "tool",
+      "mcp",
+      "a2a",
+      "http",
+      "automation",
+    ] as const) {
       await expect(
-        decideApproval.run({ contractId: view.contract.id, obligationId: ob.id, decision: "approved", paramsHash: ob.paramsHash }, ctx(caller)),
+        decideApproval.run(
+          {
+            contractId: view.contract.id,
+            obligationId: ob.id,
+            decision: "approved",
+            paramsHash: ob.paramsHash,
+          },
+          ctx(caller),
+        ),
       ).rejects.toMatchObject({ errorCode: "human_required" });
     }
-    const after = await getContract.run({ contractId: view.contract.id }, ctx("frontend"));
+    const after = await getContract.run(
+      { contractId: view.contract.id },
+      ctx("frontend"),
+    );
     expect(after.obligations[0]!.approval).toBe("pending");
-    expect(after.audit.filter((a) => a.type === "approval.refused_non_human")).toHaveLength(5);
+    expect(
+      after.audit.filter((a) => a.type === "approval.refused_non_human"),
+    ).toHaveLength(5);
   });
 
   it("decide-approval and the tamper drill are hidden from every agent surface", () => {
@@ -87,14 +130,28 @@ describe("authorization", () => {
     let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     const refund = view.obligations.find((o) => o.kind === "refund_charge")!;
     const reviewedHash = refund.paramsHash;
-    view = await svc.decideApproval(db, human(), { contractId: view.contract.id, obligationId: refund.id, decision: "approved", paramsHash: reviewedHash });
+    view = await svc.decideApproval(db, human(), {
+      contractId: view.contract.id,
+      obligationId: refund.id,
+      decision: "approved",
+      paramsHash: reviewedHash,
+    });
     // Someone changes the amount after approval: the approval is voided.
-    view = await svc.updateObligation(db, human(), { contractId: view.contract.id, obligationId: refund.id, params: { amountCents: 9000 } });
+    view = await svc.updateObligation(db, human(), {
+      contractId: view.contract.id,
+      obligationId: refund.id,
+      params: { amountCents: 9000 },
+    });
     const edited = view.obligations.find((o) => o.id === refund.id)!;
     expect(edited.approval).toBe("pending");
     // Replaying the old decision against the new parameters is refused.
     await expect(
-      svc.decideApproval(db, human(), { contractId: view.contract.id, obligationId: refund.id, decision: "approved", paramsHash: reviewedHash }),
+      svc.decideApproval(db, human(), {
+        contractId: view.contract.id,
+        obligationId: refund.id,
+        decision: "approved",
+        paramsHash: reviewedHash,
+      }),
     ).rejects.toMatchObject({ code: "stale_approval" });
   });
 
@@ -109,28 +166,58 @@ describe("authorization", () => {
         paramsHash: o.paramsHash,
       });
     }
-    view = await svc.executeContract(db, human(), { contractId: view.contract.id });
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
     const refund = view.obligations.find((o) => o.kind === "refund_charge")!;
     expect(refund.execution).toBe("skipped");
-    expect(view.attempts.some((a) => a.operation === "refunds.create")).toBe(false);
+    expect(view.attempts.some((a) => a.operation === "refunds.create")).toBe(
+      false,
+    );
     const ws = await svc.getWorkspace(db, human().email);
     if (!ws.seeded) throw new Error("not seeded");
     expect(ws.refunds).toHaveLength(0);
-    const receipt = await svc.exportReceipt(db, human(), { contractId: view.contract.id });
-    expect(receipt.obligations.find((o) => o.kind === "refund_charge")!.verdict).toBe("NOT_PURSUED");
+    const receipt = await svc.exportReceipt(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(
+      receipt.obligations.find((o) => o.kind === "refund_charge")!.verdict,
+    ).toBe("NOT_PURSUED");
   });
 
   it("refuses unauthenticated calls", async () => {
-    await expect(getContract.run({ contractId: "ctr_x" }, { caller: "http", orgId: null } as ActionRunContext)).rejects.toMatchObject({ errorCode: "unauthenticated" });
+    await expect(
+      getContract.run({ contractId: "ctr_x" }, {
+        caller: "http",
+        orgId: null,
+      } as ActionRunContext),
+    ).rejects.toMatchObject({ errorCode: "unauthenticated" });
   });
 
   it("does not leak contracts across workspaces", async () => {
-    await resetDemo.run({ scenario: "clean" }, ctx("frontend", "alex@example.test"));
-    await resetDemo.run({ scenario: "clean" }, ctx("frontend", "mallory@example.test"));
-    const alexView = await draftContract.run({ goal: DEMO_GOAL }, ctx("frontend", "alex@example.test"));
-    await expect(getContract.run({ contractId: alexView.contract.id }, ctx("frontend", "mallory@example.test"))).rejects.toMatchObject({ errorCode: "not_found" });
+    await resetDemo.run(
+      { scenario: "clean" },
+      ctx("frontend", "alex@example.test"),
+    );
+    await resetDemo.run(
+      { scenario: "clean" },
+      ctx("frontend", "mallory@example.test"),
+    );
+    const alexView = await draftContract.run(
+      { goal: DEMO_GOAL },
+      ctx("frontend", "alex@example.test"),
+    );
     await expect(
-      executeContract.run({ contractId: alexView.contract.id }, ctx("frontend", "mallory@example.test")),
+      getContract.run(
+        { contractId: alexView.contract.id },
+        ctx("frontend", "mallory@example.test"),
+      ),
+    ).rejects.toMatchObject({ errorCode: "not_found" });
+    await expect(
+      executeContract.run(
+        { contractId: alexView.contract.id },
+        ctx("frontend", "mallory@example.test"),
+      ),
     ).rejects.toMatchObject({ errorCode: "not_found" });
   });
 
@@ -139,7 +226,16 @@ describe("authorization", () => {
     const ws = await svc.getWorkspace(db, human().email);
     if (!ws.seeded) throw new Error("not seeded");
     await expect(
-      svc.draftContract(db, human(), { goal: "Erase Ben", obligations: [{ kind: "erase_personal_data", params: { customerId: ws.bystanders[0]!.id }, dependsOn: [] }] }),
+      svc.draftContract(db, human(), {
+        goal: "Erase Ben",
+        obligations: [
+          {
+            kind: "erase_personal_data",
+            params: { customerId: ws.bystanders[0]!.id },
+            dependsOn: [],
+          },
+        ],
+      }),
     ).rejects.toMatchObject({ code: "invalid_params" });
   });
 });
@@ -149,9 +245,19 @@ describe("state machine & concurrency", () => {
     await svc.resetDemo(db, human(), { scenario: "clean" });
     const view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     const v = view.contract.version;
-    await svc.updateObligation(db, human(), { contractId: view.contract.id, obligationId: view.obligations[0]!.id, expectedVersion: v, title: "Cancel Studio Plus" });
+    await svc.updateObligation(db, human(), {
+      contractId: view.contract.id,
+      obligationId: view.obligations[0]!.id,
+      expectedVersion: v,
+      title: "Cancel Studio Plus",
+    });
     await expect(
-      svc.updateObligation(db, human(), { contractId: view.contract.id, obligationId: view.obligations[0]!.id, expectedVersion: v, title: "Another title" }),
+      svc.updateObligation(db, human(), {
+        contractId: view.contract.id,
+        obligationId: view.obligations[0]!.id,
+        expectedVersion: v,
+        title: "Another title",
+      }),
     ).rejects.toMatchObject({ code: "version_conflict" });
   });
 
@@ -173,25 +279,43 @@ describe("state machine & concurrency", () => {
     await svc.resetDemo(db, human(), { scenario: "clean" });
     let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     view = await approveAllPending(db, view);
-    view = await svc.executeContract(db, human(), { contractId: view.contract.id });
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
     await expect(
-      svc.updateObligation(db, human(), { contractId: view.contract.id, obligationId: view.obligations[1]!.id, params: { amountCents: 1 } }),
+      svc.updateObligation(db, human(), {
+        contractId: view.contract.id,
+        obligationId: view.obligations[1]!.id,
+        params: { amountCents: 1 },
+      }),
     ).rejects.toMatchObject({ code: "not_editable" });
   });
 });
 
 describe("replay and reset", () => {
   it("reset returns the workspace to a clean, reproducible state", async () => {
-    let first = await svc.resetDemo(db, human(), { scenario: "duplicate_refund" });
+    let first = await svc.resetDemo(db, human(), {
+      scenario: "duplicate_refund",
+    });
     let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     view = await approveAllPending(db, view);
-    const run1 = await svc.executeContract(db, human(), { contractId: view.contract.id });
+    const run1 = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
     first = await svc.resetDemo(db, human(), { scenario: "duplicate_refund" });
     expect(await svc.listContracts(db, human().email)).toHaveLength(0);
     let again = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     again = await approveAllPending(db, again);
-    const run2 = await svc.executeContract(db, human(), { contractId: again.contract.id });
-    const shape = (v: svc.ContractView) => v.obligations.map((o) => [o.kind, o.execution, o.verdict, o.reasons.map((r) => r.code)]);
+    const run2 = await svc.executeContract(db, human(), {
+      contractId: again.contract.id,
+    });
+    const shape = (v: svc.ContractView) =>
+      v.obligations.map((o) => [
+        o.kind,
+        o.execution,
+        o.verdict,
+        o.reasons.map((r) => r.code),
+      ]);
     expect(shape(run2)).toEqual(shape(run1));
     expect(first.scenario).toBe("duplicate_refund");
     const chain = await svc.verifyAuditChain(db, human().email);
@@ -204,8 +328,12 @@ describe("receipts", () => {
     await svc.resetDemo(db, human(), { scenario: "clean" });
     let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     view = await approveAllPending(db, view);
-    view = await svc.executeContract(db, human(), { contractId: view.contract.id });
-    const receipt = await svc.exportReceipt(db, human(), { contractId: view.contract.id });
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    const receipt = await svc.exportReceipt(db, human(), {
+      contractId: view.contract.id,
+    });
     expect(receipt.overall).toBe("VERIFIED");
     expect(receipt.agentClaims.usedAsEvidence).toBe(0);
     expect(svc.checkReceipt(receipt).signatureValid).toBe(true);
@@ -222,7 +350,10 @@ describe("receipts", () => {
     await svc.draftContract(db, human(), { goal: DEMO_GOAL });
     const { auditEvents } = await import("../server/db/schema.js");
     const { eq } = await import("drizzle-orm");
-    await db.update(auditEvents).set({ actor: "someone-else" }).where(eq(auditEvents.seq, 2));
+    await db
+      .update(auditEvents)
+      .set({ actor: "someone-else" })
+      .where(eq(auditEvents.seq, 2));
     const chain = await svc.verifyAuditChain(db, human().email);
     expect(chain.intact).toBe(false);
     expect(chain.brokenAtSeq).toBe(2);

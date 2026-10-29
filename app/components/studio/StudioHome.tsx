@@ -1,22 +1,41 @@
 import { sendToAgentChat } from "@agent-native/core/client/agent-chat";
-import { actionErrorMessage, useActionMutation, useActionQuery } from "@agent-native/core/client/hooks";
-import { IconFileText, IconMessageCircle, IconRefresh, IconSparkles } from "@tabler/icons-react";
+import {
+  actionErrorMessage,
+  useActionMutation,
+  useActionQuery,
+} from "@agent-native/core/client/hooks";
+import {
+  SCENARIOS,
+  SCENARIO_INFO,
+  formatCents,
+  type Scenario,
+} from "@shared/domain";
+import {
+  IconFileText,
+  IconMessageCircle,
+  IconRefresh,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { SCENARIOS, SCENARIO_INFO, formatCents, type Scenario } from "@shared/domain";
-
 import type { getWorkspace } from "../../../server/domain/service";
-
 import { STATUS_LABEL, clock, shortId } from "./format";
 import { Seal } from "./Seal";
 
-type SeededWorkspace = Extract<Awaited<ReturnType<typeof getWorkspace>>, { seeded: true }>;
+type SeededWorkspace = Extract<
+  Awaited<ReturnType<typeof getWorkspace>>,
+  { seeded: true }
+>;
 
-const DEMO_GOAL = "Cancel my subscription, refund $100, and delete my personal data and associated memories.";
+const DEMO_GOAL =
+  "Cancel my subscription, refund $100, and delete my personal data and associated memories.";
 
-const STATUS_VERDICT: Record<string, "VERIFIED" | "FAILED" | "UNKNOWN" | undefined> = {
+const STATUS_VERDICT: Record<
+  string,
+  "VERIFIED" | "FAILED" | "UNKNOWN" | undefined
+> = {
   verified: "VERIFIED",
   failed: "FAILED",
   unknown: "UNKNOWN",
@@ -34,13 +53,17 @@ export function StudioHome() {
   const reset = useActionMutation("reset-demo", {
     onSuccess: (r) => {
       setScenario(null);
-      toast.success(`Sandbox reset · ${SCENARIO_INFO[r.scenario as Scenario].title}`);
+      toast.success(
+        `Sandbox reset · ${SCENARIO_INFO[r.scenario as Scenario].title}`,
+      );
     },
-    onError: (e) => toast.error(actionErrorMessage(e) ?? "Could not reset the sandbox."),
+    onError: (e) =>
+      toast.error(actionErrorMessage(e) ?? "Could not reset the sandbox."),
   });
   const draft = useActionMutation("draft-contract", {
     onSuccess: (view) => navigate(`/studio/${view.contract.id}`),
-    onError: (e) => toast.error(actionErrorMessage(e) ?? "Could not draft a contract."),
+    onError: (e) =>
+      toast.error(actionErrorMessage(e) ?? "Could not draft a contract."),
   });
 
   const seeded = workspace.data?.seeded === true;
@@ -57,18 +80,25 @@ export function StudioHome() {
     <div className="tcs-page space-y-8">
       <header className="max-w-3xl space-y-2">
         <p className="tcs-eyebrow">Trust Contract Studio</p>
-        <h1 className="tcs-goal">Agents make promises. This is where they get checked.</h1>
+        <h1 className="tcs-goal">
+          Agents make promises. This is where they get checked.
+        </h1>
         <p className="tcs-soft text-sm leading-relaxed">
-          Turn a request into explicit obligations, approve the sensitive ones yourself, let the agent execute against sandboxed providers, and
+          Turn a request into explicit obligations, approve the sensitive ones
+          yourself, let the agent execute against sandboxed providers, and
           accept only what an independent verifier can observe.
         </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Composer */}
-        <section className="tcs-panel space-y-3 p-5" aria-labelledby="composer-heading">
+        <section
+          className="tcs-panel space-y-3 p-5"
+          aria-labelledby="composer-heading"
+        >
           <h2 id="composer-heading" className="tcs-eyebrow">
-            New commitment · on behalf of {ws?.subject.displayName ?? "the demo customer"}
+            New commitment · on behalf of{" "}
+            {ws?.subject.displayName ?? "the demo customer"}
           </h2>
           <label htmlFor="goal" className="sr-only">
             What should the agent do?
@@ -80,7 +110,13 @@ export function StudioHome() {
             maxLength={500}
             onChange={(e) => setGoal(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && seeded && goal.trim().length >= 3) draft.mutate({ goal: goal.trim() });
+              if (
+                e.key === "Enter" &&
+                (e.metaKey || e.ctrlKey) &&
+                seeded &&
+                goal.trim().length >= 3
+              )
+                draft.mutate({ goal: goal.trim() });
             }}
           />
           <div className="flex flex-wrap items-center gap-2">
@@ -91,25 +127,38 @@ export function StudioHome() {
               disabled={!seeded || draft.isPending || goal.trim().length < 3}
               onClick={() => draft.mutate({ goal: goal.trim() })}
             >
-              <IconFileText size={16} aria-hidden /> {draft.isPending ? "Drafting…" : "Draft contract"}
+              <IconFileText size={16} aria-hidden />{" "}
+              {draft.isPending ? "Drafting…" : "Draft contract"}
             </button>
-            <button type="button" className="tcs-btn" disabled={!seeded || goal.trim().length < 3} onClick={askAgent}>
-              <IconMessageCircle size={16} aria-hidden /> Ask the agent to draft it
+            <button
+              type="button"
+              className="tcs-btn"
+              disabled={!seeded || goal.trim().length < 3}
+              onClick={askAgent}
+            >
+              <IconMessageCircle size={16} aria-hidden /> Ask the agent to draft
+              it
             </button>
             <span className="tcs-soft text-xs">⌘/Ctrl + Enter</span>
           </div>
           <p className="tcs-soft text-xs">
-            Both buttons call the same <span className="tcs-mono">draft-contract</span> action — one from this screen, one through the agent.
+            Both buttons call the same{" "}
+            <span className="tcs-mono">draft-contract</span> action — one from
+            this screen, one through the agent.
           </p>
           {!seeded && !workspace.isLoading && (
             <div className="tcs-banner text-sm" data-tone="neutral">
-              The sandbox is empty. Choose a scenario in the Replay Lab and reset it to begin.
+              The sandbox is empty. Choose a scenario in the Replay Lab and
+              reset it to begin.
             </div>
           )}
         </section>
 
         {/* Sandbox snapshot */}
-        <section className="tcs-panel space-y-3 p-5" aria-labelledby="sandbox-heading">
+        <section
+          className="tcs-panel space-y-3 p-5"
+          aria-labelledby="sandbox-heading"
+        >
           <h2 id="sandbox-heading" className="tcs-eyebrow">
             Sandbox providers · synthetic data
           </h2>
@@ -122,7 +171,8 @@ export function StudioHome() {
               <div className="flex justify-between gap-3">
                 <dt className="tcs-soft">Subscription</dt>
                 <dd>
-                  {ws.subscription?.plan} · <span className="font-medium">{ws.subscription?.status}</span>
+                  {ws.subscription?.plan} ·{" "}
+                  <span className="font-medium">{ws.subscription?.status}</span>
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
@@ -130,7 +180,10 @@ export function StudioHome() {
                 <dd className="text-right">
                   {ws.charges.map((c) => (
                     <div key={c.id}>
-                      {formatCents(c.amountCents)} <span className="tcs-soft text-xs">{c.description.replace("Studio Plus — ", "")}</span>
+                      {formatCents(c.amountCents)}{" "}
+                      <span className="tcs-soft text-xs">
+                        {c.description.replace("Studio Plus — ", "")}
+                      </span>
                     </div>
                   ))}
                 </dd>
@@ -142,7 +195,8 @@ export function StudioHome() {
                     ? "none"
                     : ws.refunds.map((r) => (
                         <div key={r.id}>
-                          {formatCents(r.amountCents)} <span className="tcs-soft text-xs">{r.status}</span>
+                          {formatCents(r.amountCents)}{" "}
+                          <span className="tcs-soft text-xs">{r.status}</span>
                         </div>
                       ))}
                 </dd>
@@ -150,13 +204,18 @@ export function StudioHome() {
               <div className="flex justify-between gap-3">
                 <dt className="tcs-soft">Memory records</dt>
                 <dd>
-                  {ws.lineage.filter((m) => m.state === "live").length} live · {ws.lineage.filter((m) => m.state === "deleted").length} deleted ·{" "}
-                  {ws.lineage.filter((m) => m.state === "unobservable").length} unobservable
+                  {ws.lineage.filter((m) => m.state === "live").length} live ·{" "}
+                  {ws.lineage.filter((m) => m.state === "deleted").length}{" "}
+                  deleted ·{" "}
+                  {ws.lineage.filter((m) => m.state === "unobservable").length}{" "}
+                  unobservable
                 </dd>
               </div>
             </dl>
           ) : (
-            <p className="tcs-soft text-sm">{workspace.isLoading ? "Loading…" : "Not seeded yet."}</p>
+            <p className="tcs-soft text-sm">
+              {workspace.isLoading ? "Loading…" : "Not seeded yet."}
+            </p>
           )}
         </section>
       </div>
@@ -169,31 +228,62 @@ export function StudioHome() {
               Adversarial Replay Lab
             </h2>
             <p className="tcs-soft text-sm">
-              Each scenario injects one realistic fault inside the providers — never inside the verifier. Active:{" "}
+              Each scenario injects one realistic fault inside the providers —
+              never inside the verifier. Active:{" "}
               <strong>{SCENARIO_INFO[active].title}</strong>
             </p>
           </div>
-          <button type="button" className="tcs-btn" data-variant="primary" disabled={reset.isPending} onClick={() => reset.mutate({ scenario: chosen })}>
-            <IconRefresh size={16} aria-hidden className={reset.isPending ? "tcs-live" : undefined} /> Reset sandbox · {SCENARIO_INFO[chosen].title}
+          <button
+            type="button"
+            className="tcs-btn"
+            data-variant="primary"
+            disabled={reset.isPending}
+            onClick={() => reset.mutate({ scenario: chosen })}
+          >
+            <IconRefresh
+              size={16}
+              aria-hidden
+              className={reset.isPending ? "tcs-live" : undefined}
+            />{" "}
+            Reset sandbox · {SCENARIO_INFO[chosen].title}
           </button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="group" aria-label="Scenarios">
+        <div
+          className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+          role="group"
+          aria-label="Scenarios"
+        >
           {SCENARIOS.map((s) => (
-            <button key={s} type="button" className="tcs-scenario" aria-pressed={chosen === s} onClick={() => setScenario(s)}>
+            <button
+              key={s}
+              type="button"
+              className="tcs-scenario"
+              aria-pressed={chosen === s}
+              onClick={() => setScenario(s)}
+            >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">{SCENARIO_INFO[s].title}</span>
+                <span className="text-sm font-semibold">
+                  {SCENARIO_INFO[s].title}
+                </span>
                 {s === active && <span className="tcs-chip">active</span>}
               </div>
-              <p className="tcs-soft mt-1 text-xs leading-snug">{SCENARIO_INFO[s].summary}</p>
+              <p className="tcs-soft mt-1 text-xs leading-snug">
+                {SCENARIO_INFO[s].summary}
+              </p>
               <div className="mt-2 flex flex-wrap gap-1">
-                {[...new Set(Object.values(SCENARIO_INFO[s].expected))].map((v) => (
-                  <Seal key={v} verdict={v} />
-                ))}
+                {[...new Set(Object.values(SCENARIO_INFO[s].expected))].map(
+                  (v) => (
+                    <Seal key={v} verdict={v} />
+                  ),
+                )}
               </div>
             </button>
           ))}
         </div>
-        <p className="tcs-soft text-xs">Resetting wipes this workspace's contracts, evidence and receipts and reseeds the synthetic customer.</p>
+        <p className="tcs-soft text-xs">
+          Resetting wipes this workspace's contracts, evidence and receipts and
+          reseeds the synthetic customer.
+        </p>
       </section>
 
       {/* Recent contracts */}
@@ -205,11 +295,24 @@ export function StudioHome() {
           <ul className="divide-y tcs-rule rounded-xl border tcs-rule">
             {contracts.data.map((c) => (
               <li key={c.id}>
-                <Link to={`/studio/${c.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-[hsl(var(--tcs-paper-2))]">
-                  <span className="tcs-mono tcs-soft text-xs">{shortId(c.id)}</span>
-                  <span className="tcs-serif min-w-0 flex-1 truncate">{c.goal}</span>
-                  <span className="tcs-soft text-xs">{SCENARIO_INFO[c.scenario as Scenario]?.title}</span>
-                  {STATUS_VERDICT[c.status] ? <Seal verdict={STATUS_VERDICT[c.status]} /> : <span className="tcs-chip">{STATUS_LABEL[c.status]}</span>}
+                <Link
+                  to={`/studio/${c.id}`}
+                  className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-[hsl(var(--tcs-paper-2))]"
+                >
+                  <span className="tcs-mono tcs-soft text-xs">
+                    {shortId(c.id)}
+                  </span>
+                  <span className="tcs-serif min-w-0 flex-1 truncate">
+                    {c.goal}
+                  </span>
+                  <span className="tcs-soft text-xs">
+                    {SCENARIO_INFO[c.scenario as Scenario]?.title}
+                  </span>
+                  {STATUS_VERDICT[c.status] ? (
+                    <Seal verdict={STATUS_VERDICT[c.status]} />
+                  ) : (
+                    <span className="tcs-chip">{STATUS_LABEL[c.status]}</span>
+                  )}
                   <span className="tcs-soft text-xs">{clock(c.createdAt)}</span>
                 </Link>
               </li>
@@ -217,7 +320,8 @@ export function StudioHome() {
           </ul>
         ) : (
           <p className="tcs-soft flex items-center gap-2 text-sm">
-            <IconSparkles size={15} aria-hidden /> No contracts yet. Draft one above.
+            <IconSparkles size={15} aria-hidden /> No contracts yet. Draft one
+            above.
           </p>
         )}
       </section>

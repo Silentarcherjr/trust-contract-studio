@@ -9,5 +9,6 @@ export default defineAction({
   description:
     "Export a proof receipt: obligations, approvals, verdicts, evidence digests, verification history, limitations and an HMAC integrity block. Evidence whose digest no longer matches is reported as UNKNOWN.",
   schema: z.object({ contractId: z.string() }),
-  run: async (args, ctx) => guarded(() => exportReceipt(getDb(), actorFrom(ctx), args)),
+  run: async (args, ctx) =>
+    guarded(() => exportReceipt(getDb(), actorFrom(ctx), args)),
 });

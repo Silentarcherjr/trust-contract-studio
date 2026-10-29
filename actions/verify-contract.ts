@@ -9,5 +9,6 @@ export default defineAction({
   description:
     "Re-run the deterministic verifier: take fresh read-only observations from billing and memory providers and recompute VERIFIED / FAILED / UNKNOWN for every pursued obligation. Agent claims are never used as evidence.",
   schema: z.object({ contractId: z.string() }),
-  run: async (args, ctx) => guarded(() => verifyContract(getDb(), actorFrom(ctx), args)),
+  run: async (args, ctx) =>
+    guarded(() => verifyContract(getDb(), actorFrom(ctx), args)),
 });

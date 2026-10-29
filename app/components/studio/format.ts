@@ -9,12 +9,18 @@ import {
 export function clock(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export function relativeSeconds(fromIso: string, toIso: string): string {
   const s = Math.max(0, (Date.parse(toIso) - Date.parse(fromIso)) / 1000);
-  return s < 60 ? `+${s.toFixed(1)}s` : `+${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
+  return s < 60
+    ? `+${s.toFixed(1)}s`
+    : `+${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
 }
 
 export function shortId(id: string | null | undefined, n = 6): string {
@@ -28,25 +34,36 @@ export function shortHash(h: string, n = 10): string {
 }
 
 /** Human-readable description of an obligation's parameters. */
-export function describeParams(kind: ObligationKind, params: Record<string, unknown>): string[] {
+export function describeParams(
+  kind: ObligationKind,
+  params: Record<string, unknown>,
+): string[] {
   const lines: string[] = [];
-  const stores = (params.stores as StoreName[] | undefined)?.map((s) => STORE_LABELS[s] ?? s);
+  const stores = (params.stores as StoreName[] | undefined)?.map(
+    (s) => STORE_LABELS[s] ?? s,
+  );
   switch (kind) {
     case "cancel_subscription":
       lines.push(`Subscription ${shortId(params.subscriptionId as string)}`);
       break;
     case "refund_charge":
-      lines.push(`${formatCents(Number(params.amountCents))} against charge ${shortId(params.chargeId as string)}`);
+      lines.push(
+        `${formatCents(Number(params.amountCents))} against charge ${shortId(params.chargeId as string)}`,
+      );
       break;
     case "erase_personal_data":
     case "purge_derived_memories":
       if (stores) lines.push(`Scope: ${stores.join(", ")}`);
       break;
     case "void_refunds":
-      lines.push(`Refunds ${(params.refundIds as string[]).map((r) => shortId(r)).join(", ")}`);
+      lines.push(
+        `Refunds ${(params.refundIds as string[]).map((r) => shortId(r)).join(", ")}`,
+      );
       break;
     case "delete_memories":
-      lines.push(`${(params.memoryIds as string[]).length} record(s): ${(params.memoryIds as string[]).map((r) => shortId(r)).join(", ")}`);
+      lines.push(
+        `${(params.memoryIds as string[]).length} record(s): ${(params.memoryIds as string[]).map((r) => shortId(r)).join(", ")}`,
+      );
       break;
   }
   return lines;

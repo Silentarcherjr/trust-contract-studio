@@ -16,11 +16,17 @@ export const TRANSITIONS: Record<ContractStatus, readonly ContractStatus[]> = {
   unknown: ["verifying", "awaiting_approval"],
 };
 
-export function canTransition(from: ContractStatus, to: ContractStatus): boolean {
+export function canTransition(
+  from: ContractStatus,
+  to: ContractStatus,
+): boolean {
   return TRANSITIONS[from]?.includes(to) ?? false;
 }
 
-export function assertTransition(from: ContractStatus, to: ContractStatus): void {
+export function assertTransition(
+  from: ContractStatus,
+  to: ContractStatus,
+): void {
   if (!canTransition(from, to)) {
     throw new ContractError(
       `A contract that is "${from}" cannot move to "${to}".`,

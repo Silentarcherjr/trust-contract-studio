@@ -38,11 +38,19 @@ export interface SubjectContext {
   customerId: string;
   displayName: string;
   subscriptionId: string | null;
-  charges: { id: string; amountCents: number; createdAt: string; description: string }[];
+  charges: {
+    id: string;
+    amountCents: number;
+    createdAt: string;
+    description: string;
+  }[];
 }
 
 /** The requester is the workspace's first customer (Ada Quinn in demo data). */
-export async function loadSubject(db: Db, owner: string): Promise<SubjectContext> {
+export async function loadSubject(
+  db: Db,
+  owner: string,
+): Promise<SubjectContext> {
   const [customer] = await db
     .select()
     .from(sbxCustomers)
@@ -59,31 +67,50 @@ export async function loadSubject(db: Db, owner: string): Promise<SubjectContext
   const [sub] = await db
     .select()
     .from(sbxSubscriptions)
-    .where(and(eq(sbxSubscriptions.ownerEmail, owner), eq(sbxSubscriptions.customerId, customer.id)));
+    .where(
+      and(
+        eq(sbxSubscriptions.ownerEmail, owner),
+        eq(sbxSubscriptions.customerId, customer.id),
+      ),
+    );
   const charges = await db
     .select()
     .from(sbxCharges)
-    .where(and(eq(sbxCharges.ownerEmail, owner), eq(sbxCharges.customerId, customer.id)))
+    .where(
+      and(
+        eq(sbxCharges.ownerEmail, owner),
+        eq(sbxCharges.customerId, customer.id),
+      ),
+    )
     .orderBy(asc(sbxCharges.createdAt));
   return {
     customerId: customer.id,
     displayName: customer.displayName,
     subscriptionId: sub?.id ?? null,
-    charges: charges.map((c) => ({ id: c.id, amountCents: c.amountCents, createdAt: c.createdAt, description: c.description })),
+    charges: charges.map((c) => ({
+      id: c.id,
+      amountCents: c.amountCents,
+      createdAt: c.createdAt,
+      description: c.description,
+    })),
   };
 }
 
 const CLAUSE_SPLIT = /\s*(?:,|;|\band then\b|\bthen\b|\band\b|\balso\b)\s*/i;
 
 const PATTERNS = {
-  cancel: /\b(cancel|terminate|end|stop)\b.*\b(subscription|plan|membership|account)\b|\bunsubscribe\b/i,
+  cancel:
+    /\b(cancel|terminate|end|stop)\b.*\b(subscription|plan|membership|account)\b|\bunsubscribe\b/i,
   refund: /\b(refund|reimburse|money back|give back|return)\b/i,
   memories: /\b(memor(y|ies)|embedding|derived|inference|profile notes?)\b/i,
-  personal: /\b(personal|my data|pii|information|details|delete my|erase|forget)\b/i,
+  personal:
+    /\b(personal|my data|pii|information|details|delete my|erase|forget)\b/i,
 };
 
 export function parseAmountCents(text: string): number | null {
-  const m = text.match(/\$\s?(\d{1,6}(?:[.,]\d{1,2})?)|(\d{1,6}(?:[.,]\d{1,2})?)\s?(?:usd|dollars?)/i);
+  const m = text.match(
+    /\$\s?(\d{1,6}(?:[.,]\d{1,2})?)|(\d{1,6}(?:[.,]\d{1,2})?)\s?(?:usd|dollars?)/i,
+  );
   if (!m) return null;
   const raw = (m[1] ?? m[2] ?? "0").replace(",", ".");
   return Math.round(parseFloat(raw) * 100);
@@ -94,26 +121,42 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
     .split(CLAUSE_SPLIT)
     .map((c) => c.trim())
     .filter((c) => c.length > 2);
-  const wants = { cancel: false, refund: false, personal: false, memories: false };
+  const wants = {
+    cancel: false,
+    refund: false,
+    personal: false,
+    memories: false,
+  };
   const unmatched: string[] = [];
   let amount: number | null = null;
 
   for (const clause of clauses) {
     let matched = false;
-    if (PATTERNS.cancel.test(clause)) { wants.cancel = true; matched = true; }
+    if (PATTERNS.cancel.test(clause)) {
+      wants.cancel = true;
+      matched = true;
+    }
     if (PATTERNS.refund.test(clause)) {
-      wants.refund = true; matched = true;
+      wants.refund = true;
+      matched = true;
       amount = parseAmountCents(clause) ?? amount;
     }
-    if (PATTERNS.memories.test(clause)) { wants.memories = true; matched = true; }
-    if (PATTERNS.personal.test(clause) && !/^memor/i.test(clause)) { wants.personal = true; matched = true; }
+    if (PATTERNS.memories.test(clause)) {
+      wants.memories = true;
+      matched = true;
+    }
+    if (PATTERNS.personal.test(clause) && !/^memor/i.test(clause)) {
+      wants.personal = true;
+      matched = true;
+    }
     if (!matched) unmatched.push(clause);
   }
   // "delete my personal data and associated memories" splits on "and";
   // a bare "associated memories" clause still counts as memories.
   const obligations: PlannedObligation[] = [];
   const limitations: string[] = [];
-  const indexOf = (kind: PlannedObligation["kind"]) => obligations.findIndex((o) => o.kind === kind);
+  const indexOf = (kind: PlannedObligation["kind"]) =>
+    obligations.findIndex((o) => o.kind === kind);
 
   if (wants.cancel) {
     if (!subject.subscriptionId) {
@@ -122,7 +165,10 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
       obligations.push({
         kind: "cancel_subscription",
         title: `${KIND_INFO.cancel_subscription.label} for ${subject.displayName}`,
-        params: { customerId: subject.customerId, subscriptionId: subject.subscriptionId },
+        params: {
+          customerId: subject.customerId,
+          subscriptionId: subject.subscriptionId,
+        },
         dependsOn: [],
       });
     }
@@ -134,22 +180,37 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
     } else {
       const amountCents = amount ?? latest.amountCents;
       if (amount === null) {
-        limitations.push(`No refund amount was stated; the planner assumed the latest charge (${formatCents(latest.amountCents)}). Edit it on the canvas if that is wrong.`);
+        limitations.push(
+          `No refund amount was stated; the planner assumed the latest charge (${formatCents(latest.amountCents)}). Edit it on the canvas if that is wrong.`,
+        );
       }
       obligations.push({
         kind: "refund_charge",
         title: `Refund ${formatCents(amountCents)} of “${latest.description}”`,
-        params: { customerId: subject.customerId, chargeId: latest.id, amountCents },
-        dependsOn: indexOf("cancel_subscription") >= 0 ? [indexOf("cancel_subscription")] : [],
+        params: {
+          customerId: subject.customerId,
+          chargeId: latest.id,
+          amountCents,
+        },
+        dependsOn:
+          indexOf("cancel_subscription") >= 0
+            ? [indexOf("cancel_subscription")]
+            : [],
       });
     }
   }
   if (wants.personal) {
-    const deps = [indexOf("refund_charge"), indexOf("cancel_subscription")].filter((i) => i >= 0);
+    const deps = [
+      indexOf("refund_charge"),
+      indexOf("cancel_subscription"),
+    ].filter((i) => i >= 0);
     obligations.push({
       kind: "erase_personal_data",
       title: `Erase ${subject.displayName}'s personal data`,
-      params: { customerId: subject.customerId, stores: ["profile_db"] satisfies StoreName[] },
+      params: {
+        customerId: subject.customerId,
+        stores: ["profile_db"] satisfies StoreName[],
+      },
       dependsOn: deps.slice(0, 1),
     });
   }
@@ -158,7 +219,10 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
     obligations.push({
       kind: "purge_derived_memories",
       title: "Purge memories derived from that data",
-      params: { customerId: subject.customerId, stores: ["memory_store", "vector_index"] satisfies StoreName[] },
+      params: {
+        customerId: subject.customerId,
+        stores: ["memory_store", "vector_index"] satisfies StoreName[],
+      },
       dependsOn: dep >= 0 ? [dep] : [],
     });
     limitations.push(

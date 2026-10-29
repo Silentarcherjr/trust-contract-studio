@@ -12,7 +12,9 @@ export default defineConfig({
   // server. Unset keeps the framework defaults.
   server: {
     ...(process.env.DEV_HOST ? { host: process.env.DEV_HOST } : {}),
-    ...(process.env.DEV_PORT ? { port: Number(process.env.DEV_PORT), strictPort: true } : {}),
+    ...(process.env.DEV_PORT
+      ? { port: Number(process.env.DEV_PORT), strictPort: true }
+      : {}),
   },
   optimizeDeps: {
     entries: [

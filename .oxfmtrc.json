@@ -4,5 +4,6 @@
   "printWidth": 80,
   "trailingComma": "all",
   "proseWrap": "preserve",
-  "sortImports": true
+  "sortImports": true,
+  "ignorePatterns": [".agents/**", "CHANGELOG.md", "changelog/**"]
 }

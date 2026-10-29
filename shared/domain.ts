@@ -253,7 +253,9 @@ export const obligationDraftSchema = z.object({
   dependsOn: z
     .array(z.number().int().min(0))
     .default([])
-    .describe("Indexes of earlier obligations in this list that must succeed first."),
+    .describe(
+      "Indexes of earlier obligations in this list that must succeed first.",
+    ),
 });
 export type ObligationDraft = z.infer<typeof obligationDraftSchema>;
 

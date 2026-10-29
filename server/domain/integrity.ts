@@ -6,7 +6,12 @@
  * receipt it issued has not been edited. Neither is a public-key signature,
  * a timestamping service, or proof of immutability.
  */
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 
 /** Deterministic JSON: object keys sorted recursively, no whitespace. */
 export function canonicalJson(value: unknown): string {

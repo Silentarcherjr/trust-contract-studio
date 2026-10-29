@@ -31,7 +31,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { APP_TITLE } from "@/lib/app-config";
-import { chatThreadPath, STUDIO_PATH, threadIdFromPath } from "@/lib/chat-paths";
+import {
+  chatThreadPath,
+  STUDIO_PATH,
+  threadIdFromPath,
+} from "@/lib/chat-paths";
 import { cn } from "@/lib/utils";
 
 const CHAT_STORAGE_KEY = "chat";

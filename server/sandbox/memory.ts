@@ -38,7 +38,9 @@ export async function erasePersonalData(
     : [];
   return {
     erased: erased.map((r) => r.id),
-    forwarded: input.stores.includes("analytics_export") ? ["analytics_export"] : [],
+    forwarded: input.stores.includes("analytics_export")
+      ? ["analytics_export"]
+      : [],
   };
 }
 
@@ -69,29 +71,52 @@ export async function purgeDerivedMemories(
   const all = await db
     .select()
     .from(sbxMemories)
-    .where(and(eq(sbxMemories.ownerEmail, owner), eq(sbxMemories.customerId, input.customerId)));
+    .where(
+      and(
+        eq(sbxMemories.ownerEmail, owner),
+        eq(sbxMemories.customerId, input.customerId),
+      ),
+    );
   const roots = all.filter((r) => r.kind === "pii").map((r) => r.id);
   const closure = lineageClosure(all, roots);
 
-  let stores: StoreName[] = input.stores.filter((s) => s !== "analytics_export");
+  let stores: StoreName[] = input.stores.filter(
+    (s) => s !== "analytics_export",
+  );
   // Fault: a lagging vector-index replica silently ignores the purge.
-  if (stores.includes("vector_index") && (await takeFault(db, owner, "memory.skip_vector_index"))) {
+  if (
+    stores.includes("vector_index") &&
+    (await takeFault(db, owner, "memory.skip_vector_index"))
+  ) {
     stores = stores.filter((s) => s !== "vector_index");
   }
   const targets = all
-    .filter((r) => r.kind !== "pii" && closure.has(r.id) && !r.deletedAt && stores.includes(r.store as StoreName))
+    .filter(
+      (r) =>
+        r.kind !== "pii" &&
+        closure.has(r.id) &&
+        !r.deletedAt &&
+        stores.includes(r.store as StoreName),
+    )
     .map((r) => r.id);
   if (targets.length) {
     await db
       .update(sbxMemories)
       .set({ deletedAt: nowIso() })
-      .where(and(eq(sbxMemories.ownerEmail, owner), inArray(sbxMemories.id, targets)));
+      .where(
+        and(
+          eq(sbxMemories.ownerEmail, owner),
+          inArray(sbxMemories.id, targets),
+        ),
+      );
   }
   // The provider reports what it was asked to do, not what it achieved.
   return {
     status: "purged",
     requestedStores: input.stores,
-    forwarded: input.stores.includes("analytics_export") ? ["analytics_export"] : [],
+    forwarded: input.stores.includes("analytics_export")
+      ? ["analytics_export"]
+      : [],
   };
 }
 
@@ -111,7 +136,11 @@ export async function deleteMemories(
       ),
     );
   if (rows.length !== input.memoryIds.length) {
-    throw new ContractError("Some memories were not found", "provider_not_found", 404);
+    throw new ContractError(
+      "Some memories were not found",
+      "provider_not_found",
+      404,
+    );
   }
   if (rows.some((r) => r.store === "analytics_export")) {
     throw new ContractError(
@@ -123,6 +152,11 @@ export async function deleteMemories(
   await db
     .update(sbxMemories)
     .set({ deletedAt: nowIso() })
-    .where(and(eq(sbxMemories.ownerEmail, owner), inArray(sbxMemories.id, input.memoryIds)));
+    .where(
+      and(
+        eq(sbxMemories.ownerEmail, owner),
+        inArray(sbxMemories.id, input.memoryIds),
+      ),
+    );
   return { deleted: input.memoryIds };
 }

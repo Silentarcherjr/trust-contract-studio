@@ -12,5 +12,6 @@ export default defineAction({
   agentTool: false,
   mcpTool: false,
   toolCallable: false,
-  run: async (args, ctx) => guarded(() => tamperEvidence(getDb(), actorFrom(ctx), args)),
+  run: async (args, ctx) =>
+    guarded(() => tamperEvidence(getDb(), actorFrom(ctx), args)),
 });
