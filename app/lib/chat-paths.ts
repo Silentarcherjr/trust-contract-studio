@@ -8,6 +8,12 @@ import {
 } from "@agent-native/toolkit/composer";
 
 export const HOME_PATH = "/home";
+export const STUDIO_PATH = "/studio";
+
+export function contractIdFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/studio\/([^/?#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
 export const NEW_CHAT_PATH = "/chat";
 
 const FAILED_CHAT_HANDOFF_PREFIX = "agent-native.chat.failed-handoff:";

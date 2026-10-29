@@ -6,7 +6,9 @@ import { useAgentRouteState } from "@agent-native/core/client/navigation";
 
 import {
   chatThreadPath,
+  contractIdFromPath,
   HOME_PATH,
+  STUDIO_PATH,
   isChatPathname,
   NEW_CHAT_PATH,
   threadIdFromPath,
@@ -18,6 +20,8 @@ export interface NavigationState {
   path?: string;
   publicPath?: string;
   threadId?: string;
+  /** Contract open in the Studio, so the agent knows what the person sees. */
+  contractId?: string;
 }
 
 export function useNavigationState() {
@@ -64,16 +68,19 @@ function matchesPathPrefix(pathname: string, prefix: string): boolean {
 
 export function navigationStateForPath(pathname: string): NavigationState {
   const threadId = threadIdFromPath(pathname);
+  const contractId = contractIdFromPath(pathname);
   return {
     view: viewForPath(pathname),
     path: pathname,
     publicPath: appPathFromLocalRoute(pathname),
     ...(threadId ? { threadId } : {}),
+    ...(contractId ? { contractId } : {}),
   };
 }
 
 function viewForPath(pathname: string): string {
   if (isChatPathname(pathname)) return "chat";
+  if (pathname.startsWith(STUDIO_PATH)) return "studio";
   if (pathname === HOME_PATH) return "home";
   if (pathname.startsWith("/database")) return "database";
   if (pathname.startsWith("/extensions")) return "extensions";
@@ -92,7 +99,8 @@ function pathForView(view?: string): string {
     case "ask":
       return NEW_CHAT_PATH;
     case "home":
-      return HOME_PATH;
+    case "studio":
+      return STUDIO_PATH;
     case "database":
       return "/database";
     case "extensions":

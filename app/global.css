@@ -2,13 +2,14 @@
 
 @import "tailwindcss";
 @import "@agent-native/toolkit/styles.css";
+@import "./studio.css";
 
 @source "./**/*.{ts,tsx}";
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 10%;
-  --card: 0 0% 100%;
+  --background: 40 33% 98%;
+  --foreground: 222 22% 14%;
+  --card: 40 33% 99%;
   --card-foreground: 0 0% 10%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 10%;
@@ -22,11 +23,11 @@
   --accent-foreground: 0 0% 15%;
   --destructive: 0 91% 71%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
+  --border: 35 14% 86%;
+  --input: 35 14% 86%;
   --ring: 0 0% 40%;
   --radius: 0.5rem;
-  --sidebar-background: 0 0% 97%;
+  --sidebar-background: 40 20% 95.5%;
   --sidebar-foreground: 0 0% 43%;
   --sidebar-primary: 0 0% 15%;
   --sidebar-primary-foreground: 0 0% 100%;

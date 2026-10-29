@@ -15,7 +15,7 @@ import { openCommandMenu } from "@agent-native/toolkit/app/shared";
 import { AgentNativeIcon } from "@agent-native/toolkit/app/shared/AgentNativeIcon";
 import {
   IconEdit,
-  IconHome,
+  IconShieldCheck,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconLoader2,
@@ -31,7 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { APP_TITLE } from "@/lib/app-config";
-import { chatThreadPath, HOME_PATH, threadIdFromPath } from "@/lib/chat-paths";
+import { chatThreadPath, STUDIO_PATH, threadIdFromPath } from "@/lib/chat-paths";
 import { cn } from "@/lib/utils";
 
 const CHAT_STORAGE_KEY = "chat";
@@ -120,12 +120,14 @@ function persistActiveThreadId(threadId: string) {
 function HomeNavLink({ collapsed }: { collapsed: boolean }) {
   const t = useT();
   const location = useLocation();
-  const active = location.pathname === HOME_PATH;
+  const active = location.pathname.startsWith(STUDIO_PATH);
+  const label = "Contract Studio";
+  void t;
   const link = (
     <Link
-      to={HOME_PATH}
+      to={STUDIO_PATH}
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? t("navigation.home") : undefined}
+      aria-label={collapsed ? label : undefined}
       className={cn(
         "flex items-center text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active && "bg-sidebar-accent",
@@ -134,10 +136,8 @@ function HomeNavLink({ collapsed }: { collapsed: boolean }) {
           : "h-8 w-full gap-3 rounded-lg px-3 text-sm font-medium",
       )}
     >
-      <IconHome className="size-4 shrink-0" strokeWidth={1.8} />
-      <span className={collapsed ? "sr-only" : "truncate"}>
-        {t("navigation.home")}
-      </span>
+      <IconShieldCheck className="size-4 shrink-0" strokeWidth={1.8} />
+      <span className={collapsed ? "sr-only" : "truncate"}>{label}</span>
     </Link>
   );
 
@@ -145,7 +145,7 @@ function HomeNavLink({ collapsed }: { collapsed: boolean }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>{link}</TooltipTrigger>
-        <TooltipContent side="right">{t("navigation.home")}</TooltipContent>
+        <TooltipContent side="right">{label}</TooltipContent>
       </Tooltip>
     );
   }

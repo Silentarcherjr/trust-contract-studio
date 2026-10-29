@@ -15,6 +15,7 @@ export default defineConfig({
       "**/.git/**",
       "**/dist/**",
       "**/.react-router/**",
+      "e2e/**",
     ],
   },
 });
