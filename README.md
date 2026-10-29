@@ -23,6 +23,14 @@ Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@age
 9. **Re-run verification** against fresh observations.
 10. **Export a proof receipt** with obligations, approvals, verdict history, evidence digests, limitations and an HMAC integrity block, and see that an edited copy is detected.
 
+## Screenshots
+
+|                                                                                                         |                                                                                             |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| ![Studio home and Replay Lab](docs/screenshots/01-studio-home.png)                                      | ![Promise Canvas awaiting approval](docs/screenshots/02-promise-canvas-approval.png)        |
+| ![Duplicate refund: the agent's claim is contradicted](docs/screenshots/03-duplicate-refund-failed.png) | ![Memory lineage with residual embeddings](docs/screenshots/04-memory-lineage-residual.png) |
+| ![Proof receipt and forgery check](docs/screenshots/05-proof-receipt.png)                               | ![Phone layout](docs/screenshots/06-mobile.png)                                             |
+
 ## What makes it different
 
 Approvals, policy engines, audit logs and memory revocation already exist (see [docs/DIFFERENTIATION.md](docs/DIFFERENTIATION.md) for the products we checked). The Studio's claim is narrower and testable: **outcomes are verified end to end, independently of the executor**:

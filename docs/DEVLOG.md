@@ -27,6 +27,11 @@ Living log so progress survives context resets. Newest entries first.
 - The receipt "edited copy" drill was a no-op on already-VERIFIED receipts. It now always makes a real edit.
 - The lifecycle rail said "Verified" for FAILED contracts. It is renamed "Independently checked".
 
+**Tracking**
+
+- Issues #1 (live LLM agent path), #2 (safe preview deployment), #3 (accessibility, polish, demo pacing).
+- Screenshots of the current UI are in `docs/screenshots/`.
+
 **Next (priority order)**
 
 1. Watch the first GitHub Actions run; fix anything environment-specific.
