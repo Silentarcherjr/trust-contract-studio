@@ -359,3 +359,30 @@ describe("receipts", () => {
     expect(chain.brokenAtSeq).toBe(2);
   });
 });
+
+describe("rate limiting", () => {
+  it("caps drafts per workspace, survives a demo reset, and is per-workspace", async () => {
+    const { RATE_LIMITS } = await import("../server/domain/rate-limit.js");
+    const saved = { ...RATE_LIMITS };
+    RATE_LIMITS.draft = 3;
+    try {
+      await svc.resetDemo(db, human(), { scenario: "clean" });
+      for (let i = 0; i < 3; i++)
+        await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+      await expect(
+        svc.draftContract(db, human(), { goal: DEMO_GOAL }),
+      ).rejects.toMatchObject({ code: "rate_limited", status: 429 });
+      await svc.resetDemo(db, human(), { scenario: "clean" });
+      await expect(
+        svc.draftContract(db, human(), { goal: DEMO_GOAL }),
+      ).rejects.toMatchObject({ code: "rate_limited" });
+      const other = human("other@example.test");
+      await svc.resetDemo(db, other, { scenario: "clean" });
+      await expect(
+        svc.draftContract(db, other, { goal: DEMO_GOAL }),
+      ).resolves.toBeTruthy();
+    } finally {
+      Object.assign(RATE_LIMITS, saved);
+    }
+  });
+});

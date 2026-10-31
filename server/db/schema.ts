@@ -127,6 +127,14 @@ export const receipts = pgTable("tcs_receipts", {
   createdAt: text("created_at").notNull(),
 });
 
+/** Rate-limit ledger. Deliberately NOT wiped by a demo reset. */
+export const rateEvents = pgTable("tcs_rate_events", {
+  id: text("id").primaryKey(),
+  ownerEmail: text("owner_email").notNull(),
+  type: text("type").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
 export const auditEvents = pgTable("tcs_audit_events", {
   id: text("id").primaryKey(),
   ownerEmail: text("owner_email").notNull(),

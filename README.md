@@ -78,8 +78,8 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 53 unit + integration tests on in-memory PostgreSQL (PGlite)
-pnpm test:e2e       # 6 Playwright journeys against the real app
+pnpm test           # 56 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test:e2e       # 8 Playwright tests against the real app (incl. axe-core accessibility audit)
 pnpm build          # production build (Nitro, node preset)
 ```
 

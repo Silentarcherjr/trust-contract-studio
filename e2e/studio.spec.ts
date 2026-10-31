@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 async function resetTo(page: Page, scenario: string) {
@@ -133,3 +134,38 @@ test("the studio has no horizontal overflow on a phone", async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+async function expectNoA11yViolations(page: Page) {
+  const result = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .include(".tcs")
+    .analyze();
+  expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`no WCAG 2.1 AA violations on the main screens (${colorScheme})`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ colorScheme });
+    await context.addInitScript((s) => {
+      try {
+        localStorage.setItem("theme", s);
+      } catch {}
+    }, colorScheme);
+    const page = await context.newPage();
+    await resetTo(page, "Showcase");
+    await expectNoA11yViolations(page);
+    await draftDemo(page);
+    await expectNoA11yViolations(page);
+    await page.getByRole("button", { name: /Approve all 4/ }).click();
+    await page.getByRole("button", { name: /Execute contract/ }).click();
+    await expect(bigSeal(page)).toHaveText(/FAILED/, { timeout: 30_000 });
+    await expectNoA11yViolations(page);
+    for (const tab of ["Evidence", "Receipt", "Lab"]) {
+      await page.getByRole("tab", { name: tab }).click();
+      await expectNoA11yViolations(page);
+    }
+    await context.close();
+  });
+}

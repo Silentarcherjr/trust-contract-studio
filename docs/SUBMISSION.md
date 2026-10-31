@@ -22,8 +22,9 @@ All application code in this repository after commit `6511b5f` was written durin
 - [x] CI green on GitHub Actions (run 40826383944)
 - [ ] Live agent conversation tested with an LLM
 - [ ] Safe public preview deployment (needs owner approval: hosting, cost, exposure)
+- [x] Clips script (`docs/DEMO_SCRIPT.md`)
 - [ ] Public Clips recording (~90 s: request → obligations → approval → failure the agent missed → repair → re-verify → receipt)
-- [ ] Screenshots
+- [x] Screenshots (`docs/screenshots/`)
 - [ ] Project description for the submission form
 - [ ] Final disclosure review
 - [ ] Owner approval to submit

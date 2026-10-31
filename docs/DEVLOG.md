@@ -2,6 +2,25 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-10-31: Day 3 (accessibility, polish, demo)
+
+**Done**
+
+- axe-core WCAG 2.1 AA audit of home, canvas, failed contract and every inspector tab, in light and dark themes. Fixed: UNKNOWN ochre contrast (3.98 → above 4.5:1) and the keyboard-unreachable scrollable tab panel. The audit is now part of the E2E suite.
+- Dark mode reviewed. The app shell background now matches the studio paper. The "0 residual" chip is neutral when zero.
+- Error state verified: unknown contract id shows "Contract not found" plus a way back.
+- Per-workspace rate limiting (`server/domain/rate-limit.ts`, migration 18), immune to demo reset (threat model open item closed).
+- New **Showcase (demo)** scenario: duplicate refund + residual embeddings in one run, repaired in one round (matches the planned demo storyboard). Measured ~8.5 s of machine time from draft to receipt.
+- Repair round: a single banner instead of two, and auto-scroll to the first proposed repair clause (respects reduced motion).
+- `docs/DEMO_SCRIPT.md`: 90-second Clips script.
+- Results: 56/56 Vitest, 8/8 Playwright, typecheck, lint, format and build all green.
+
+**Waiting on the owner**
+
+- LLM access (Builder.io connection or provider key) for issue #1.
+- Approval for the preview deployment (#2): hosting, cost, public exposure.
+- Network allowlist for `www.agent-native.com` and `www.builder.io` to re-check rules before submitting.
+
 ## 2026-10-29: Day 1 (bootstrap → working P0 loop)
 
 **Done**

@@ -25,7 +25,21 @@ export function RepairStudio({
   const { contract } = view;
   const [plan, setPlan] = useState<RepairPlanView | null>(null);
   const propose = useActionMutation("propose-repair", {
-    onSuccess: (res) => setPlan(res.plan as RepairPlanView),
+    onSuccess: (res) => {
+      setPlan(res.plan as RepairPlanView);
+      // Bring the first proposed repair clause into view once it renders.
+      window.setTimeout(() => {
+        document
+          .querySelector('[data-pending-decision="true"]')
+          ?.scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "auto"
+              : "smooth",
+            block: "center",
+          });
+      }, 400);
+    },
     onError: (e) =>
       toast.error(actionErrorMessage(e) ?? "Could not propose a repair."),
   });
@@ -38,22 +52,6 @@ export function RepairStudio({
   const failing = view.obligations.filter(
     (o) => o.verdict === "FAILED" || o.verdict === "UNKNOWN",
   );
-  const pendingRepairs = view.obligations.filter(
-    (o) => o.repairOf && o.approval === "pending",
-  );
-
-  if (contract.status === "awaiting_approval" && pendingRepairs.length) {
-    return (
-      <div className="tcs-banner" data-tone="neutral" role="status">
-        <p className="text-sm">
-          <strong>Repair round {contract.round}.</strong>{" "}
-          {pendingRepairs.length} repair clause
-          {pendingRepairs.length === 1 ? "" : "s"} below wait for your decision.
-          Nothing runs until you approve.
-        </p>
-      </div>
-    );
-  }
   if (contract.status !== "failed" && contract.status !== "unknown")
     return null;
 

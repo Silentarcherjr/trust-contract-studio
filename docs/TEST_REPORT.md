@@ -1,14 +1,14 @@
 # Test report
 
-Last run: **2026-10-29** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
+Last run: **2026-10-31** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
 
 | Check              | Command                                                                   | Result                                                                 |
 | ------------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | Typecheck          | `pnpm typecheck`                                                          | ✅ 0 errors                                                            |
 | Lint               | `pnpm lint` (oxlint 1.90.0)                                               | ✅ 0 errors (1 warning in an unmodified starter file)                  |
 | Format             | `pnpm format:check` (oxfmt)                                               | ✅                                                                     |
-| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                       | ✅ **53 / 53 passed**                                                  |
-| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB) | ✅ **6 / 6 passed**                                                    |
+| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                       | ✅ **56 / 56 passed**                                                  |
+| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB) | ✅ **8 / 8 passed** (incl. axe-core WCAG 2.1 AA audit, light + dark)   |
 | Production build   | `pnpm build`                                                              | ✅ Nitro node preset                                                   |
 | GitHub Actions     | `.github/workflows/ci.yml`                                                | ✅ run 40826383944 (commit `cab02d4`): checks job + E2E job both green |
 
@@ -31,4 +31,4 @@ Last run: **2026-10-29** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux co
 - **A live LLM agent driving the Studio through chat.** No LLM key is configured in the development container. The agent path is tested at the action layer (`caller: "tool"`), which is the same code the agent loop dispatches, but not through a real model conversation. Planned once a key or Builder.io connection is available.
 - The framework's `needsApproval` pause for `reset-demo` when invoked by the agent (needs the same).
 - Hosted PostgreSQL. All runs used PGlite, the same SQL dialect.
-- Screen-reader pass. Keyboard and ARIA roles were implemented but not audited with assistive technology.
+- Manual screen-reader pass with real assistive technology (automated axe-core WCAG 2.1 AA audit passes in both themes).

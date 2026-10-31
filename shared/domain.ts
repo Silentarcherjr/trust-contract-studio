@@ -163,6 +163,7 @@ export const KIND_INFO: Record<ObligationKind, KindInfo> = {
 // ---------------------------------------------------------------------------
 export const SCENARIOS = [
   "clean",
+  "showcase",
   "duplicate_refund",
   "incomplete_deletion",
   "provider_timeout",
@@ -189,6 +190,17 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
       refund_charge: "VERIFIED",
       erase_personal_data: "VERIFIED",
       purge_derived_memories: "VERIFIED",
+    },
+  },
+  showcase: {
+    title: "Showcase (demo)",
+    summary:
+      "Two silent failures in one run: a retried refund is paid twice and a vector-index replica keeps derived memories.",
+    expected: {
+      cancel_subscription: "VERIFIED",
+      refund_charge: "FAILED",
+      erase_personal_data: "VERIFIED",
+      purge_derived_memories: "FAILED",
     },
   },
   duplicate_refund: {

@@ -79,6 +79,7 @@ export function ClauseCard({
       className="tcs-clause"
       data-verdict={o.verdict ?? undefined}
       data-repair={o.repairOf ? "true" : undefined}
+      data-pending-decision={decisionOpen ? "true" : undefined}
       aria-labelledby={`clause-${o.id}`}
     >
       <header className="flex flex-wrap items-start gap-3 px-4 pt-4 pb-3">

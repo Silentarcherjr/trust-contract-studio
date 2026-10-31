@@ -270,6 +270,7 @@ export function ContractWorkspace({ contractId }: { contractId: string }) {
             <div
               className="max-h-[calc(100vh-10rem)] overflow-y-auto p-4"
               role="tabpanel"
+              tabIndex={0}
               id={`panel-${tab}`}
               aria-labelledby={`tab-${tab}`}
             >
@@ -372,11 +373,12 @@ function PrimaryAction({
       >
         <p className="text-sm">
           <strong>
-            {pendingCount} clause{pendingCount === 1 ? "" : "s"} need your
-            decision.
+            {view.contract.round > 1
+              ? `Repair round ${view.contract.round}: ${pendingCount} repair clause${pendingCount === 1 ? "" : "s"} need your decision.`
+              : `${pendingCount} clause${pendingCount === 1 ? "" : "s"} need your decision.`}
           </strong>{" "}
-          Review the terms below. The agent cannot approve anything on your
-          behalf.
+          Review the terms below. Nothing runs until you approve, and the agent
+          cannot approve on your behalf.
         </p>
         <button
           type="button"

@@ -163,7 +163,10 @@ export function MemoryLineage({
       </div>
       <ul className="tcs-soft mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
         <li>
-          <span className="tcs-chip" data-tone="failed">
+          <span
+            className="tcs-chip"
+            data-tone={counts.residual > 0 ? "failed" : undefined}
+          >
             {counts.residual} residual
           </span>
         </li>

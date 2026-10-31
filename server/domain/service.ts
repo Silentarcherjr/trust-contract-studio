@@ -60,6 +60,7 @@ import {
   type PlannedObligation,
   type SubjectContext,
 } from "./planner.js";
+import { assertRateLimit } from "./rate-limit.js";
 import { planRepairs } from "./repair.js";
 import { EDITABLE_STATUSES, assertTransition } from "./state-machine.js";
 import {
@@ -385,6 +386,7 @@ export async function resetDemo(
   input: { scenario: Scenario },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "reset");
   const tables = [
     contracts,
     obligations,
@@ -544,6 +546,7 @@ export async function draftContract(
   input: { goal: string; obligations?: ObligationDraft[] | undefined },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "draft");
   const subject = await loadSubject(db, owner);
   let planned: PlannedObligation[];
   let unmatched: string[] = [];
@@ -938,6 +941,7 @@ export async function executeContract(
   input: { contractId: string; paceMs?: number | undefined },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "execute");
   let contract = await requireContract(db, owner, input.contractId);
   const status = contract.status as ContractStatus;
   if (status !== "ready" && status !== "interrupted") {
@@ -1019,6 +1023,7 @@ export async function verifyContract(
   input: { contractId: string },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "verify");
   let contract = await requireContract(db, owner, input.contractId);
   contract = await transition(db, contract, "verifying");
   await runVerification(db, actor, contract);
@@ -1153,6 +1158,7 @@ export async function proposeRepair(
   input: { contractId: string },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "repair");
   let contract = await requireContract(db, owner, input.contractId);
   if (contract.status !== "failed" && contract.status !== "unknown") {
     throw new ContractError(
@@ -1420,6 +1426,7 @@ export async function exportReceipt(
   input: { contractId: string },
 ) {
   const owner = actor.email;
+  await assertRateLimit(db, owner, "receipt");
   const view = await getContractView(db, owner, input.contractId);
   if (!["verified", "failed", "unknown"].includes(view.contract.status)) {
     throw new ContractError(

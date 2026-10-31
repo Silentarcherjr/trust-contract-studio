@@ -25,6 +25,11 @@ export type FaultKey =
 
 export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   clean: [],
+  showcase: [
+    "billing.refund_lost_response",
+    "billing.ignore_idempotency",
+    "memory.skip_vector_index",
+  ],
   duplicate_refund: [
     "billing.refund_lost_response",
     "billing.ignore_idempotency",

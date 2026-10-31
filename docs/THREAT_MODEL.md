@@ -16,11 +16,11 @@ Actors: the person (trusted for their own workspace), the in-app LLM agent (**un
 
 ## 2. Tool misuse
 
-| Threat                                            | Mitigation                                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Agent calls destructive tools                     | Side effects only happen through `execute-contract`, which runs only obligations with a matching human approval. `reset-demo` uses the framework's `needsApproval: true`, so the agent loop pauses for a person. The starter's generic third-party API tool (`provider-api-request`) was removed. |
-| Agent authors obligations targeting other records | `validateParams` checks every id belongs to the requesting customer in this workspace, refunds cannot exceed the charge, and kinds must be in the verifiable catalog. Tested: “rejects obligations that target another customer's records”.                                                       |
-| Resource abuse                                    | Schema bounds: goal ≤ 500 chars, ≤ 8 agent-authored obligations, `paceMs` ≤ 2000, max 3 attempts per obligation. **Not implemented:** per-user rate limiting.                                                                                                                                     |
+| Threat                                            | Mitigation                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agent calls destructive tools                     | Side effects only happen through `execute-contract`, which runs only obligations with a matching human approval. `reset-demo` uses the framework's `needsApproval: true`, so the agent loop pauses for a person. The starter's generic third-party API tool (`provider-api-request`) was removed.                                               |
+| Agent authors obligations targeting other records | `validateParams` checks every id belongs to the requesting customer in this workspace, refunds cannot exceed the charge, and kinds must be in the verifiable catalog. Tested: “rejects obligations that target another customer's records”.                                                                                                     |
+| Resource abuse                                    | Schema bounds: goal ≤ 500 chars, ≤ 8 agent-authored obligations, `paceMs` ≤ 2000, max 3 attempts per obligation. Per-workspace rate limits on reset, draft, execute, verify, repair and receipt (`server/domain/rate-limit.ts`), kept in a ledger that a demo reset does not clear. Tested: “caps drafts per workspace, survives a demo reset”. |
 
 ## 3. Authorization bypass
 
@@ -62,6 +62,6 @@ Actors: the person (trusted for their own workspace), the in-app LLM agent (**un
 
 ## Open items
 
-- [ ] Per-user rate limiting on mutating actions
+- [x] Per-workspace rate limiting on mutating actions
 - [ ] Production `RECEIPT_SIGNING_KEY` + `BETTER_AUTH_SECRET` before any public preview
 - [ ] Review framework `needsApproval` UX for `reset-demo` when invoked by the agent (requires an LLM to exercise; not yet tested end to end)

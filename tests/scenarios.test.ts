@@ -287,3 +287,26 @@ describe("expected outcomes table matches reality for every scenario", () => {
     });
   }
 });
+
+describe("scenario: showcase (demo)", () => {
+  it("catches both silent failures and repairs them in a single round", async () => {
+    const approved = await draftAndApprove(db, "showcase");
+    let view = await svc.executeContract(db, human(), {
+      contractId: approved.contract.id,
+    });
+    expect(verdictsByKind(view)).toEqual(SCENARIO_INFO.showcase.expected);
+    const { plan, view: proposed } = await svc.proposeRepair(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(plan.proposals.map((p) => p.kind).sort()).toEqual([
+      "delete_memories",
+      "void_refunds",
+    ]);
+    view = await approveAllPending(db, proposed);
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(view.contract.status).toBe("verified");
+    expect(view.contract.round).toBe(2);
+  });
+});

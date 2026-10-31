@@ -139,6 +139,12 @@ export const TCS_MIGRATIONS: TcsMigration[] = [
     sql: `CREATE INDEX IF NOT EXISTS tcs_obligations_contract_idx ON tcs_obligations (contract_id)`,
   },
   {
+    version: 18,
+    name: "tcs-rate-events",
+    sql: `CREATE TABLE IF NOT EXISTS tcs_rate_events (
+      id TEXT PRIMARY KEY, owner_email ${T}, type ${T}, created_at ${T})`,
+  },
+  {
     version: 17,
     name: "tcs-contracts-owner-idx",
     sql: `CREATE INDEX IF NOT EXISTS tcs_contracts_owner_idx ON tcs_contracts (owner_email, created_at)`,

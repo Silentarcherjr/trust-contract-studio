@@ -230,7 +230,7 @@
 }
 
 .dark {
-  --background: 0 0% 13%;
+  --background: 222 16% 11%;
   --foreground: 0 0% 90%;
   --card: 0 0% 16.47%;
   --card-foreground: 0 0% 90%;
@@ -250,7 +250,7 @@
   --input: 0 0% 24%;
   --ring: 0 0% 60%;
   --radius: 0.5rem;
-  --sidebar-background: 0 0% 10%;
+  --sidebar-background: 222 16% 9%;
   --sidebar-foreground: 0 0% 60%;
   --sidebar-primary: 0 0% 75%;
   --sidebar-primary-foreground: 0 0% 10%;
