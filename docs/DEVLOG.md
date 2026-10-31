@@ -2,6 +2,22 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-10-31: Rules verified, Builder.io connection setup
+
+**Official rules re-read on 2026-10-31** (builder.io/hackathon, /rules, FAQ; network allowlist now includes `www.builder.io` and `www.agent-native.com`):
+
+- Deadline: Mon Nov 9, 2026, 11:59 PM PT (Nov 10 07:59 UTC). Look for the submission confirmation. Recording a clip is not submitting.
+- The demo **must be recorded with Clips** (no other tool), publicly viewable without login. Repo and live app are optional; the app may have normal sign-in.
+- Disclose pre-existing work, templates and libraries, and what changed during the event.
+- Rubric: Usefulness & Execution 40, Creativity & Design 20, Innovation 20, Cleverness & Use of Agent-Native 20 (FAQ: naming or importing the framework is not enough).
+- Prizes $5k/$2.5k/$1.5k/$750/$250, gross. Non-US withholding up to 30% possible.
+- **No LLM credits for participants.** The FAQ mentions "approved mentorship and credits" only for winners.
+- Optional office hours: Nov 3 and Nov 5, 8:30 AM PT.
+
+**LLM access plan:** the Builder.io free plan gives 60 credits/month (15/day max). Agent-Native's "Use Builder.io" managed connection reads `BUILDER_PUBLIC_KEY` and `BUILDER_PRIVATE_KEY` (Space API keys from Space Settings, not personal access tokens; see `dist/server/credential-provider.js`). The owner created a dedicated private key and added both as **environment variables** of the cloud environment. They load only in a **new** session. Not yet verified that these keys unlock LLM calls on the free plan, nor how many credits a chat turn costs. Fallback: `ANTHROPIC_API_KEY`.
+
+**Next session, first steps:** confirm both variables exist (never print the values) → `DEV_HOST=127.0.0.1 pnpm dev` → exercise the agent via chat (issue #1) → record credit usage → update TEST_REPORT and SUBMISSION.
+
 ## 2026-10-31: Day 3 (accessibility, polish, demo)
 
 **Done**
