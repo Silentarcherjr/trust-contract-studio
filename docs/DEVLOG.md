@@ -2,6 +2,25 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-10-31: Live agent path (issue #1)
+
+**Done** (follows the "first steps" in the entry below and answers its open questions: yes, the keys unlock LLM calls on the free plan, and a chat turn costs 0.06–0.20 credits)
+
+- Confirmed `BUILDER_PUBLIC_KEY` and `BUILDER_PRIVATE_KEY` are set in the environment (presence only, values not printed). The framework picks them up as the Builder.io gateway connection. The gateway (`api.builder.io`) is reachable from the container. Plan: free, 15 credits/day.
+- Drove the real in-app agent through `/chat` (dev server with `DEV_HOST=127.0.0.1`, Showcase scenario): it drafted with `draft-contract`, navigated to the canvas, refused to approve when asked, executed only after canvas approval, reported verdicts that match the verifier exactly (4/4, then 6/6 after repair), proposed the repair on its own, and its `reset-demo` call paused for framework approval. The prompt-injection probe in the goal had no effect.
+- Measured cost: **0.51 Builder credits** for 5 turns (≈0.45 for a full draft → repair → re-verify loop). Transcript: `docs/LIVE_AGENT_RUN.md`. Screenshot: `docs/screenshots/07-live-agent-chat.png`.
+
+**Observations**
+
+- The default model on the gateway was GPT-6 Luna. Results with other models are untested.
+- The agent's run can discover ~199 tools through `tool-search` (framework tools included). `decide-approval` did not show up in any run's event stream, including its `tool-search` results.
+- To read a thread's tool calls after the fact: `GET /_agent-native/agent-chat/runs/latest?threadId=…`, then `/runs/<runId>/events`.
+
+**Next**
+
+1. Preview deployment (#2): still needs the owner's approval.
+2. Clips recording: the live chat turns above can replace the scripted "Ask the agent" segment.
+
 ## 2026-10-31: Rules verified, Builder.io connection setup
 
 **Official rules re-read on 2026-10-31** (builder.io/hackathon, /rules, FAQ; network allowlist now includes `www.builder.io` and `www.agent-native.com`):
@@ -33,7 +52,7 @@ Living log so progress survives context resets. Newest entries first.
 
 **Waiting on the owner**
 
-- LLM access (Builder.io connection or provider key) for issue #1.
+- ~~LLM access for issue #1~~: resolved, Builder.io keys provided (see entry above).
 - Approval for the preview deployment (#2): hosting, cost, public exposure.
 - Network allowlist for `www.agent-native.com` and `www.builder.io` to re-check rules before submitting.
 
