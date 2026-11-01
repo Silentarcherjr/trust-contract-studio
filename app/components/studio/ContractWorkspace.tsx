@@ -11,7 +11,7 @@ import {
   IconFlask,
   IconPlayerPlay,
 } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
@@ -67,6 +67,28 @@ export function ContractWorkspace({ contractId }: { contractId: string }) {
     () => new Map((view?.obligations ?? []).map((o, i) => [o.id, i + 1])),
     [view],
   );
+
+  // Keyboard users: when a step's button disappears (Approve all → Execute →
+  // Propose repair → …), the browser drops focus to <body> and Tab restarts
+  // at the sidebar. On each contract state change, if focus was lost, move
+  // it to the next step's primary button. Never steals focus from elsewhere.
+  const stage = view
+    ? `${view.contract.status}:${view.contract.round}:${running}`
+    : "";
+  const lastStage = useRef<string | null>(null);
+  useEffect(() => {
+    if (!stage) return;
+    const first = lastStage.current === null;
+    lastStage.current = stage;
+    if (first) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    document
+      .querySelector<HTMLElement>(
+        ".tcs [data-primary-action]:not([disabled]):not([aria-disabled='true'])",
+      )
+      ?.focus();
+  }, [stage]);
 
   if (query.isLoading) return <WorkspaceSkeleton />;
   if (query.error || !view) {
@@ -259,11 +281,24 @@ export function ContractWorkspace({ contractId }: { contractId: string }) {
                   className="tcs-tab"
                   onClick={() => setTab(t.id)}
                   onKeyDown={(e) => {
+                    // WAI-ARIA tabs: arrows/Home/End move selection AND focus
+                    // (roving tabindex), so focus never sits on a tabIndex=-1 tab.
                     const i = TABS.findIndex((x) => x.id === tab);
-                    if (e.key === "ArrowRight")
-                      setTab(TABS[(i + 1) % TABS.length]!.id);
-                    if (e.key === "ArrowLeft")
-                      setTab(TABS[(i - 1 + TABS.length) % TABS.length]!.id);
+                    const next =
+                      e.key === "ArrowRight"
+                        ? (i + 1) % TABS.length
+                        : e.key === "ArrowLeft"
+                          ? (i - 1 + TABS.length) % TABS.length
+                          : e.key === "Home"
+                            ? 0
+                            : e.key === "End"
+                              ? TABS.length - 1
+                              : null;
+                    if (next === null) return;
+                    e.preventDefault();
+                    const id = TABS[next]!.id;
+                    setTab(id);
+                    document.getElementById(`tab-${id}`)?.focus();
                   }}
                 >
                   {t.label}
@@ -387,6 +422,7 @@ function PrimaryAction({
           type="button"
           className="tcs-btn"
           data-variant="primary"
+          data-primary-action
           disabled={approvingAll || pendingCount === 0}
           onClick={onApproveAll}
         >
@@ -419,6 +455,7 @@ function PrimaryAction({
           type="button"
           className="tcs-btn"
           data-variant="primary"
+          data-primary-action
           onClick={onExecute}
         >
           <IconPlayerPlay size={16} aria-hidden />{" "}
@@ -439,7 +476,12 @@ function PrimaryAction({
           </strong>{" "}
           not by the agent's word.
         </p>
-        <button type="button" className="tcs-btn" onClick={onShowReceipt}>
+        <button
+          type="button"
+          className="tcs-btn"
+          data-primary-action
+          onClick={onShowReceipt}
+        >
           View proof receipt
         </button>
       </div>

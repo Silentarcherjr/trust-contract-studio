@@ -241,8 +241,12 @@ export function StudioHome() {
             type="button"
             className="tcs-btn"
             data-variant="primary"
-            disabled={reset.isPending}
-            onClick={() => reset.mutate({ scenario: chosen })}
+            // aria-disabled (not disabled) while pending keeps keyboard focus here.
+            aria-disabled={reset.isPending || undefined}
+            onClick={() => {
+              if (reset.isPending) return;
+              reset.mutate({ scenario: chosen });
+            }}
           >
             <IconRefresh
               size={16}

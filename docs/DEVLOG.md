@@ -13,7 +13,15 @@ Living log so progress survives context resets. Newest entries first.
 - `docs/DEMO_SCRIPT.md` has the measurements and how to use the autopilot. The agent variant now has real timings from the live run.
 - Results: 62/62 Vitest (+6 demo-mode tests), 8/8 Playwright, typecheck, lint, format and build green.
 
-**Still open on #3:** keyboard-only walkthrough and a manual screen-reader pass need a person with real assistive technology. The automated axe audit already passes.
+**Keyboard-only walkthrough (automated):** `e2e/keyboard.spec.ts` drives the full loop without a mouse and checks the focus ring at every stop. It found and fixed three problems:
+
+- The inspector tabs did not move focus with the arrow keys.
+- Focus fell to `<body>` whenever a step's button was replaced: it took 35 Tab presses to reach Execute. Focus now moves to the next step's button, so the loop is Enter-only.
+- Export receipt and Reset sandbox dropped focus while pending; they now use `aria-disabled`.
+
+Results: 9/9 Playwright, 62/62 Vitest, autopilot still 7/7 on time.
+
+**Still open on #3:** a manual screen-reader pass with real assistive technology (needs a person).
 
 ## 2026-10-31: Live agent path (issue #1)
 

@@ -115,6 +115,7 @@ export function RepairStudio({
             className="tcs-btn"
             data-variant="primary"
             data-size="sm"
+            data-primary-action
             disabled={propose.isPending}
             onClick={() => propose.mutate({ contractId: contract.id })}
           >

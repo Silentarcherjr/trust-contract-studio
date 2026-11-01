@@ -75,8 +75,13 @@ export function ReceiptPanel({ view }: { view: ContractView }) {
           type="button"
           className="tcs-btn"
           data-variant="primary"
-          disabled={!final || exportReceipt.isPending}
-          onClick={() => exportReceipt.mutate({ contractId: view.contract.id })}
+          disabled={!final}
+          // aria-disabled (not disabled) while pending keeps keyboard focus here.
+          aria-disabled={exportReceipt.isPending || undefined}
+          onClick={() => {
+            if (exportReceipt.isPending) return;
+            exportReceipt.mutate({ contractId: view.contract.id });
+          }}
         >
           <IconFileCertificate size={16} aria-hidden />{" "}
           {receipt ? "Re-issue receipt" : "Export proof receipt"}
