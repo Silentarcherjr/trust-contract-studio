@@ -2,6 +2,22 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: External agents over MCP
+
+**Done**
+
+- **The MCP catalog was empty.** `server/plugins/agent-chat.ts` had `connectorCatalog: []`, so external MCP hosts saw none of our actions. The catalog now lives in `server/lib/mcp-catalog.ts`. It offers draft, read, execute, verify, repair and the receipt actions, and never offers `decide-approval`, `tamper-evidence` or `reset-demo` (a test guards this).
+- **New `get-receipt` action** (read-only, owner-scoped). MCP shortens long results from mutating actions, so external agents read state back through read-only actions.
+- **`pnpm demo:external-agent`.** A raw MCP client (JSON-RPC over Streamable HTTP, no SDK) plays an outside support agent:
+  - it connects and sees our tools, without `decide-approval`;
+  - it drafts, then tries `decide-approval` and gets "Unknown tool";
+  - it waits for a person to approve in the Studio and executes;
+  - its own "Done" claims are contradicted (FAILED: $200 refunded, 2 embeddings left);
+  - it proposes repairs, reaches VERIFIED, and checks an intact signed receipt.
+- **Execution Theater labels.** Calls from MCP now show as **External agent · MCP**; A2A calls are labelled too. Screenshot: `docs/screenshots/08-external-agent-mcp.png`.
+- **Static-token identity.** With a static token, MCP identity comes from the server's `AGENT_NATIVE_OWNER_EMAIL` (local, single-tenant only). Hosted deployments use the framework's MCP OAuth.
+- **pgvector investigated.** The framework's PGlite cannot load extensions, so a real vector store needs a separate engine (a PGlite instance with `@electric-sql/pglite-pgvector`, or Neon in production). Not built yet.
+
 ## 2026-11-01: Measured evaluation and problem framing
 
 **Done**

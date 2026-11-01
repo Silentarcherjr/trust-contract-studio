@@ -75,6 +75,40 @@ Every capability is a `defineAction()` in [`actions/`](actions). The React UI ca
 
 The open contract id is published in the framework's navigation state, so the agent knows which contract the person is looking at.
 
+## Hold any agent to its promise (MCP)
+
+The in-app agent is not the only one that can be checked. Any MCP host (Claude Code, Cursor, another company's support bot) can connect to the Studio's MCP endpoint and work under a trust contract:
+
+1. It drafts a contract (`draft-contract`).
+2. A person approves the clauses in the Studio. `decide-approval` is not in the MCP catalog; calling it returns "Unknown tool".
+3. It executes (`execute-contract`) and reads the verifier's verdicts (`get-contract`), not its own claims.
+4. It proposes repairs (`propose-repair`).
+5. It leaves with a signed receipt (`export-receipt` → `get-receipt` → `check-receipt`).
+
+In the Execution Theater, its calls appear as **External agent · MCP**. The catalog lives in [`server/lib/mcp-catalog.ts`](server/lib/mcp-catalog.ts). It also never includes the tamper drill or the workspace reset, and a test guards that.
+
+Try it locally. The token stays in your shell and is never committed.
+
+```bash
+export MCP_TOKEN=$(node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")
+```
+
+```bash
+ACCESS_TOKEN=$MCP_TOKEN AGENT_NATIVE_OWNER_EMAIL=dev@local.test AUTH_DISABLED=true DEV_HOST=127.0.0.1 pnpm dev
+```
+
+```bash
+pnpm demo:external-agent --reset "Showcase"        # you approve in the Studio when it asks
+```
+
+The script includes its own small MCP client (about 60 lines of JSON-RPC over Streamable HTTP, no SDK). Add `--as-human` to let a headless browser play the person for a rehearsal. A real MCP host connects the same way:
+
+```bash
+claude mcp add --transport http trust-contracts http://127.0.0.1:8080/mcp --header "Authorization: Bearer $MCP_TOKEN"
+```
+
+`AGENT_NATIVE_OWNER_EMAIL` maps the static token to one local workspace (single-tenant development only). A hosted deployment uses the framework's MCP OAuth instead, so each external agent acts as a signed-in person.
+
 ## Quick start
 
 Requirements: Node.js ≥ 22.22, pnpm (via `corepack enable`).

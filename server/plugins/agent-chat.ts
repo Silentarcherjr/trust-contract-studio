@@ -5,6 +5,7 @@ import {
 } from "@agent-native/core/server";
 
 import actionsRegistry from "../../.generated/actions-registry.js";
+import { MCP_CONNECTOR_CATALOG } from "../lib/mcp-catalog.js";
 
 const INITIAL_TOOL_NAMES = [
   "view-screen",
@@ -19,7 +20,11 @@ const INITIAL_TOOL_NAMES = [
 export default createAgentChatPlugin({
   appId: "trust-contract-studio",
   actions: loadActionsFromStaticRegistry(actionsRegistry),
-  mcp: { connectorCatalog: [], appApprovalPage: true },
+  // External agents can be held to their promises too (see mcp-catalog.ts).
+  mcp: {
+    connectorCatalog: [...MCP_CONNECTOR_CATALOG],
+    appApprovalPage: true,
+  },
   initialToolNames: INITIAL_TOOL_NAMES,
   resolveOrgId: async (event) => (await getOrgContext(event)).orgId,
   systemPrompt: `You are the agent inside Trust Contract Studio, a workspace that turns promises made on a person's behalf into verifiable commitments.

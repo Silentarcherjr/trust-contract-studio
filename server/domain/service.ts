@@ -1558,6 +1558,39 @@ export async function exportReceipt(
   };
 }
 
+/** The latest proof receipt issued for a contract, with its integrity block. */
+export async function getLatestReceipt(
+  db: Db,
+  owner: string,
+  contractId: string,
+) {
+  await requireContract(db, owner, contractId);
+  const [row] = await db
+    .select()
+    .from(receipts)
+    .where(
+      and(eq(receipts.ownerEmail, owner), eq(receipts.contractId, contractId)),
+    )
+    .orderBy(desc(receipts.createdAt))
+    .limit(1);
+  if (!row) {
+    throw new ContractError(
+      "No receipt has been issued for this contract yet. Call export-receipt first.",
+      "not_found",
+      404,
+    );
+  }
+  const body = row.body as Record<string, unknown> & { receiptId: string };
+  return {
+    ...body,
+    integrity: {
+      algorithm: "HMAC-SHA256(SHA-256(canonical JSON))",
+      digest: row.digest,
+      signature: row.signature,
+    },
+  };
+}
+
 export function checkReceipt(receipt: Record<string, unknown>) {
   const { integrity, ...body } = receipt as {
     integrity?: { digest?: string; signature?: string };

@@ -14,6 +14,10 @@ import resetDemo from "../actions/reset-demo.js";
 import tamperEvidence from "../actions/tamper-evidence.js";
 import type { Db } from "../server/db/index.js";
 import * as svc from "../server/domain/service.js";
+import {
+  MCP_CONNECTOR_CATALOG,
+  NEVER_EXTERNAL,
+} from "../server/lib/mcp-catalog.js";
 import { DEMO_GOAL, approveAllPending, freshDb, human } from "./harness.js";
 
 const ctx = (
@@ -123,6 +127,19 @@ describe("authorization", () => {
     expect(decideApproval.agentTool).toBe(false);
     expect(decideApproval.mcpTool).toBe(false);
     expect(tamperEvidence.agentTool).toBe(false);
+  });
+
+  it("external agents over MCP get the contract tools but never approval, drills or reset", () => {
+    for (const name of NEVER_EXTERNAL)
+      expect(MCP_CONNECTOR_CATALOG as readonly string[]).not.toContain(name);
+    expect(MCP_CONNECTOR_CATALOG).toEqual(
+      expect.arrayContaining([
+        "draft-contract",
+        "execute-contract",
+        "get-contract",
+        "get-receipt",
+      ]),
+    );
   });
 
   it("an approval is bound to the exact parameters the person reviewed", async () => {
@@ -343,6 +360,19 @@ describe("receipts", () => {
     forged.overall = "VERIFIED";
     forged.obligations[0]!.title = "Cancel (edited)";
     expect(svc.checkReceipt(forged).digestMatches).toBe(false);
+
+    // Read-only retrieval (used by external agents over MCP) returns the same
+    // signed receipt, and only to its owner.
+    const again = await svc.getLatestReceipt(
+      db,
+      human().email,
+      view.contract.id,
+    );
+    expect(again.receiptId).toBe(receipt.receiptId);
+    expect(svc.checkReceipt(again).signatureValid).toBe(true);
+    await expect(
+      svc.getLatestReceipt(db, "mallory@example.test", view.contract.id),
+    ).rejects.toThrow();
   });
 
   it("the audit chain detects a rewritten event", async () => {

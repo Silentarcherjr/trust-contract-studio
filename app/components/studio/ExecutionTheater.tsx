@@ -50,6 +50,13 @@ const ACTOR_LABEL: Record<Actor, string> = {
   system: "System",
 };
 
+/** External agents (MCP, A2A) are named as such, not as the in-app agent. */
+function actorLabel(who: Actor, caller: string) {
+  if (who === "agent" && caller === "mcp") return "External agent · MCP";
+  if (who === "agent" && caller === "a2a") return "External agent · A2A";
+  return ACTOR_LABEL[who];
+}
+
 export function ExecutionTheater({
   view,
   numberById,
@@ -94,8 +101,8 @@ export function ExecutionTheater({
           : undefined,
       title: (
         <>
-          <strong className="font-semibold">{ACTOR_LABEL[who]}</strong> ·{" "}
-          {AUDIT_TITLES[a.type] ?? a.type}
+          <strong className="font-semibold">{actorLabel(who, a.caller)}</strong>{" "}
+          · {AUDIT_TITLES[a.type] ?? a.type}
         </>
       ),
       detail,

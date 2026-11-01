@@ -18,6 +18,7 @@
     "demo:autopilot": "tsx scripts/demo-autopilot.ts",
     "eval:outcomes": "tsx scripts/eval/outcome-eval.ts",
     "eval:agent": "tsx scripts/eval/agent-eval.ts",
+    "demo:external-agent": "tsx scripts/external-agent-demo.ts",
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
