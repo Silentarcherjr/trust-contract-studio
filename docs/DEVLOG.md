@@ -2,6 +2,26 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: Protected deployment on Vercel (issue #2)
+
+**Done**
+
+- **Vercel project** `trust-contract-studio` (team HACKS), connected to the private repo.
+  - Build command: `pnpm migrate:production && NITRO_PRESET=vercel pnpm build`, so migrations run before every build.
+  - Node 22, protected source maps.
+  - The framework sweep cron is set to daily (`AGENT_NATIVE_VERCEL_CRON_SCHEDULE`), because Hobby only allows daily crons.
+- **Database:** Neon Postgres (us-east-2, pooled connection).
+- **Secrets:** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `RECEIPT_SIGNING_KEY` and `CRON_SECRET` were added by the owner in the Vercel dashboard as sensitive values. They never passed through the agent session.
+- **First deployment:** READY in about 2 min 20 s from commit `b62b1ac`.
+- **Access:** Vercel Authentication is on for all deployments. `/studio`, `/mcp` and `/.well-known/mcp.json` all redirect unauthenticated visitors to Vercel SSO (checked with curl).
+
+**Before opening it to judges (near Nov 8–9)**
+
+- Switch protection off in one setting.
+- Decide on the agent chat in production: it needs Builder keys added by the owner, plus a guard so anonymous visitors cannot spend the owner's credits.
+- Run the E2E suite against the deployment.
+- Do not rotate `RECEIPT_SIGNING_KEY` after recording.
+
 ## 2026-11-01: External agents over MCP
 
 **Done**

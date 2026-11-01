@@ -123,7 +123,8 @@ All application code in this repository after commit `6511b5f` (Oct 29, 2026, 05
 - [x] Threat model
 - [x] CI green on GitHub Actions (latest: run 41259795887, commit `d4f2075`)
 - [x] Live agent conversation tested with an LLM (`docs/LIVE_AGENT_RUN.md`, 0.51 Builder credits)
-- [ ] Safe public preview deployment (needs owner approval: hosting, cost, exposure)
+- [x] Preview deployment on Vercel + Neon, protected (Vercel Authentication on all deployments)
+- [ ] Open the deployment to the public near the deadline (owner decision)
 - [x] Clips script (`docs/DEMO_SCRIPT.md`)
 - [ ] Public Clips recording (~90 s: request → obligations → approval → failure the agent missed → repair → re-verify → receipt)
 - [x] Screenshots (`docs/screenshots/`)
