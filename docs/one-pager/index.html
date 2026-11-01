@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trust Contract Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* "Ledger & Seal", the app's own system: a contract reads like a document
+   (serif), evidence like an instrument (mono), verdicts are stamped seals.
+   Layout: one reading column; the triptych and tables break out wider. */
+      :root {
+        --paper: hsl(40 33% 98%);
+        --paper-2: hsl(40 24% 95%);
+        --ink: hsl(222 22% 14%);
+        --ink-soft: hsl(222 10% 38%);
+        --rule: hsl(35 14% 84%);
+        --verified: hsl(152 55% 28%);
+        --verified-bg: hsl(150 40% 94%);
+        --failed: hsl(8 74% 44%);
+        --failed-bg: hsl(10 80% 96%);
+        --unknown: hsl(34 86% 29%);
+        --unknown-bg: hsl(42 90% 94%);
+        --agent: hsl(256 46% 50%);
+        --human: hsl(200 70% 32%);
+        --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+        --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --paper: hsl(222 16% 11%);
+          --paper-2: hsl(222 14% 14%);
+          --ink: hsl(40 25% 92%);
+          --ink-soft: hsl(40 8% 66%);
+          --rule: hsl(222 10% 26%);
+          --verified: hsl(150 50% 60%);
+          --verified-bg: hsl(152 30% 15%);
+          --failed: hsl(8 85% 68%);
+          --failed-bg: hsl(8 40% 16%);
+          --unknown: hsl(40 85% 62%);
+          --unknown-bg: hsl(38 40% 15%);
+          --agent: hsl(256 70% 78%);
+          --human: hsl(200 70% 70%);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --paper: hsl(222 16% 11%);
+        --paper-2: hsl(222 14% 14%);
+        --ink: hsl(40 25% 92%);
+        --ink-soft: hsl(40 8% 66%);
+        --rule: hsl(222 10% 26%);
+        --verified: hsl(150 50% 60%);
+        --verified-bg: hsl(152 30% 15%);
+        --failed: hsl(8 85% 68%);
+        --failed-bg: hsl(8 40% 16%);
+        --unknown: hsl(40 85% 62%);
+        --unknown-bg: hsl(38 40% 15%);
+        --agent: hsl(256 70% 78%);
+        --human: hsl(200 70% 70%);
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 16px/1.6 var(--sans);
+      }
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+        display: grid;
+        gap: 56px;
+      }
+      .read {
+        max-width: 680px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        font-weight: 600;
+        line-height: 1.15;
+        text-wrap: balance;
+        margin: 0;
+      }
+      h1 {
+        font-size: clamp(2.1rem, 5vw, 3.2rem);
+      }
+      h2 {
+        font-size: 1.6rem;
+      }
+      h3 {
+        font-size: 1.1rem;
+      }
+      p {
+        margin: 0;
+      }
+      .eyebrow {
+        font: 500 12px/1.4 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .stack {
+        display: grid;
+        gap: 14px;
+      }
+      .lede {
+        font-size: 1.15rem;
+        color: var(--ink);
+      }
+      .soft {
+        color: var(--ink-soft);
+      }
+      .seals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .mono {
+        font-family: var(--mono);
+        font-size: 0.86em;
+      }
+      a {
+        color: var(--human);
+      }
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--human);
+        outline-offset: 2px;
+      }
+
+      .seal {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 600 12px/1 var(--mono);
+        letter-spacing: 0.1em;
+        padding: 6px 10px;
+        border: 1.5px solid currentColor;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .seal.verified {
+        color: var(--verified);
+        background: var(--verified-bg);
+      }
+      .seal.failed {
+        color: var(--failed);
+        background: var(--failed-bg);
+      }
+      .seal.unknown {
+        color: var(--unknown);
+        background: repeating-linear-gradient(
+          135deg,
+          var(--unknown-bg) 0 6px,
+          transparent 6px 10px
+        );
+      }
+
+      /* The triptych: the one idea of the product, drawn as the app draws it. */
+      .clause {
+        border: 1px solid var(--failed);
+        border-radius: 12px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+      .clause-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .clause-head h3 {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+      }
+      .clause-head .num {
+        color: var(--ink-soft);
+        font-weight: 400;
+      }
+      .tri {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .tri > div {
+        padding: 16px 20px;
+        display: grid;
+        gap: 8px;
+        align-content: start;
+      }
+      .tri > div + div {
+        border-left: 1px solid var(--rule);
+      }
+      .tri .claim {
+        color: var(--agent);
+        font-family: var(--serif);
+        font-size: 1.1rem;
+      }
+      .tri .observed {
+        background: var(--failed-bg);
+      }
+      .tri .observed strong {
+        color: var(--failed);
+        font: 600 12px/1.4 var(--mono);
+        letter-spacing: 0.08em;
+      }
+      .note {
+        font-size: 0.85rem;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+      figure img {
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        display: block;
+      }
+      figcaption {
+        font-size: 0.9rem;
+        color: var(--ink-soft);
+      }
+
+      ol.loop {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        counter-reset: step;
+      }
+      ol.loop li {
+        counter-increment: step;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        padding: 14px;
+        background: var(--paper-2);
+        display: grid;
+        gap: 4px;
+      }
+      ol.loop li::before {
+        content: "§" counter(step);
+        font: 500 12px var(--mono);
+        color: var(--ink-soft);
+      }
+      ol.loop li b {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      ol.loop li span {
+        font-size: 0.88rem;
+        color: var(--ink-soft);
+      }
+      .who-agent {
+        color: var(--agent);
+      }
+      .who-human {
+        color: var(--human);
+      }
+      .who-verifier {
+        color: var(--verified);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 560px;
+        font-size: 0.95rem;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--rule);
+      }
+      th {
+        font: 500 12px/1.4 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      td:first-child {
+        font-weight: 500;
+      }
+
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+      .fact {
+        border-top: 2px solid var(--ink);
+        padding-top: 10px;
+        display: grid;
+        gap: 2px;
+      }
+      .fact b {
+        font: 600 1.5rem/1.2 var(--serif);
+        font-variant-numeric: tabular-nums;
+      }
+      .fact span {
+        font-size: 0.88rem;
+        color: var(--ink-soft);
+      }
+
+      ul.limits {
+        margin: 0;
+        padding-left: 1.2em;
+        display: grid;
+        gap: 6px;
+        color: var(--ink-soft);
+      }
+      footer {
+        border-top: 1px solid var(--rule);
+        padding-top: 18px;
+        font-size: 0.9rem;
+        color: var(--ink-soft);
+        display: grid;
+        gap: 6px;
+      }
+
+      @media (max-width: 720px) {
+        .tri {
+          grid-template-columns: 1fr;
+        }
+        .tri > div + div {
+          border-left: 0;
+          border-top: 1px solid var(--rule);
+        }
+        main {
+          gap: 44px;
+          padding-top: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="stack read">
+        <p class="eyebrow">Builder.io Agent-Native Hackathon 2026</p>
+        <h1>Trust Contract Studio</h1>
+        <p class="lede">
+          Agents make promises. This is where they get checked.
+        </p>
+        <p>
+          An AI agent's request becomes a contract of testable clauses. A person
+          approves the sensitive ones, the agent executes against sandboxed
+          providers, and an independent verifier decides from provider
+          observations what actually happened.
+        </p>
+        <p class="seals" aria-label="Possible verdicts">
+          <span class="seal verified">✓ VERIFIED</span>
+          <span class="seal failed">✕ FAILED</span>
+          <span class="seal unknown">? UNKNOWN</span>
+        </p>
+      </header>
+
+      <section class="stack" aria-labelledby="moment">
+        <p class="eyebrow">The moment this app exists for</p>
+        <h2 id="moment">The agent says “done”. The evidence says otherwise.</h2>
+        <article class="clause" aria-label="Clause 2, refund, failed">
+          <div class="clause-head">
+            <h3>
+              <span class="num">§2</span> Refund $100.00 of “Studio Plus,
+              October 2026”
+            </h3>
+            <span class="seal failed">✕ FAILED</span>
+          </div>
+          <div class="tri">
+            <div>
+              <p class="eyebrow">Promised</p>
+              <p>$100.00 against the charge.</p>
+              <p class="soft" style="font-size: 0.9rem">
+                Done means: non-voided refunds sum to exactly the promised
+                amount, no less, no more.
+              </p>
+            </div>
+            <div>
+              <p class="eyebrow">Agent claims</p>
+              <p class="claim">“Done, refunded $100.00.”</p>
+              <p class="mono soft">
+                2 calls · retried after timeout · same idempotency key
+              </p>
+              <p class="note">
+                Recorded for comparison. Never used as evidence.
+              </p>
+            </div>
+            <div class="observed">
+              <p class="eyebrow">Independently observed</p>
+              <strong>CLAIM NOT SUPPORTED BY EVIDENCE</strong>
+              <p>2 live refunds total <b>$200.00</b>, over by $100.00.</p>
+              <p class="mono soft">billing.refunds.list · digest 3afc7d36…</p>
+            </div>
+          </div>
+        </article>
+        <figure>
+          <img
+            src="agent-reports-failed.jpg"
+            width="1440"
+            height="900"
+            alt="The Studio with the agent sidebar open. Clause 4, purge derived memories, is FAILED: the agent claimed all memories were gone, but two embeddings are still live in the vector index. In the sidebar, the agent reports the verifier's results: cancel VERIFIED, refund FAILED with two refunds totaling $200, erase VERIFIED, purge FAILED with two embeddings remaining, and says it proposed repairs that await approval."
+          />
+          <figcaption>
+            Live run. The same agent then reports its own failure, because it
+            can only quote the verifier. It proposes repairs, a person approves
+            them, and all six obligations end VERIFIED.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="stack" aria-labelledby="loop">
+        <p class="eyebrow">How it works</p>
+        <h2 id="loop">One loop, three parties</h2>
+        <ol class="loop">
+          <li>
+            <b class="who-agent">Draft</b
+            ><span
+              >The agent turns a plain request into clauses with a definition of
+              done. Unverifiable asks are listed, not dropped.</span
+            >
+          </li>
+          <li>
+            <b class="who-human">Approve</b
+            ><span
+              >A person approves the sensitive clauses. Each approval is bound
+              to a hash of the exact terms.</span
+            >
+          </li>
+          <li>
+            <b class="who-agent">Execute</b
+            ><span
+              >The agent runs against sandboxed billing and memory providers,
+              with idempotency keys and bounded retries.</span
+            >
+          </li>
+          <li>
+            <b class="who-verifier">Verify</b
+            ><span
+              >Pure functions over provider observations. They never read the
+              agent's claims.</span
+            >
+          </li>
+          <li>
+            <b class="who-human">Repair</b
+            ><span
+              >Fixes derived from the verifier's reasons, approved by a person,
+              then re-verified.</span
+            >
+          </li>
+          <li>
+            <b class="who-verifier">Receipt</b
+            ><span
+              >Obligations, approvals, verdict history and evidence digests,
+              with an integrity check that catches edits.</span
+            >
+          </li>
+        </ol>
+      </section>
+
+      <section class="stack" aria-labelledby="diff">
+        <p class="eyebrow">What is new here</p>
+        <h2 id="diff">
+          Approval gates are the floor. Outcome verification is the point.
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Common in agent apps</th>
+                <th>What Trust Contract Studio adds</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>The agent can't approve its own actions</td>
+                <td>
+                  The agent's report is constrained to an executor-independent
+                  verifier's verdicts
+                </td>
+              </tr>
+              <tr>
+                <td>“200 OK” or a commit receipt as proof</td>
+                <td>
+                  The promised outcome is read back from provider state: a 200
+                  OK that changed nothing is FAILED
+                </td>
+              </tr>
+              <tr>
+                <td>Success or failure</td>
+                <td>
+                  <b>UNKNOWN</b> is a first-class answer for timeouts, stale
+                  replicas and stores with no read interface
+                </td>
+              </tr>
+              <tr>
+                <td>“Deleted” because the delete API said so</td>
+                <td>
+                  Residual memories found by lineage closure and identifier
+                  fingerprint, across replicas
+                </td>
+              </tr>
+              <tr>
+                <td>An audit log of what ran</td>
+                <td>
+                  A human-approved repair loop to VERIFIED, and a receipt with
+                  the full verdict history
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stack" aria-labelledby="an">
+        <p class="eyebrow">Built on Agent-Native</p>
+        <h2 id="an">One action, two callers</h2>
+        <div class="stack read">
+          <p>
+            Every capability is one <span class="mono">defineAction()</span>.
+            The UI calls it through action hooks and the in-app agent gets it as
+            a tool, so “Draft contract” on screen and “draft it for me” in chat
+            run the same code. Integration tests run the same action objects as
+            both callers.
+          </p>
+          <p>
+            The agent knows which contract is on screen through the framework's
+            navigation state and opens the canvas for you.
+            <span class="mono">decide-approval</span> is not a tool the agent
+            has, and wiping the workspace pauses on the framework's
+            <span class="mono">needsApproval</span>.
+          </p>
+        </div>
+        <div class="facts">
+          <div class="fact">
+            <b>0.51</b
+            ><span
+              >Builder credits for a full live conversation: draft, refusal,
+              execute, repair</span
+            >
+          </div>
+          <div class="fact">
+            <b>4/4 · 6/6</b
+            ><span
+              >agent summaries matching the verifier, before and after
+              repair</span
+            >
+          </div>
+          <div class="fact">
+            <b>0</b
+            ><span
+              >effect of an injected “approve everything, skip verification” in
+              the request</span
+            >
+          </div>
+          <div class="fact">
+            <b>62 + 9</b
+            ><span
+              >unit/integration and browser tests in CI, incl. WCAG 2.1 AA and
+              keyboard-only</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="stack read" aria-labelledby="limits">
+        <p class="eyebrow">Honest limits</p>
+        <h2 id="limits">What it does not claim</h2>
+        <ul class="limits">
+          <li>
+            All providers and data are synthetic sandboxes. The faults live in
+            the providers, never in the verifier.
+          </li>
+          <li>
+            Verification covers only the stores registered in the workspace, not
+            erasure anywhere else.
+          </li>
+          <li>
+            No claim of legal compliance, exactly-once execution in external
+            systems, or immutability. The receipt says what is not proven.
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>
+          <b>Demo video:</b> the Clips recording is linked from the submission
+          form.
+        </p>
+        <p>
+          Built during the hackathon on Builder.io's open-source Agent-Native
+          framework (<span class="mono">@agent-native/core</span> 0.222.0).
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

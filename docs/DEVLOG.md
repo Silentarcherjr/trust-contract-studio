@@ -2,6 +2,17 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: Agent-led demo take, submission text, one-pager
+
+**Done**
+
+- Checked the official pages again (rules, homepage, submit form): the deadline is **Nov 9, 11:59 PM PT** on all three; winners on Nov 13. A third-party search result saying Nov 2 was wrong.
+- `pnpm demo:autopilot --agent`: an event-driven, agent-led take through the sidebar. The agent drafts, refuses to approve, executes after the human approves, reports FAILED with the verifier's numbers, proposes repairs, and re-executes to VERIFIED. Then the receipt. Rehearsal: 1:55.7, final VERIFIED, 0.70 credits (the prototype took 66 s of agent time and 0.48 credits). The pre-roll folds the app navigation so the canvas stays readable next to the sidebar.
+- Agent system prompt: execute with `paceMs 1500` so the Execution Theater can be followed.
+- `docs/DEMO_SCRIPT.md`: agent-led take is now the recommended one, with narration that announces the failure in the first sentence. The 90 s button-only take is kept as a fallback.
+- `docs/SUBMISSION.md`: a paste-ready description field (~270 words) that includes team members (placeholder) and pre-existing work, because the form has no separate field for them.
+- `docs/one-pager/`: a one-page summary in the app's visual language, for the optional slides field. It is not published yet.
+
 ## 2026-11-01: Submission description and disclosure review
 
 **Done**
