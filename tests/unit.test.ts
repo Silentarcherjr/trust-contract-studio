@@ -295,6 +295,56 @@ describe("repair planner", () => {
     expect(plan.reverify.map((r) => r.obligationId)).toEqual(["o2"]);
     expect(plan.needsHuman.map((r) => r.obligationId)).toEqual(["o3"]);
   });
+
+  it("never proposes the same side effect twice (found by the outcome eval)", () => {
+    // An original cancel and its retry both see the same late renewal charge.
+    const lateCharge = {
+      code: "charge_after_cancel",
+      message: "m",
+      refs: ["ch_late"],
+    };
+    const plan = planRepairs(
+      [
+        {
+          id: "cancel_r1",
+          kind: "cancel_subscription",
+          params: { customerId: "c", subscriptionId: "sub" },
+          verdict: "FAILED",
+          reasons: [lateCharge],
+        },
+        {
+          id: "cancel_r3",
+          kind: "cancel_subscription",
+          params: { customerId: "c", subscriptionId: "sub" },
+          verdict: "FAILED",
+          reasons: [lateCharge],
+        },
+        {
+          id: "purge",
+          kind: "purge_derived_memories",
+          params: { customerId: "c" },
+          verdict: "FAILED",
+          reasons: [
+            { code: "residual_lineage", message: "m", refs: ["m1", "m2"] },
+            { code: "untracked_copy", message: "m", refs: ["m2", "m3"] },
+          ],
+        },
+      ],
+      new Map([["ch_late", 10_000]]),
+    );
+    const refunds = plan.proposals.filter((p) => p.kind === "refund_charge");
+    expect(refunds).toHaveLength(1);
+    expect(refunds[0]!.params).toMatchObject({
+      chargeId: "ch_late",
+      amountCents: 10_000,
+    });
+    const deletes = plan.proposals.filter((p) => p.kind === "delete_memories");
+    expect(deletes.flatMap((p) => p.params.memoryIds as string[])).toEqual([
+      "m1",
+      "m2",
+      "m3",
+    ]);
+  });
 });
 
 describe("integrity", () => {

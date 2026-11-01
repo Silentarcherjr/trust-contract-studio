@@ -16,6 +16,7 @@
     "agent-native:doctor": "agent-native doctor",
     "test:e2e": "playwright test",
     "demo:autopilot": "tsx scripts/demo-autopilot.ts",
+    "eval:outcomes": "tsx scripts/eval/outcome-eval.ts",
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check"

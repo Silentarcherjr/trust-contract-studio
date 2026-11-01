@@ -42,6 +42,30 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   interrupted: ["worker.crash_after_first"],
 };
 
+/**
+ * Evaluation only: per-workspace fault sets that replace the scenario's list.
+ * `scripts/eval/outcome-eval.ts` uses this to run every combination of
+ * faults. No action, route or agent tool can reach it.
+ */
+const evalFaultOverride = new Map<string, FaultKey[]>();
+export function setFaultOverrideForEval(
+  owner: string,
+  keys: FaultKey[] | null,
+) {
+  if (keys) evalFaultOverride.set(owner, keys);
+  else evalFaultOverride.delete(owner);
+}
+export const ALL_FAULT_KEYS: FaultKey[] = [
+  "billing.refund_lost_response",
+  "billing.ignore_idempotency",
+  "billing.cancel_noop",
+  "billing.renewal_after_cancel",
+  "billing.observe_timeout",
+  "memory.skip_vector_index",
+  "memory.stale_read",
+  "worker.crash_after_first",
+];
+
 export async function setScenario(db: Db, owner: string, scenario: Scenario) {
   await db.delete(sbxFaults).where(eq(sbxFaults.ownerEmail, owner));
   await db.insert(sbxFaults).values({
@@ -70,7 +94,10 @@ export async function faultActive(
     .from(sbxFaults)
     .where(eq(sbxFaults.ownerEmail, owner));
   if (!row) return false;
-  const enabled = SCENARIO_FAULTS[row.scenario as Scenario] ?? [];
+  const enabled =
+    evalFaultOverride.get(owner) ??
+    SCENARIO_FAULTS[row.scenario as Scenario] ??
+    [];
   return enabled.includes(key) && !row.consumed.includes(key);
 }
 

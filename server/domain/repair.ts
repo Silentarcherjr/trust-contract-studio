@@ -111,10 +111,61 @@ export function planRepairs(
       }
     }
   }
+  // De-duplicate side effects. Two failing obligations can point at the same
+  // fact (an original cancel and its retry both see one late charge); one
+  // proposal per failing obligation would refund that charge twice. Found by
+  // the outcome evaluation (scripts/eval/outcome-eval.ts).
+  plan.proposals = dedupeProposals(plan.proposals);
   // De-duplicate reverify entries per obligation.
   plan.reverify = plan.reverify.filter(
     (r, i, arr) =>
       arr.findIndex((x) => x.obligationId === r.obligationId) === i,
   );
   return plan;
+}
+
+const ID_LIST_PARAM: Partial<Record<ObligationKind, string>> = {
+  void_refunds: "refundIds",
+  delete_memories: "memoryIds",
+};
+
+/** One proposal per real-world effect; id lists never repeat an id. */
+export function dedupeProposals(proposals: RepairProposal[]): RepairProposal[] {
+  const seenKeys = new Set<string>();
+  const seenIds = new Map<ObligationKind, Set<string>>();
+  const out: RepairProposal[] = [];
+  for (const p of proposals) {
+    const listParam = ID_LIST_PARAM[p.kind];
+    if (listParam) {
+      const seen = seenIds.get(p.kind) ?? new Set<string>();
+      seenIds.set(p.kind, seen);
+      const ids = ((p.params[listParam] as string[]) ?? []).filter(
+        (id) => !seen.has(id),
+      );
+      if (!ids.length) continue;
+      ids.forEach((id) => seen.add(id));
+      const noun =
+        p.kind === "void_refunds"
+          ? "duplicate refund(s)"
+          : "residual record(s)";
+      const verb = p.kind === "void_refunds" ? "Void" : "Delete";
+      out.push({
+        ...p,
+        title: `${verb} ${ids.length} ${noun}`,
+        params: { ...p.params, [listParam]: ids },
+      });
+      continue;
+    }
+    const target =
+      p.kind === "refund_charge"
+        ? `charge:${String(p.params.chargeId)}`
+        : p.kind === "cancel_subscription"
+          ? `subscription:${String(p.params.subscriptionId)}`
+          : JSON.stringify(p.params);
+    const key = `${p.kind}|${target}`;
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    out.push(p);
+  }
+  return out;
 }
