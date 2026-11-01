@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "demo:autopilot": "tsx scripts/demo-autopilot.ts",
     "eval:outcomes": "tsx scripts/eval/outcome-eval.ts",
+    "eval:agent": "tsx scripts/eval/agent-eval.ts",
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check"

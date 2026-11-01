@@ -8,6 +8,23 @@ Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@age
 
 > Private repository. Synthetic data only. Not a legal-compliance tool.
 
+## Who it is for
+
+**Maya runs support operations at a subscription software company.** Her team now lets an AI agent handle routine billing tickets: cancellations, refunds and "delete my data" requests. A customer escalates. The agent's transcript says _"Done: canceled, refunded $100, your data and memories deleted"_, but the customer's bank statement shows a renewal charge and two refunds. Maya needs an answer from the billing ledger and the data stores, not from the agent's word.
+
+That gap is growing:
+
+- Agents are taking over this work. Gartner predicts that by 2029 agentic AI will autonomously resolve 80% of common customer service issues ([2]), and Klarna reported that its assistant handled two-thirds of its service chats, including refunds ([3]).
+- Agents misreport. In a 2026 study of LLM agents, false claims of success made up 45–48% of failures on customer-service benchmark tasks. No LLM judge configuration tested exceeded an AUROC of 0.65 at catching them ([1]).
+- The underlying systems are unforgiving:
+  - a retried call can perform an operation twice unless it is idempotent ([4]);
+  - data deletion requests rose 82% year over year in one vendor's data ([5]);
+  - an embedding left behind after a "deletion" can reveal much of the original text, including full names ([6]).
+
+Trust Contract Studio is built for that moment. It checks provider state, never the agent's claim.
+
+<sub>[1] Advani, _From Confident Closing to Silent Failure: Characterizing False Success in LLM Agents_, [arXiv:2606.09863](https://arxiv.org/abs/2606.09863) (2026). [2] Gartner press release, 5 Mar 2025 ([republished](https://www.cmswire.com/the-wire/gartner-predicts-agentic-ai-will-autonomously-resolve-80-of-common-customer-service-issues-without-human-intervention-by-2029)), a forecast. [3] Klarna press release, 27 Feb 2024 ([republished](https://www.vktr.com/the-wire/klarna-ai-assistant-handles-two-thirds-of-customer-service-chats-in-its-first-month)), self-reported. [4] [Stripe API docs, idempotent requests](https://docs.stripe.com/api/idempotent_requests). [5] [DataGrail, June 2025](https://www.datagrail.io/press/datagrail-report-consumer-demand-for-data-privacy-surges-driving-up-business-costs-as-data-deletion-requests-rise/), vendor report. [6] Morris et al., _Text Embeddings Reveal (Almost) As Much As Text_, [arXiv:2310.06816](https://arxiv.org/abs/2310.06816). Maya is an illustrative persona; the data in the demo is synthetic.</sub>
+
 ## The scenario
 
 > “Cancel my subscription, refund $100, and delete my personal data and associated memories.”

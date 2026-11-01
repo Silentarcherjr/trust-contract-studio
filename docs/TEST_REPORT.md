@@ -2,17 +2,18 @@
 
 Last run: **2026-11-01** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
 
-| Check              | Command                                                                      | Result                                                                                           |
-| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Typecheck          | `pnpm typecheck`                                                             | ✅ 0 errors                                                                                      |
-| Lint               | `pnpm lint` (oxlint 1.90.0)                                                  | ✅ 0 errors (1 warning in an unmodified starter file)                                            |
-| Format             | `pnpm format:check` (oxfmt)                                                  | ✅                                                                                               |
-| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                          | ✅ **62 / 62 passed**                                                                            |
-| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB)    | ✅ **9 / 9 passed** (incl. keyboard-only full loop and axe-core WCAG 2.1 AA audit, light + dark) |
-| Production build   | `pnpm build`                                                                 | ✅ Nitro node preset                                                                             |
-| Live LLM agent     | Chat at `/chat`, Builder.io gateway (GPT-6 Luna), Showcase scenario, 5 turns | ✅ issue #1 criteria met, **0.51 Builder credits** ([transcript](LIVE_AGENT_RUN.md))             |
-| Demo pacing        | `pnpm demo:autopilot --headless --video …` (Showcase, demo mode 1800 ms)     | ✅ 7/7 beats inside their slots, 1:30.0 total, final seal VERIFIED                               |
-| GitHub Actions     | `.github/workflows/ci.yml`                                                   | ✅ run 40826383944 (commit `cab02d4`): checks job + E2E job both green                           |
+| Check              | Command                                                                                | Result                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Typecheck          | `pnpm typecheck`                                                                       | ✅ 0 errors                                                                                                                    |
+| Lint               | `pnpm lint` (oxlint 1.90.0)                                                            | ✅ 0 errors (1 warning in an unmodified starter file)                                                                          |
+| Format             | `pnpm format:check` (oxfmt)                                                            | ✅                                                                                                                             |
+| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                                    | ✅ **63 / 63 passed**                                                                                                          |
+| End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB)              | ✅ **9 / 9 passed** (incl. keyboard-only full loop and axe-core WCAG 2.1 AA audit, light + dark)                               |
+| Production build   | `pnpm build`                                                                           | ✅ Nitro node preset                                                                                                           |
+| Live LLM agent     | Chat at `/chat`, Builder.io gateway (GPT-6 Luna), Showcase scenario, 5 turns           | ✅ issue #1 criteria met, **0.51 Builder credits** ([transcript](LIVE_AGENT_RUN.md))                                           |
+| Outcome evaluation | `pnpm eval:outcomes`: all 256 fault combinations vs an independent oracle (also in CI) | ✅ **0 false VERIFIED, 0 false FAILED** over 1,024 clauses; 256/256 runs converge to VERIFIED ([report](eval/outcome-eval.md)) |
+| Demo pacing        | `pnpm demo:autopilot --headless --video …` (Showcase, demo mode 1800 ms)               | ✅ 7/7 beats inside their slots, 1:30.0 total, final seal VERIFIED                                                             |
+| GitHub Actions     | `.github/workflows/ci.yml`                                                             | ✅ run 40826383944 (commit `cab02d4`): checks job + E2E job both green                                                         |
 
 ## Coverage of required scenarios
 
@@ -27,6 +28,19 @@ Last run: **2026-11-01** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux co
 | Unauthorized action attempts                     | `actions.test.ts` › agent cannot self-approve (5 callers), stale approval, unauthenticated, cross-workspace read/execute, foreign customer ids                            | integration       |
 | Replay and reset from a clean state              | `actions.test.ts` › reset is reproducible (same verdict shape twice, audit chain intact); `scenarios.test.ts` › expected-outcomes table for all 8 scenarios               | integration       |
 | UI and agent invoke the same Agent-Native action | `actions.test.ts` › “one action, two callers” runs the same `defineAction` objects with `caller: "frontend"` and `caller: "tool"`                                         | integration       |
+
+## Outcome evaluation (2026-11-01)
+
+`pnpm eval:outcomes` (`scripts/eval/outcome-eval.ts`) runs the demo request for **all 2^8 = 256 combinations** of the 8 injectable provider faults. Each run applies the agent's repair policy, then compares every verdict with an oracle. The oracle reads the sandbox tables directly, shares no code with the verifier, and is not subject to observation faults. Full report: [`eval/outcome-eval.md`](eval/outcome-eval.md).
+
+| Metric                                                  | Result                                                                           |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| False VERIFIED (promise broken, verifier said VERIFIED) | **0** of 384 broken clauses                                                      |
+| False FAILED                                            | **0**                                                                            |
+| Executor's own "Done" claims that were false            | **384 of 1,024 (37.5 %)**, all flagged by the verifier (192 FAILED, 192 UNKNOWN) |
+| Runs converging to VERIFIED after the repair policy     | **256 / 256**                                                                    |
+
+The first run found a real bug: two failing obligations pointing at the same late charge made the repair planner propose refunding it twice. The verifier caught the resulting over-refund. The bug is fixed (`dedupeProposals`) and covered by a unit test. The evaluation now runs in CI and fails on any false verdict or non-converging run.
 
 ## Live agent run (issue #1), 2026-10-31
 
