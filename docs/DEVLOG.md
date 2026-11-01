@@ -2,6 +2,19 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: Submission description and disclosure review
+
+**Done**
+
+- `docs/SUBMISSION.md` now has a draft project description for the form (name, tagline, short and full description, built-with, links). Every number in it comes from the test report or the live agent run. It contains none of the forbidden claims (compliance, universal erasure, exactly-once, immutability).
+- The pre-existing materials disclosure has had its final review:
+  - starter files modified or removed during the event, checked with `git diff 6511b5f`;
+  - a third-party library table with licenses, saying whether the starter or the event added each library (checked against the starter's `package.json`);
+  - a row for AI coding assistance.
+- Corrected the action count: 14 domain actions are new. The starter's `navigate`, `view-screen` and `run` are unmodified.
+
+**Waiting on the owner:** review the description and sign off on the disclosure (especially the AI-assistance row), record the Clips video, add its link and submit.
+
 ## 2026-11-01: Demo pacing for Clips (issue #3)
 
 **Done**
