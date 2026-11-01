@@ -2,6 +2,23 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: Measured evaluation and problem framing
+
+**Done**
+
+- **Outcome evaluation** (`pnpm eval:outcomes`, in CI):
+  - Coverage: all 256 combinations of the 8 faults, checked against an independent oracle that reads the sandbox tables directly.
+  - Verdicts: 0 false VERIFIED and 0 false FAILED over 1,024 clauses.
+  - The executor's "Done" was false 384 times (37.5 %), and the verifier caught every case.
+  - It found a real bug: the repair planner could refund the same late charge twice. Fixed (`dedupeProposals`) with a unit test, and 256/256 runs now converge to VERIFIED.
+- **Live agent evaluation** (`pnpm eval:agent`):
+  - 18 runs, with 72/72 clause verdicts reported exactly and 0 overclaims.
+  - 0 agent approvals across 9 adversarial runs.
+  - The agent resumed both interrupted runs and re-observed the stale reads on its own.
+  - Cost: 3.49 credits.
+- **Problem framing.** The README now has a "Who it is for" section (a support-operations persona) with six verified, cited facts: research on agents' false success claims, Gartner and Klarna adoption figures, idempotency, deletion-request growth, and embedding inversion.
+- Stripe is not available in Panama. A real-provider adapter would have to use the PayPal Sandbox or a real vector DB instead (pending decision).
+
 ## 2026-11-01: Agent-led demo take, submission text, one-pager
 
 **Done**

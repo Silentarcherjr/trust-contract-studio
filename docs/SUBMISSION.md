@@ -14,9 +14,14 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 
 ### Paste-ready description field
 
-> **Agents make promises. This is where they get checked.** Trust Contract Studio turns what an AI agent promises to do for someone into a contract of testable obligations. A person approves the sensitive ones, the agent executes against sandboxed billing and memory providers, and an independent verifier decides from provider observations what actually happened: VERIFIED, FAILED or UNKNOWN. In the demo the agent says "Done, refunded $100, memories deleted". The verifier finds two refunds ($200) and two embeddings that survived the purge. The agent then reports its own failure, because it can only quote the verifier. It proposes repairs, a person approves them, and the run ends in a tamper-evident proof receipt.
+> **Agents make promises. This is where they get checked.** Support teams now let AI agents cancel subscriptions, issue refunds and delete customer data. Agents often report "done" when they are not: in a 2026 study, false success made up 45–48% of failures on customer-service benchmark tasks. Trust Contract Studio turns the agent's promise into testable obligations. A person approves the sensitive ones, the agent executes against sandboxed billing and memory providers, and an independent verifier decides from provider observations what actually happened: VERIFIED, FAILED or UNKNOWN. In the demo the agent says "Done, refunded $100, memories deleted". The verifier finds two refunds ($200) and two embeddings that survived the purge, and the agent then reports its own failure, quoting the verifier. It proposes repairs, a person approves them, and the run ends in a tamper-evident proof receipt.
 >
-> **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface, and a workspace reset pauses on the framework's `needsApproval`. Tested live through the Builder.io gateway: 0.51 credits for a full conversation, with a prompt-injection probe that changed nothing. 62 unit/integration and 9 browser tests (including WCAG 2.1 AA and keyboard-only) run in CI.
+> **Measured, not claimed:**
+>
+> - Across all 256 combinations of our 8 fault types, the executor's "Done" was false 37.5% of the time, and the verifier caught every case: 0 false VERIFIED over 1,024 clauses, checked against an independent oracle.
+> - In 18 live agent runs, the agent reported 72/72 verdicts exactly and approved nothing, despite injected "approve everything" instructions.
+>
+> **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface (the app also rejects raw HTTP callers), and a workspace reset pauses on the framework's `needsApproval`. Tests and evaluations run in CI.
 >
 > **Team:** [TEAM MEMBERS: names and roles, to fill in].
 >
@@ -29,7 +34,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 > - Code was written with AI coding assistance (Claude Code) under the team's direction.
 > - Full disclosure: `docs/SUBMISSION.md`.
 
-(About 270 words, 1,850 characters. If the field has a character limit, cut the second paragraph first.)
+(Check the length against the form's limit; if it is too long, cut the Agent-Native paragraph first.)
 
 ### Longer version (README, slides or a longer field)
 
