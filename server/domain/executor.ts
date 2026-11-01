@@ -325,7 +325,9 @@ export async function executeObligations(
             attemptNo,
           });
           final = "timed_out";
-          await sleep(Math.min(ctx.paceMs, 400) * attemptNo);
+          // Half the step pace (max 1 s) per attempt: a retry is visible in demo
+          // mode without slowing normal runs noticeably.
+          await sleep(Math.min(Math.round(ctx.paceMs / 2), 1000) * attemptNo);
           continue;
         }
         const message =

@@ -15,6 +15,7 @@
     "test": "vitest --run",
     "agent-native:doctor": "agent-native doctor",
     "test:e2e": "playwright test",
+    "demo:autopilot": "tsx scripts/demo-autopilot.ts",
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check"

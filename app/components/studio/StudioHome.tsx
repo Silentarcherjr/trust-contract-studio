@@ -20,6 +20,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { useDemoMode } from "@/lib/demo-mode";
+
 import type { getWorkspace } from "../../../server/domain/service";
 import { STATUS_LABEL, clock, shortId } from "./format";
 import { Seal } from "./Seal";
@@ -42,6 +44,8 @@ const STATUS_VERDICT: Record<
 };
 
 export function StudioHome() {
+  // Reads ?demo=1 here too, so the flag survives the navigation to a contract.
+  useDemoMode();
   const navigate = useNavigate();
   const [goal, setGoal] = useState(DEMO_GOAL);
   const workspace = useActionQuery("get-workspace", {});

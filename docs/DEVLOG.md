@@ -2,6 +2,19 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-01: Demo pacing for Clips (issue #3)
+
+**Done**
+
+- Demo mode: `?demo=1` (`app/lib/demo-mode.ts`) paces execution at 1800 ms per step instead of 650 ms. The setting is kept for the browser tab, and `?pace=` overrides it for tuning. The Studio home reads it too, so the flag survives navigating to a contract.
+- Measured the Showcase run at 650/1200/1500/1800/2000 ms. At 1800 ms the first execution reaches FAILED in 8.9 s and the repair in 4.4 s, so both fit their 15-second storyboard slots with time to narrate. Normal mode is still 3.9 s.
+- Executor: the pause before a retry is now half the step pace, capped at 1 s (was the pace capped at 0.4 s), so the refund timeout → retry is visible in demo mode. Normal runs: 325 ms instead of 400 ms.
+- `pnpm demo:autopilot` (`scripts/demo-autopilot.ts`) plays the 90-second storyboard on a fixed clock, ringing the element being narrated, with optional `--video`. It exits 1 if a beat overruns. Rehearsal: 7/7 beats inside their slots, 1:30.0, final seal VERIFIED. The video frames were checked against the storyboard.
+- `docs/DEMO_SCRIPT.md` has the measurements and how to use the autopilot. The agent variant now has real timings from the live run.
+- Results: 62/62 Vitest (+6 demo-mode tests), 8/8 Playwright, typecheck, lint, format and build green.
+
+**Still open on #3:** keyboard-only walkthrough and a manual screen-reader pass need a person with real assistive technology. The automated axe audit already passes.
+
 ## 2026-10-31: Live agent path (issue #1)
 
 **Done** (follows the "first steps" in the entry below and answers its open questions: yes, the keys unlock LLM calls on the free plan, and a chat turn costs 0.06–0.20 credits)

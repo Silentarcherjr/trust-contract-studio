@@ -15,6 +15,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
+import { useDemoMode } from "@/lib/demo-mode";
+
 import { ClauseCard } from "./ClauseCard";
 import { EvidenceLedger } from "./EvidenceLedger";
 import { ExecutionTheater } from "./ExecutionTheater";
@@ -37,6 +39,7 @@ type TabId = (typeof TABS)[number]["id"];
 export function ContractWorkspace({ contractId }: { contractId: string }) {
   const [tab, setTab] = useState<TabId>("theater");
   const [running, setRunning] = useState(false);
+  const demo = useDemoMode();
   const query = useActionQuery(
     "get-contract",
     { contractId },
@@ -171,7 +174,7 @@ export function ContractWorkspace({ contractId }: { contractId: string }) {
         executing={running || contract.status === "executing"}
         onApproveAll={approveAll}
         onExecute={() =>
-          execute.mutate({ contractId: contract.id, paceMs: 650 })
+          execute.mutate({ contractId: contract.id, paceMs: demo.paceMs })
         }
         onShowReceipt={() => setTab("receipt")}
       />

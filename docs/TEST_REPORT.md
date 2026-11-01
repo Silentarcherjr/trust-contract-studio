@@ -1,16 +1,17 @@
 # Test report
 
-Last run: **2026-10-31** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
+Last run: **2026-11-01** (UTC), commit on branch `ccr-7e192655-qektlx`, Linux container, Node 22.22.0, pnpm 10.29.1.
 
 | Check              | Command                                                                      | Result                                                                               |
 | ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Typecheck          | `pnpm typecheck`                                                             | ✅ 0 errors                                                                          |
 | Lint               | `pnpm lint` (oxlint 1.90.0)                                                  | ✅ 0 errors (1 warning in an unmodified starter file)                                |
 | Format             | `pnpm format:check` (oxfmt)                                                  | ✅                                                                                   |
-| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                          | ✅ **56 / 56 passed**                                                                |
+| Unit + integration | `pnpm test` (Vitest 4, in-memory PGlite PostgreSQL)                          | ✅ **62 / 62 passed**                                                                |
 | End-to-end         | `pnpm test:e2e` (Playwright 1.63, Chromium, real dev server, isolated DB)    | ✅ **8 / 8 passed** (incl. axe-core WCAG 2.1 AA audit, light + dark)                 |
 | Production build   | `pnpm build`                                                                 | ✅ Nitro node preset                                                                 |
 | Live LLM agent     | Chat at `/chat`, Builder.io gateway (GPT-6 Luna), Showcase scenario, 5 turns | ✅ issue #1 criteria met, **0.51 Builder credits** ([transcript](LIVE_AGENT_RUN.md)) |
+| Demo pacing        | `pnpm demo:autopilot --headless --video …` (Showcase, demo mode 1800 ms)     | ✅ 7/7 beats inside their slots, 1:30.0 total, final seal VERIFIED                   |
 | GitHub Actions     | `.github/workflows/ci.yml`                                                   | ✅ run 40826383944 (commit `cab02d4`): checks job + E2E job both green               |
 
 ## Coverage of required scenarios
