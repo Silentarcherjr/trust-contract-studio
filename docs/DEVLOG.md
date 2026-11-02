@@ -15,10 +15,20 @@ Living log so progress survives context resets. Newest entries first.
 - **First deployment:** READY in about 2 min 20 s from commit `b62b1ac`.
 - **Access:** Vercel Authentication is on for all deployments. `/studio`, `/mcp` and `/.well-known/mcp.json` all redirect unauthenticated visitors to Vercel SSO (checked with curl).
 
+**Deployment checks (2026-11-02)**
+
+- **E2E against the deployment.** Playwright gained a remote mode: `E2E_BASE_URL`, a fresh synthetic account per run in `e2e/global-setup.ts`, and the Vercel bypass taken from the environment.
+  - The first remote run gave 8/9. The first sandbox reset could intermittently drop keyboard focus to `<body>`, which never happens locally.
+  - Fix: for a few seconds after a reset, focus returns to the Reset button if it lands on `<body>`.
+  - Result: 3/3 keyboard reruns and then **9/9 for the full suite** on the deployment.
+- **Sign-up** works without email verification; each account gets its own workspace.
+- **The "local dev" sign-in is closed in production.** `GET /_agent-native/auth/local-dev` returns `available: false (not-allowed)` and `POST` returns 404.
+- **Agent chat in production.** The framework does not let signed-in users spend the deployment's Builder keys (the deploy credential fallback is off in production). Each user connects their own AI ("Use Builder.io" or custom keys), so visitors cannot drain the owner's credits. The Builder keys in the Vercel env are therefore unused and can be removed.
+
 **Before opening it to judges (near Nov 8–9)**
 
 - Switch protection off in one setting.
-- Decide on the agent chat in production: it needs Builder keys added by the owner, plus a guard so anonymous visitors cannot spend the owner's credits.
+- Agent chat in production: each user connects their own AI (framework default). Optionally document that for judges.
 - Run the E2E suite against the deployment.
 - Do not rotate `RECEIPT_SIGNING_KEY` after recording.
 
