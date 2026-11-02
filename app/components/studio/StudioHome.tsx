@@ -235,6 +235,10 @@ export function StudioHome() {
                   unobservable
                 </dd>
               </div>
+              <div className="flex justify-between gap-3">
+                <dt className="tcs-soft">Vector index</dt>
+                <dd className="text-right">{ws.vectorEngine}</dd>
+              </div>
             </dl>
           ) : (
             <p className="tcs-soft text-sm">

@@ -202,6 +202,8 @@ export const sbxMemories = pgTable("sbx_memories", {
   derivedFrom: jsonb("derived_from").$type<string[]>().notNull(),
   createdAt: text("created_at").notNull(),
   deletedAt: text("deleted_at"),
+  /** Evaluation ground truth only; never read by observe.ts or the verifier. */
+  truthSubject: text("truth_subject"),
 });
 
 export const sbxFaults = pgTable("sbx_faults", {

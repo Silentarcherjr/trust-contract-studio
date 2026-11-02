@@ -21,7 +21,8 @@ export type FaultKey =
   | "billing.observe_timeout"
   | "memory.skip_vector_index"
   | "memory.stale_read"
-  | "worker.crash_after_first";
+  | "worker.crash_after_first"
+  | "memory.reembed_untracked";
 
 export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   clean: [],
@@ -40,6 +41,7 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   silent_failure: ["billing.cancel_noop"],
   contradictory_evidence: ["billing.renewal_after_cancel"],
   interrupted: ["worker.crash_after_first"],
+  disguised_copy: ["memory.reembed_untracked"],
 };
 
 /**
@@ -64,6 +66,7 @@ export const ALL_FAULT_KEYS: FaultKey[] = [
   "memory.skip_vector_index",
   "memory.stale_read",
   "worker.crash_after_first",
+  "memory.reembed_untracked",
 ];
 
 export async function setScenario(db: Db, owner: string, scenario: Scenario) {

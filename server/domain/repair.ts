@@ -87,6 +87,7 @@ export function planRepairs(
         case "residual_personal_data":
         case "residual_lineage":
         case "untracked_copy":
+        case "near_duplicate_vector":
           plan.proposals.push({
             kind: "delete_memories",
             title: `Delete ${reason.refs?.length ?? 0} residual record(s)`,

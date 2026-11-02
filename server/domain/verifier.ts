@@ -294,6 +294,18 @@ export function verifyPurge(
     (r) =>
       r.kind !== "pii" && !r.deleted && closure.has(r.id) && !inScope(r.store),
   );
+  // Disguised copies: live vectors that a nearest-neighbour search ties to one
+  // of the subject's identifiers, with no lineage and no exact text match.
+  const flagged = new Set([...lineageResidue, ...untracked].map((r) => r.id));
+  const byId = new Map(records.map((r) => [r.id, r]));
+  const nearDuplicates = (pre.data.nearDuplicates ?? []).filter((m) => {
+    const r = byId.get(m.id);
+    return (
+      !flagged.has(m.id) &&
+      (!r || (!r.deleted && r.kind !== "pii" && !closure.has(r.id))) &&
+      inScope("vector_index")
+    );
+  });
 
   const reasons: VerificationReason[] = [];
   const verdicts: Verdict[] = [];
@@ -317,7 +329,22 @@ export function verifyPurge(
       ),
     );
   }
-  if (!lineageResidue.length && !untracked.length && pre.observable.length) {
+  if (nearDuplicates.length) {
+    verdicts.push("FAILED");
+    reasons.push(
+      pass(
+        "near_duplicate_vector",
+        `${nearDuplicates.length} live vector${nearDuplicates.length === 1 ? " is" : "s are"} a near-duplicate of the subject's identifiers with no recorded lineage: ${nearDuplicates.map((m) => `${m.label} ≈ ${m.identifierLabel} (cosine distance ${m.distance.toFixed(2)}, ${pre.data.vectorEngine ?? "vector index"})`).join(", ")}.`,
+        nearDuplicates.map((m) => m.id),
+      ),
+    );
+  }
+  if (
+    !lineageResidue.length &&
+    !untracked.length &&
+    !nearDuplicates.length &&
+    pre.observable.length
+  ) {
     verdicts.push("VERIFIED");
     reasons.push(
       pass(

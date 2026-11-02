@@ -42,6 +42,7 @@ import {
   type Observation,
 } from "../sandbox/observe.js";
 import { seedSandbox } from "../sandbox/seed.js";
+import { liveVectorIds, vectorEngineName } from "../sandbox/vector-index.js";
 import { ContractError } from "./errors.js";
 import { executeObligations, executionOrder } from "./executor.js";
 import {
@@ -471,6 +472,11 @@ export async function getWorkspace(db: Db, owner: string) {
       ),
     )
     .orderBy(asc(sbxMemories.createdAt), asc(sbxMemories.id));
+  // Embeddings live in the pgvector engine; it decides what is live.
+  const [liveVectors, vectorEngine] = await Promise.all([
+    liveVectorIds(owner),
+    vectorEngineName(),
+  ]);
   return {
     seeded: true as const,
     scenario,
@@ -504,6 +510,7 @@ export async function getWorkspace(db: Db, owner: string) {
     })),
     // Lineage registry: labels and links only. Content is never returned, and
     // the third-party export's live state is unknown by construction.
+    vectorEngine,
     lineage: mems.map((m) => ({
       id: m.id,
       store: m.store,
@@ -513,7 +520,7 @@ export async function getWorkspace(db: Db, owner: string) {
       state:
         m.store === "analytics_export"
           ? "unobservable"
-          : m.deletedAt
+          : (m.store === "vector_index" ? !liveVectors.has(m.id) : m.deletedAt)
             ? "deleted"
             : "live",
     })),

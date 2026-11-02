@@ -10,6 +10,7 @@ import {
   sbxSubscriptions,
 } from "../db/schema.js";
 import { newId } from "../domain/integrity.js";
+import { deleteAllVectors, upsertVectors } from "./vector-index.js";
 
 export interface SeedResult {
   requesterId: string;
@@ -208,6 +209,26 @@ export async function seedSandbox(db: Db, owner: string): Promise<SeedResult> {
       benEmail,
       benPref,
     ]);
+
+  // The vector index lives in a real pgvector engine: each embedding row is
+  // the vector of the memory it was derived from.
+  await deleteAllVectors(owner);
+  await upsertVectors([
+    {
+      id: embedPref.id,
+      ownerEmail: owner,
+      customerId: ada,
+      label: embedPref.label,
+      sourceText: contactPref.content,
+    },
+    {
+      id: embedLocality.id,
+      ownerEmail: owner,
+      customerId: ada,
+      label: embedLocality.label,
+      sourceText: locality.content,
+    },
+  ]);
 
   return {
     requesterId: ada,

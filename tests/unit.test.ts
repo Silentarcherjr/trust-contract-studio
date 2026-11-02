@@ -13,7 +13,10 @@ import {
   verifyRefund,
 } from "../server/domain/verifier.js";
 import { lineageClosure } from "../server/sandbox/memory.js";
-import type { MemoryRecordObservation } from "../server/sandbox/observe.js";
+import type {
+  MemoryRecordObservation,
+  NearDuplicateObservation,
+} from "../server/sandbox/observe.js";
 
 const at = "2026-10-29T10:00:00.000Z";
 const ok = <T>(source: string, data: T) => ({
@@ -140,7 +143,11 @@ describe("verifier", () => {
     deleted,
     containsSubjectIdentifier,
   });
-  const mem = (records: MemoryRecordObservation[], stale = false) => ({
+  const mem = (
+    records: MemoryRecordObservation[],
+    stale = false,
+    nearDuplicates: NearDuplicateObservation[] = [],
+  ) => ({
     memories: ok("memory.records.scan", {
       stale,
       replicaLagMs: stale ? 4000 : 0,
@@ -150,7 +157,44 @@ describe("verifier", () => {
         "vector_index",
       ] as MemoryRecordObservation["store"][],
       records,
+      vectorEngine: "pgvector (test)",
+      nearDuplicates,
     }),
+  });
+
+  it("purge: a disguised copy found only by vector similarity is FAILED", () => {
+    const records = [
+      rec("pii", "profile_db", "pii", [], true),
+      rec("d1", "memory_store", "derived", ["pii"], true),
+      // Live, no lineage, no exact identifier match: only the vector search sees it.
+      rec("copy", "vector_index", "embedding", [], false),
+    ];
+    const scope = { stores: ["memory_store", "vector_index"] as const };
+    expect(
+      verifyPurge({ stores: [...scope.stores] }, mem(records)).verdict,
+    ).toBe("VERIFIED");
+    const near = [
+      {
+        id: "copy",
+        label: "Re-indexed",
+        identifierLabel: "Email",
+        distance: 0.12,
+      },
+    ];
+    const result = verifyPurge(
+      { stores: [...scope.stores] },
+      mem(records, false, near),
+    );
+    expect(result.verdict).toBe("FAILED");
+    expect(result.reasons[0]).toMatchObject({
+      code: "near_duplicate_vector",
+      refs: ["copy"],
+    });
+    // Out of scope (vector index not in the obligation): not this clause's failure.
+    expect(
+      verifyPurge({ stores: ["memory_store"] }, mem(records, false, near))
+        .verdict,
+    ).toBe("VERIFIED");
   });
 
   it("purge: lineage residue, untracked copies, stale reads and unobservable scope", () => {

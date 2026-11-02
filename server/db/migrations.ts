@@ -139,6 +139,14 @@ export const TCS_MIGRATIONS: TcsMigration[] = [
     sql: `CREATE INDEX IF NOT EXISTS tcs_obligations_contract_idx ON tcs_obligations (contract_id)`,
   },
   {
+    version: 19,
+    name: "sbx-memories-truth-subject",
+    // Evaluation ground truth: which customer a record is really about. Set
+    // only for fault-injected copies with no lineage. Never read by the
+    // observation layer or the verifier (see scripts/eval/outcome-eval.ts).
+    sql: `ALTER TABLE sbx_memories ADD COLUMN IF NOT EXISTS truth_subject TEXT`,
+  },
+  {
     version: 18,
     name: "tcs-rate-events",
     sql: `CREATE TABLE IF NOT EXISTS tcs_rate_events (

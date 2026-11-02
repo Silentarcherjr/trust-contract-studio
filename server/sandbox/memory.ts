@@ -11,8 +11,9 @@ import type { StoreName } from "../../shared/domain.js";
 import type { Db } from "../db/index.js";
 import { sbxMemories } from "../db/schema.js";
 import { ContractError } from "../domain/errors.js";
-import { nowIso } from "../domain/integrity.js";
+import { newId, nowIso } from "../domain/integrity.js";
 import { takeFault } from "./faults.js";
+import { deleteVectors, upsertVectors } from "./vector-index.js";
 
 export async function erasePersonalData(
   db: Db,
@@ -109,6 +110,44 @@ export async function purgeDerivedMemories(
           inArray(sbxMemories.id, targets),
         ),
       );
+    // Embeddings are physically deleted from the pgvector engine.
+    await deleteVectors(
+      owner,
+      all
+        .filter((r) => targets.includes(r.id) && r.store === "vector_index")
+        .map((r) => r.id),
+    );
+  }
+  // Fault: a re-indexing job re-embeds the customer's contact preference from
+  // a stale cache, in a reformatted form, under a new id with no lineage.
+  if (
+    stores.includes("vector_index") &&
+    (await takeFault(db, owner, "memory.reembed_untracked"))
+  ) {
+    const id = newId("mem");
+    const source = "A. Quinn · ada-quinn(at)example(dot)test · evenings";
+    await db.insert(sbxMemories).values({
+      id,
+      ownerEmail: owner,
+      customerId: input.customerId,
+      store: "vector_index",
+      kind: "embedding",
+      label: "Re-indexed embedding (cache)",
+      content: `vec[${source}]`,
+      derivedFrom: [],
+      createdAt: nowIso(),
+      deletedAt: null,
+      truthSubject: input.customerId,
+    });
+    await upsertVectors([
+      {
+        id,
+        ownerEmail: owner,
+        customerId: input.customerId,
+        label: "Re-indexed embedding (cache)",
+        sourceText: source,
+      },
+    ]);
   }
   // The provider reports what it was asked to do, not what it achieved.
   return {
@@ -158,5 +197,9 @@ export async function deleteMemories(
         inArray(sbxMemories.id, input.memoryIds),
       ),
     );
+  await deleteVectors(
+    owner,
+    rows.filter((r) => r.store === "vector_index").map((r) => r.id),
+  );
   return { deleted: input.memoryIds };
 }

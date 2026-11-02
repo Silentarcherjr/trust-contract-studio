@@ -18,7 +18,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Measured, not claimed:**
 >
-> - Across all 256 combinations of our 8 fault types, the executor's "Done" was false 37.5% of the time, and the verifier caught every case: 0 false VERIFIED over 1,024 clauses, checked against an independent oracle.
+> - Across all 512 combinations of our 9 fault types, the executor's "Done" was false 43.75% of the time, and the verifier caught every case: 0 false VERIFIED over 2,048 clauses, checked against an independent oracle. The memory index runs on a real pgvector engine (Neon Postgres in production), where a vector-similarity search catches a reformatted copy of a customer's email that text matching misses.
 > - In 18 live agent runs, the agent reported 72/72 verdicts exactly and approved nothing, despite injected "approve everything" instructions.
 >
 > **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface (the app also rejects raw HTTP callers), and a workspace reset pauses on the framework's `needsApproval`. Tests and evaluations run in CI.

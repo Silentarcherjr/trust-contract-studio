@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../server/db/index.js";
 import * as svc from "../server/domain/service.js";
+import { liveVectorIds } from "../server/sandbox/vector-index.js";
 import { SCENARIO_INFO, type Scenario } from "../shared/domain.js";
 import {
   DEMO_GOAL,
@@ -308,5 +309,36 @@ describe("scenario: showcase (demo)", () => {
     });
     expect(view.contract.status).toBe("verified");
     expect(view.contract.round).toBe(2);
+  });
+});
+
+describe("scenario: disguised copy (pgvector)", () => {
+  it("finds a reformatted copy only by vector similarity, deletes it physically and re-verifies", async () => {
+    const approved = await draftAndApprove(db, "disguised_copy");
+    let view = await svc.executeContract(db, human(), {
+      contractId: approved.contract.id,
+    });
+    const purge = view.obligations.find(
+      (o) => o.kind === "purge_derived_memories",
+    )!;
+    expect(purge.verdict).toBe("FAILED");
+    // Exact text matching did not see it; only the nearest-neighbour search did.
+    expect(purge.reasons.map((r) => r.code)).toEqual(["near_duplicate_vector"]);
+    const copyId = purge.reasons[0]!.refs![0]!;
+    expect(await liveVectorIds(human().email)).toContain(copyId);
+
+    const { plan, view: proposed } = await svc.proposeRepair(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(plan.proposals).toMatchObject([
+      { kind: "delete_memories", params: { memoryIds: [copyId] } },
+    ]);
+    view = await approveAllPending(db, proposed);
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(view.contract.status).toBe("verified");
+    // Physically gone from the vector engine, not just flagged.
+    expect(await liveVectorIds(human().email)).not.toContain(copyId);
   });
 });

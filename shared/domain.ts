@@ -171,6 +171,7 @@ export const SCENARIOS = [
   "silent_failure",
   "contradictory_evidence",
   "interrupted",
+  "disguised_copy",
 ] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 
@@ -251,6 +252,17 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
       refund_charge: "VERIFIED",
       erase_personal_data: "VERIFIED",
       purge_derived_memories: "VERIFIED",
+    },
+  },
+  disguised_copy: {
+    title: "Disguised copy",
+    summary:
+      "After the purge, a re-indexing job re-embeds the customer's email in a reformatted form with no lineage. Text matching misses it; a vector-similarity search finds it.",
+    expected: {
+      cancel_subscription: "VERIFIED",
+      refund_charge: "VERIFIED",
+      erase_personal_data: "VERIFIED",
+      purge_derived_memories: "FAILED",
     },
   },
 };

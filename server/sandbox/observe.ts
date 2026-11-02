@@ -18,6 +18,11 @@ import {
 } from "../db/schema.js";
 import { nowIso } from "../domain/integrity.js";
 import { faultActive } from "./faults.js";
+import {
+  liveVectorIds,
+  nearestVectors,
+  vectorEngineName,
+} from "./vector-index.js";
 
 export type Observation<T> =
   | { source: string; ok: true; observedAt: string; data: T }
@@ -65,11 +70,24 @@ export interface MemoryRecordObservation {
   containsSubjectIdentifier: boolean;
 }
 
+/** A live vector-index entry that a nearest-neighbour search tied to one of
+ * the subject's identifiers (labels only; no personal data). */
+export interface NearDuplicateObservation {
+  id: string;
+  label: string;
+  identifierLabel: string;
+  distance: number;
+}
+
 export interface MemoryObservation {
   stale: boolean;
   replicaLagMs: number;
   observableStores: StoreName[];
   records: MemoryRecordObservation[];
+  /** Which engine answered for the vector index (e.g. pgvector on PostgreSQL). */
+  vectorEngine: string;
+  /** Nearest-neighbour matches for the subject's identifiers (cosine distance). */
+  nearDuplicates: NearDuplicateObservation[];
 }
 
 async function billingTimeout(db: Db, owner: string) {
@@ -216,10 +234,30 @@ export async function observeMemories(
     );
   // Identifier fingerprints come from the subject's personal-data records.
   // Sandbox soft-deletes keep the value, which is what makes this scan possible.
-  const identifiers = rows
-    .filter((r) => r.kind === "pii")
-    .map((r) => r.content.toLowerCase())
-    .filter((v) => v.length >= 6);
+  const piiRows = rows.filter((r) => r.kind === "pii" && r.content.length >= 6);
+  const identifiers = piiRows.map((r) => r.content.toLowerCase());
+  // The vector index is a real pgvector engine: whether an embedding is live
+  // is the engine's answer, not the sandbox bookkeeping table's.
+  const [liveVectors, engineName] = await Promise.all([
+    liveVectorIds(owner),
+    vectorEngineName(),
+  ]);
+  const nearDuplicates = new Map<string, NearDuplicateObservation>();
+  for (const pii of piiRows) {
+    for (const m of await nearestVectors(owner, pii.content)) {
+      const prev = nearDuplicates.get(m.id);
+      if (!prev || m.distance < prev.distance) {
+        nearDuplicates.set(m.id, {
+          id: m.id,
+          label: m.label,
+          identifierLabel: pii.label,
+          distance: Number(m.distance.toFixed(4)),
+        });
+      }
+    }
+  }
+  const isLive = (r: (typeof rows)[number]) =>
+    r.store === "vector_index" ? liveVectors.has(r.id) : r.deletedAt === null;
   return {
     source,
     ok: true,
@@ -228,6 +266,10 @@ export async function observeMemories(
       stale,
       replicaLagMs: stale ? 4200 : 0,
       observableStores: [...OBSERVABLE_STORES],
+      vectorEngine: engineName,
+      nearDuplicates: [...nearDuplicates.values()].sort((a, b) =>
+        a.id.localeCompare(b.id),
+      ),
       records: rows
         .map((r) => ({
           id: r.id,
@@ -235,9 +277,9 @@ export async function observeMemories(
           kind: r.kind,
           label: r.label,
           derivedFrom: r.derivedFrom,
-          deleted: r.deletedAt !== null,
+          deleted: !isLive(r),
           containsSubjectIdentifier:
-            r.deletedAt === null &&
+            isLive(r) &&
             r.kind !== "pii" &&
             identifiers.some((id) => r.content.toLowerCase().includes(id)),
         }))
