@@ -16,7 +16,7 @@ import {
   IconRefresh,
   IconSparkles,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -54,7 +54,24 @@ export function StudioHome() {
   const active = (workspace.data?.scenario ?? "clean") as Scenario;
   const chosen = scenario ?? active;
 
+  // On slower networks the page re-renders while a reset settles and its data
+  // reloads, which can drop keyboard focus to <body>. For a few seconds after a
+  // reset, give focus back to the button (never steal it from anywhere else).
+  const resetButton = useRef<HTMLButtonElement>(null);
+  const resetAt = useRef(0);
+  const restoreResetFocus = () =>
+    requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (Date.now() - resetAt.current > 6000) return;
+      if (!active || active === document.body) resetButton.current?.focus();
+    });
   const reset = useActionMutation("reset-demo", {
+    onMutate: () => {
+      resetAt.current = Date.now();
+    },
+    onSettled: () => {
+      restoreResetFocus();
+    },
     onSuccess: (r) => {
       setScenario(null);
       toast.success(
@@ -64,6 +81,9 @@ export function StudioHome() {
     onError: (e) =>
       toast.error(actionErrorMessage(e) ?? "Could not reset the sandbox."),
   });
+  useEffect(() => {
+    restoreResetFocus();
+  }, [workspace.data, contracts.data]);
   const draft = useActionMutation("draft-contract", {
     onSuccess: (view) => navigate(`/studio/${view.contract.id}`),
     onError: (e) =>
@@ -238,6 +258,7 @@ export function StudioHome() {
             </p>
           </div>
           <button
+            ref={resetButton}
             type="button"
             className="tcs-btn"
             data-variant="primary"

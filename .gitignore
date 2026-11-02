@@ -45,3 +45,6 @@ data/*.lock
 # Playwright
 test-results/
 playwright-report/
+
+# Remote E2E session (synthetic account)
+e2e/.auth/
