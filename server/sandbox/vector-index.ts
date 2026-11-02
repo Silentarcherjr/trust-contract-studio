@@ -128,9 +128,7 @@ async function createEngine(): Promise<Engine> {
   const { vector } = await import("@electric-sql/pglite-pgvector");
   const inMemory =
     process.env.TCS_VECTOR_STORE === "memory" || Boolean(process.env.VITEST);
-  const dataDir = inMemory
-    ? undefined
-    : (process.env.TCS_VECTOR_PGLITE_DIR ?? "./data/vector-pglite");
+  const dataDir = inMemory ? undefined : localVectorDir();
   const db = await PGlite.create(dataDir, { extensions: { vector } });
   const engine: Engine = {
     name: "pgvector on PGlite (local)",
@@ -139,6 +137,21 @@ async function createEngine(): Promise<Engine> {
   };
   for (const statement of SCHEMA) await engine.query(statement);
   return engine;
+}
+
+/**
+ * A local vector engine directory per app database, so two dev servers (for
+ * example the E2E server next to a normal one) never open the same PGlite
+ * directory: pglite:./data/e2e-pglite → ./data/e2e-pglite-vector.
+ */
+export function localVectorDir() {
+  if (process.env.TCS_VECTOR_PGLITE_DIR)
+    return process.env.TCS_VECTOR_PGLITE_DIR;
+  const url = process.env.DATABASE_URL ?? "";
+  const match = url.match(/^pglite:(.+)$/);
+  return match
+    ? `${match[1]!.replace(/\/+$/, "")}-vector`
+    : "./data/vector-pglite";
 }
 
 function engine() {

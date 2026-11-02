@@ -43,6 +43,9 @@ const STATUS_VERDICT: Record<
   unknown: "UNKNOWN",
 };
 
+/** Module-level so it survives a remount of the Studio home after a reset. */
+let lastResetAt = 0;
+
 export function StudioHome() {
   // Reads ?demo=1 here too, so the flag survives the navigation to a contract.
   useDemoMode();
@@ -54,20 +57,23 @@ export function StudioHome() {
   const active = (workspace.data?.scenario ?? "clean") as Scenario;
   const chosen = scenario ?? active;
 
-  // On slower networks the page re-renders while a reset settles and its data
-  // reloads, which can drop keyboard focus to <body>. For a few seconds after a
-  // reset, give focus back to the button (never steal it from anywhere else).
+  // On slower networks (e.g. the first vector-engine start in production) the
+  // page re-renders while a reset settles and its data reloads, which can drop
+  // keyboard focus to <body>. For 15 s after a reset, put focus back on the
+  // Reset button whenever it lands on <body>; never move it from elsewhere.
   const resetButton = useRef<HTMLButtonElement>(null);
-  const resetAt = useRef(0);
-  const restoreResetFocus = () =>
-    requestAnimationFrame(() => {
-      const active = document.activeElement;
-      if (Date.now() - resetAt.current > 6000) return;
-      if (!active || active === document.body) resetButton.current?.focus();
-    });
+  const restoreResetFocus = () => {
+    if (Date.now() - lastResetAt > 15_000) return;
+    const active = document.activeElement;
+    if (!active || active === document.body) resetButton.current?.focus();
+  };
+  useEffect(() => {
+    const timer = window.setInterval(restoreResetFocus, 250);
+    return () => window.clearInterval(timer);
+  }, []);
   const reset = useActionMutation("reset-demo", {
     onMutate: () => {
-      resetAt.current = Date.now();
+      lastResetAt = Date.now();
     },
     onSettled: () => {
       restoreResetFocus();
@@ -81,9 +87,6 @@ export function StudioHome() {
     onError: (e) =>
       toast.error(actionErrorMessage(e) ?? "Could not reset the sandbox."),
   });
-  useEffect(() => {
-    restoreResetFocus();
-  }, [workspace.data, contracts.data]);
   const draft = useActionMutation("draft-contract", {
     onSuccess: (view) => navigate(`/studio/${view.contract.id}`),
     onError: (e) =>

@@ -2,6 +2,21 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-02: Vector index on a real pgvector engine
+
+**Done**
+
+- **Real vector engine.** The vector index store now runs on PostgreSQL + pgvector: Neon in production, with the same database, `CREATE EXTENSION vector` and an HNSW cosine index. Locally and in tests it uses a separate PGlite instance with `@electric-sql/pglite-pgvector@0.0.14`, pinned to our PGlite 0.5.13, because the framework's PGlite cannot load extensions.
+- **What changes.**
+  - Deletes are physical.
+  - The observation layer asks the engine which embeddings are live and runs nearest-neighbour searches with the subject's identifiers. It returns only labels, ids and distances.
+  - The verifier stays pure, with a new `near_duplicate_vector` reason, and the repair planner maps it to `delete_memories`.
+- **New fault and scenario, "Disguised copy".** After the purge, a re-indexing job re-embeds the customer's email in reformatted form with no lineage. Text matching misses it; pgvector finds it at cosine distance 0.16. The threshold is 0.35, because another customer's email on the same domain sits at 0.47.
+- **Migration 19** adds `sbx_memories.truth_subject`, ground truth for the evaluation's oracle only.
+- **Outcome evaluation:** 512 combinations of 9 faults, 2,048 clauses, 0 false VERIFIED, 0 false FAILED and 512/512 converging. The "Done" claim was false in 43.75 % of clauses, all caught.
+- **Verified on the deployment.** The panel shows "pgvector on PostgreSQL", the disguised copy is FAILED at 0.16, and after repair the vector is deleted in Neon and the contract is VERIFIED.
+- **Honest limit:** the embeddings are lexical (no model), stated in the README and ARCHITECTURE.
+
 ## 2026-11-01: Protected deployment on Vercel (issue #2)
 
 **Done**

@@ -37,7 +37,8 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: "rm -rf data/e2e-pglite && pnpm exec agent-native dev",
+          command:
+            "rm -rf data/e2e-pglite data/e2e-pglite-vector && pnpm exec agent-native dev",
           url: `http://127.0.0.1:${PORT}/studio`,
           timeout: 180_000,
           reuseExistingServer: false,

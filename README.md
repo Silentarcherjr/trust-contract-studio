@@ -54,7 +54,7 @@ Approvals, policy engines, audit logs and memory revocation already exist (see [
 
 - The verifier is a set of pure functions whose only inputs are obligation terms and provider observations. Its signature makes it impossible for agent claims or executor logs to influence a verdict.
 - UNKNOWN is a first-class answer: timeouts, stale replicas and stores with no read interface are reported as such, never rounded up to success.
-- Memory deletion is checked by **lineage** (everything derived from the person's data) and by **identifier fingerprint** (copies with no recorded lineage), not by trusting the deletion API's response.
+- Memory deletion is checked by **lineage** (everything derived from the person's data), by **identifier fingerprint**, and by **vector similarity** in a real **pgvector** index (Neon Postgres in production). That last check catches a reformatted copy of the customer's email that text matching misses, without trusting the deletion API's response.
 - Failures lead to a human-approved repair loop, and the receipt keeps the full verdict history.
 
 ## Agent-Native, for real
@@ -148,5 +148,6 @@ Latest results are in [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 ## Honest limits
 
 - Providers are sandboxes with synthetic data. Verification covers only stores registered in the workspace. It is not evidence of erasure anywhere else and not a legal determination.
+- Vector-index embeddings are lexical (hashed character trigrams), not a language model's. They catch reformatted copies of an identifier, not deep paraphrases.
 - Exactly-once execution is **not** claimed. Side effects use idempotency keys and bounded retries, and the verifier catches what slips through.
 - Integrity is tamper-_evident_: SHA-256 digests on evidence, a hash-chained audit log, HMAC-signed receipts. There is no public-key signature, external timestamping or immutability guarantee. Someone with database and key access could rewrite history.
