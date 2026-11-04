@@ -150,6 +150,21 @@ export function dedupeProposals(proposals: RepairProposal[]): RepairProposal[] {
           ? "duplicate refund(s)"
           : "residual record(s)";
       const verb = p.kind === "void_refunds" ? "Void" : "Delete";
+      // One repair per obligation and kind: residues found by lineage, by
+      // fingerprint and by vector similarity become a single delete clause.
+      const same = out.find(
+        (o) =>
+          o.kind === p.kind &&
+          o.repairOf === p.repairOf &&
+          o.params.chargeId === p.params.chargeId,
+      );
+      if (same) {
+        const merged = [...(same.params[listParam] as string[]), ...ids];
+        same.params = { ...same.params, [listParam]: merged };
+        same.title = `${verb} ${merged.length} ${noun}`;
+        same.rationale = `${same.rationale} ${p.rationale}`;
+        continue;
+      }
       out.push({
         ...p,
         title: `${verb} ${ids.length} ${noun}`,

@@ -121,7 +121,7 @@ export async function purgeDerivedMemories(
   // Fault: a re-indexing job re-embeds the customer's contact preference from
   // a stale cache, in a reformatted form, under a new id with no lineage.
   if (
-    stores.includes("vector_index") &&
+    input.stores.includes("vector_index") &&
     (await takeFault(db, owner, "memory.reembed_untracked"))
   ) {
     const id = newId("mem");

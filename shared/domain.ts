@@ -196,7 +196,7 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
   showcase: {
     title: "Showcase (demo)",
     summary:
-      "Two silent failures in one run: a retried refund is paid twice and a vector-index replica keeps derived memories.",
+      "Three silent failures in one run: a retried refund is paid twice, a vector-index replica keeps derived memories, and a re-indexing job leaves a disguised copy of the email that only a pgvector similarity search finds.",
     expected: {
       cancel_subscription: "VERIFIED",
       refund_charge: "FAILED",

@@ -2,6 +2,16 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-04: Showcase includes the disguised copy
+
+**Done**
+
+- **Showcase now has three silent failures in one run:** the retried refund paid twice, the vector-index replica that keeps derived memories, and the re-indexing job that leaves a disguised copy of the email. Only the pgvector similarity search finds the disguised copy.
+- **Fault fix:** `memory.reembed_untracked` now fires whenever the purge targets the vector index. It used to check the store list after `skip_vector_index` had filtered it, so the two faults never fired together.
+- **Repair planner:** delete proposals of the same kind, for the same clause, are merged, so the repair reads "Delete 3 residual record(s)" instead of two separate proposals.
+- **Demo script and autopilot** updated: §4 now shows both `residual_lineage` and `near_duplicate_vector`. The button-mode rehearsal hit all 7 beats in 1:30.0 and ended VERIFIED.
+- **Checks:** 67 unit/integration tests, 9/9 local E2E, outcome evaluation unchanged (512 combinations, 0 false VERIFIED, 0 false FAILED).
+
 ## 2026-11-02: Vector index on a real pgvector engine
 
 **Done**

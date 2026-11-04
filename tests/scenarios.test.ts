@@ -303,6 +303,18 @@ describe("scenario: showcase (demo)", () => {
       "delete_memories",
       "void_refunds",
     ]);
+    // The purge failed on lineage residue AND on a disguised copy that only
+    // the pgvector similarity search found; one repair deletes all three.
+    const purge = view.obligations.find(
+      (o) => o.kind === "purge_derived_memories",
+    )!;
+    expect(purge.reasons.map((r) => r.code).sort()).toEqual([
+      "near_duplicate_vector",
+      "residual_lineage",
+    ]);
+    const del = plan.proposals.find((p) => p.kind === "delete_memories")!;
+    expect(del.params.memoryIds).toHaveLength(3);
+    expect(del.title).toBe("Delete 3 residual record(s)");
     view = await approveAllPending(db, proposed);
     view = await svc.executeContract(db, human(), {
       contractId: view.contract.id,

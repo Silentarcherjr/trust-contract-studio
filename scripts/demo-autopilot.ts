@@ -233,7 +233,7 @@ const AGENT_STEPS: AgentStep[] = [
         .locator('.tcs-seal[data-size="lg"][data-verdict="FAILED"]')
         .waitFor({ timeout: 120_000 });
       await spot(clause(page, "Refund $100.00"), 4500);
-      await spot(clause(page, "Purge memories"), 3000);
+      await spot(clause(page, "Purge memories"), 4500);
       await agentDone(3);
       await page.waitForTimeout(4000); // the agent's report, read on screen
     },

@@ -30,6 +30,7 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
     "billing.refund_lost_response",
     "billing.ignore_idempotency",
     "memory.skip_vector_index",
+    "memory.reembed_untracked",
   ],
   duplicate_refund: [
     "billing.refund_lost_response",
