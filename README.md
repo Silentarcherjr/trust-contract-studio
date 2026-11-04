@@ -15,7 +15,7 @@ Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@age
 That gap is growing:
 
 - Agents are taking over this work. Gartner predicts that by 2029 agentic AI will autonomously resolve 80% of common customer service issues ([2]), and Klarna reported that its assistant handled two-thirds of its service chats, including refunds ([3]).
-- Agents misreport. In a 2026 study of LLM agents, false claims of success made up 45–48% of failures on customer-service benchmark tasks. No LLM judge configuration tested exceeded an AUROC of 0.65 at catching them ([1]).
+- Agents misreport. In a 2026 study of LLM agents, false claims of success made up 45–48% of failures in the single-control τ²-bench domains (airline and retail customer service). No LLM judge configuration tested exceeded an AUROC of 0.65 at catching them ([1]).
 - The underlying systems are unforgiving:
   - a retried call can perform an operation twice unless it is idempotent ([4]);
   - data deletion requests rose 82% year over year in one vendor's data ([5]);

@@ -2,6 +2,39 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-04: Security review fixes
+
+An independent review read the code against the invariants and confirmed several issues with probes. All the confirmed issues are fixed except the remaining limits listed below.
+
+- **Approval now needs proof of the signed-in UI.**
+  - The service treated the framework's `frontend` caller as "a person". That caller comes from a header any client can set, so a script holding a session token could approve.
+  - `decide-approval` and the tamper drill now declare `uiOnly`. The framework then requires the same origin, a browser cookie session, no `Authorization` header and a short-lived UI capability.
+  - The CLI no longer counts as a person, because coding agents drive it.
+  - Probe against a local server: a header-only call gets 403 `ui_capability_required`, and approving in the Studio still works.
+- **Edits void approvals.**
+  - A new title or new dependencies now reset an approval, not only new parameters. Before, an approved refund could have its `cancel first` dependency removed and keep its approval.
+  - The executor also checks the approval state, not only the latest decision's hash.
+- **One refund promise per charge per contract.** Refund verification checks the charge's total of live refunds. Two promises on one charge would each see the other's refund and both read as over-refunded.
+- **No stuck contracts.**
+  - An error during execution now leaves the contract `interrupted` (resumable) instead of `executing`.
+  - A run whose function died is treated as interrupted after 5 minutes.
+  - A verification that stopped on an error can be retried.
+  - Repair proposals are validated before the contract moves to a new round.
+- **Smaller hardening:**
+  - repair-only refund and memory ids are validated;
+  - at most 16 obligations per contract;
+  - receipt checks refuse bodies over 256 KB, nesting deeper than 32 levels and reserved keys;
+  - the in-app agent no longer has the framework's raw SQL read tools;
+  - vector searches are exact and scoped by owner. The approximate HNSW index is dropped, because it filters by owner only after the scan.
+- **Citation wording:** the 45–48% false-success figure now names its scope: single-control τ²-bench domains (airline and retail).
+- **Checks:**
+  - 72 unit/integration tests (5 new);
+  - 9/9 local E2E;
+  - outcome evaluation unchanged (512 combinations, 0 false VERIFIED, 0 false FAILED, 512/512 converge).
+- **Still open (in THREAT_MODEL):**
+  - sign-up has no email verification, so per-workspace rate limits can be multiplied;
+  - two contracts refunding the same charge affect each other's verdicts.
+
 ## 2026-11-04: Showcase includes the disguised copy
 
 **Done**

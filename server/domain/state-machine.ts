@@ -10,7 +10,8 @@ export const TRANSITIONS: Record<ContractStatus, readonly ContractStatus[]> = {
   ready: ["awaiting_approval", "executing"],
   executing: ["verifying", "interrupted"],
   interrupted: ["executing"],
-  verifying: ["verified", "failed", "unknown"],
+  // verifying → verifying: retry a verification that stopped on an error.
+  verifying: ["verifying", "verified", "failed", "unknown"],
   verified: ["verifying"],
   failed: ["verifying", "awaiting_approval"],
   unknown: ["verifying", "awaiting_approval"],

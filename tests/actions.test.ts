@@ -4,6 +4,7 @@
  * tools (caller "tool").
  */
 import type { ActionRunContext } from "@agent-native/core/action";
+import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import decideApproval from "../actions/decide-approval.js";
@@ -13,6 +14,7 @@ import getContract from "../actions/get-contract.js";
 import resetDemo from "../actions/reset-demo.js";
 import tamperEvidence from "../actions/tamper-evidence.js";
 import type { Db } from "../server/db/index.js";
+import { contracts } from "../server/db/schema.js";
 import * as svc from "../server/domain/service.js";
 import {
   MCP_CONNECTOR_CATALOG,
@@ -94,24 +96,32 @@ describe("authorization", () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     const view = await draftContract.run({ goal: DEMO_GOAL }, ctx("tool"));
     const ob = view.obligations[0]!;
-    for (const caller of [
+    const args = {
+      contractId: view.contract.id,
+      obligationId: ob.id,
+      decision: "approved" as const,
+      paramsHash: ob.paramsHash,
+    };
+    const nonHuman = [
       "tool",
       "mcp",
       "a2a",
       "http",
       "automation",
-    ] as const) {
+      "cli",
+    ] as const;
+    // Layer 1: the framework refuses uiOnly actions from any non-UI caller.
+    for (const caller of nonHuman) {
+      await expect(decideApproval.run(args, ctx(caller))).rejects.toMatchObject(
+        { errorCode: "ui_only_action" },
+      );
+    }
+    // Layer 2: the service itself refuses every caller except the app UI,
+    // including the CLI, which coding agents drive.
+    for (const caller of nonHuman) {
       await expect(
-        decideApproval.run(
-          {
-            contractId: view.contract.id,
-            obligationId: ob.id,
-            decision: "approved",
-            paramsHash: ob.paramsHash,
-          },
-          ctx(caller),
-        ),
-      ).rejects.toMatchObject({ errorCode: "human_required" });
+        svc.decideApproval(db, { email: "alex@example.test", caller }, args),
+      ).rejects.toMatchObject({ code: "human_required" });
     }
     const after = await getContract.run(
       { contractId: view.contract.id },
@@ -120,7 +130,12 @@ describe("authorization", () => {
     expect(after.obligations[0]!.approval).toBe("pending");
     expect(
       after.audit.filter((a) => a.type === "approval.refused_non_human"),
-    ).toHaveLength(5);
+    ).toHaveLength(nonHuman.length);
+  });
+
+  it("decide-approval and the tamper drill require proof of the signed-in UI", () => {
+    expect(decideApproval.uiOnly).toBe(true);
+    expect(tamperEvidence.uiOnly).toBe(true);
   });
 
   it("decide-approval and the tamper drill are hidden from every agent surface", () => {
@@ -306,6 +321,81 @@ describe("state machine & concurrency", () => {
         params: { amountCents: 1 },
       }),
     ).rejects.toMatchObject({ code: "not_editable" });
+  });
+});
+
+describe("security review fixes", () => {
+  it("a new title or new dependencies void an existing approval", async () => {
+    await svc.resetDemo(db, human(), { scenario: "clean" });
+    let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+    view = await approveAllPending(db, view);
+    expect(view.contract.status).toBe("ready");
+    const ob =
+      view.obligations.find((o) => o.dependsOn.length) ?? view.obligations[1]!;
+    view = await svc.updateObligation(db, human(), {
+      contractId: view.contract.id,
+      obligationId: ob.id,
+      dependsOn: ob.dependsOn.length ? [] : [view.obligations[0]!.id],
+    });
+    expect(view.obligations.find((o) => o.id === ob.id)!.approval).toBe(
+      "pending",
+    );
+    expect(view.contract.status).toBe("awaiting_approval");
+    view = await approveAllPending(db, view);
+    view = await svc.updateObligation(db, human(), {
+      contractId: view.contract.id,
+      obligationId: view.obligations[0]!.id,
+      title: "Tiny goodwill credit",
+    });
+    expect(view.obligations[0]!.approval).toBe("pending");
+  });
+
+  it("one contract cannot promise two refunds of the same charge", async () => {
+    await svc.resetDemo(db, human(), { scenario: "clean" });
+    const view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+    const refund = view.obligations.find((o) => o.kind === "refund_charge")!;
+    await expect(
+      svc.addObligation(db, human(), {
+        contractId: view.contract.id,
+        draft: {
+          kind: "refund_charge",
+          params: { ...refund.params, amountCents: 300 },
+          dependsOn: [],
+        },
+      }),
+    ).rejects.toMatchObject({ code: "duplicate_refund_promise" });
+  });
+
+  it("a verification that stopped on an error can be retried", async () => {
+    await svc.resetDemo(db, human(), { scenario: "clean" });
+    let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+    view = await approveAllPending(db, view);
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    await db
+      .update(contracts)
+      .set({ status: "verifying" })
+      .where(eq(contracts.id, view.contract.id));
+    view = await svc.verifyContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(view.contract.status).toBe("verified");
+  });
+
+  it("a run whose function died is treated as interrupted and can be resumed", async () => {
+    await svc.resetDemo(db, human(), { scenario: "clean" });
+    let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+    view = await approveAllPending(db, view);
+    const old = new Date(Date.now() - svc.STALE_RUN_MS - 1000).toISOString();
+    await db
+      .update(contracts)
+      .set({ status: "executing", updatedAt: old })
+      .where(eq(contracts.id, view.contract.id));
+    view = await svc.executeContract(db, human(), {
+      contractId: view.contract.id,
+    });
+    expect(view.contract.status).toBe("verified");
   });
 });
 

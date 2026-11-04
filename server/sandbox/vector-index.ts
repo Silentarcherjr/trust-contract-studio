@@ -2,7 +2,8 @@
  * The vector index store, on a real vector engine: PostgreSQL + pgvector.
  *
  * - Production (DATABASE_URL is a Postgres URL, e.g. Neon): the same database,
- *   with the `vector` extension and an HNSW cosine index.
+ *   with the `vector` extension. Nearest-neighbour searches are exact cosine
+ *   searches scoped by owner (no approximate index; see SCHEMA).
  * - Local development and tests (the app runs on PGlite, which cannot load
  *   extensions into the framework's instance): a separate PGlite instance with
  *   `@electric-sql/pglite-pgvector`, on disk under data/ in dev, in memory
@@ -96,7 +97,11 @@ const SCHEMA = [
      created_at text NOT NULL
    )`,
   "CREATE INDEX IF NOT EXISTS tcs_vector_index_owner_idx ON tcs_vector_index (owner_email)",
-  "CREATE INDEX IF NOT EXISTS tcs_vector_index_hnsw ON tcs_vector_index USING hnsw (embedding vector_cosine_ops)",
+  // Searches are exact (owner filter, then a full cosine sort). Each
+  // workspace holds a handful of vectors, and an approximate HNSW scan
+  // filters by owner only after the scan, so other workspaces' identical
+  // demo vectors could crowd out this one's disguised copy.
+  "DROP INDEX IF EXISTS tcs_vector_index_hnsw",
 ];
 
 let enginePromise: Promise<Engine> | null = null;

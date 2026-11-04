@@ -262,6 +262,7 @@ export async function executeObligations(
     if (ob.requiresApproval) {
       const latest = last(decisions.filter((d) => d.obligationId === ob.id));
       if (
+        ob.approval !== "approved" ||
         !latest ||
         latest.decision !== "approved" ||
         latest.paramsHash !== ob.paramsHash

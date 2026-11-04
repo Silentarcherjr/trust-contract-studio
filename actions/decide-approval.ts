@@ -18,8 +18,12 @@ export default defineAction({
       .describe("Hash of the parameters the person reviewed."),
     note: z.string().max(500).optional(),
   }),
-  // Never offered to any agent. The service also refuses non-human callers,
-  // so a direct HTTP/MCP/A2A call cannot self-approve either.
+  // Never offered to any agent. `uiOnly` makes the framework demand proof
+  // that the request comes from the signed-in app UI (same origin, browser
+  // cookie session, short-lived UI capability), so a script that only sets
+  // the frontend header is refused with 403. The service also refuses every
+  // caller other than "frontend".
+  uiOnly: true,
   agentTool: false,
   mcpTool: false,
   toolCallable: false,

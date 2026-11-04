@@ -9,6 +9,7 @@ export default defineAction({
   description:
     "Replay Lab drill: forge the latest stored evidence without updating its digest, to show that integrity checks catch it.",
   schema: z.object({ contractId: z.string() }),
+  uiOnly: true,
   agentTool: false,
   mcpTool: false,
   toolCallable: false,

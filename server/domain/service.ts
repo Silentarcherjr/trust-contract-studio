@@ -77,8 +77,16 @@ export interface Actor {
   caller: string;
 }
 
-/** Surfaces where a person is directly at the controls. */
-export const HUMAN_CALLERS: ReadonlySet<string> = new Set(["frontend", "cli"]);
+/**
+ * Surfaces where a person is directly at the controls. Only the app UI:
+ * the CLI is driven by coding agents too, so it does not count as a person.
+ * The actions that use this also declare `uiOnly`, so the framework proves
+ * the request came from the signed-in UI before the caller reaches here.
+ */
+export const HUMAN_CALLERS: ReadonlySet<string> = new Set(["frontend"]);
+
+/** After this long without progress, an "executing" contract counts as interrupted. */
+export const STALE_RUN_MS = 5 * 60 * 1000;
 
 type ContractRow = typeof contracts.$inferSelect;
 type ObligationRow = typeof obligations.$inferSelect;
@@ -185,7 +193,7 @@ export async function verifyAuditChain(db: Db, owner: string) {
 export function requireHuman(actor: Actor, what: string) {
   if (!HUMAN_CALLERS.has(actor.caller)) {
     throw new ContractError(
-      `${what} requires a person at the Studio UI or CLI. Agents and external callers (${actor.caller}) cannot do this.`,
+      `${what} requires a person at the Studio UI. Agents, scripts and external callers (${actor.caller}) cannot do this.`,
       "human_required",
       403,
     );
@@ -285,6 +293,43 @@ async function bumpVersion(
   return updated;
 }
 
+/** Most obligations one contract may hold (drafts are capped lower). */
+export const MAX_OBLIGATIONS_PER_CONTRACT = 16;
+
+/**
+ * Refund verification checks the charge's total of live refunds against the
+ * promise, so one contract may hold only one refund promise per charge
+ * (repairs of that promise excluded). Two promises on one charge would each
+ * see the other's refund and both read as over-refunded.
+ */
+function assertOneRefundPerCharge(
+  existing: {
+    id?: string;
+    kind: string;
+    params: unknown;
+    repairOf?: string | null;
+  }[],
+  kind: string,
+  params: Record<string, unknown>,
+  excludeId?: string,
+) {
+  if (kind !== "refund_charge") return;
+  const clash = existing.some(
+    (o) =>
+      o.id !== excludeId &&
+      o.kind === "refund_charge" &&
+      !o.repairOf &&
+      (o.params as { chargeId?: string }).chargeId === params.chargeId,
+  );
+  if (clash) {
+    throw new ContractError(
+      "This contract already promises a refund of that charge. Edit that clause's amount instead.",
+      "duplicate_refund_promise",
+      422,
+    );
+  }
+}
+
 function paramsHashOf(kind: string, params: Record<string, unknown>) {
   return digestOf({ kind, params });
 }
@@ -374,6 +419,45 @@ async function validateParams(
         422,
       );
     }
+  }
+  // Repair-only ids must belong to this customer (and charge), whoever edits them.
+  if (Array.isArray(p.refundIds) && p.refundIds.length) {
+    const ids = p.refundIds as string[];
+    const found = await db
+      .select({ id: sbxRefunds.id })
+      .from(sbxRefunds)
+      .where(
+        and(
+          eq(sbxRefunds.ownerEmail, owner),
+          eq(sbxRefunds.chargeId, p.chargeId as string),
+          inArray(sbxRefunds.id, ids),
+        ),
+      );
+    if (found.length !== new Set(ids).size)
+      throw new ContractError(
+        "Unknown refund for this charge.",
+        "invalid_params",
+        422,
+      );
+  }
+  if (Array.isArray(p.memoryIds) && p.memoryIds.length) {
+    const ids = p.memoryIds as string[];
+    const found = await db
+      .select({ id: sbxMemories.id })
+      .from(sbxMemories)
+      .where(
+        and(
+          eq(sbxMemories.ownerEmail, owner),
+          eq(sbxMemories.customerId, subject.customerId),
+          inArray(sbxMemories.id, ids),
+        ),
+      );
+    if (found.length !== new Set(ids).size)
+      throw new ContractError(
+        "Unknown memory for this customer.",
+        "invalid_params",
+        422,
+      );
   }
   return p;
 }
@@ -586,6 +670,7 @@ export async function draftContract(
   }
   for (const [i, p] of planned.entries()) {
     p.params = await validateParams(db, owner, p.kind, p.params);
+    assertOneRefundPerCharge(planned.slice(0, i), p.kind, p.params);
     if (p.dependsOn.some((d) => d < 0 || d >= i)) {
       throw new ContractError(
         "dependsOn may only reference earlier obligations.",
@@ -726,6 +811,7 @@ export async function updateObligation(
       ...ob.params,
       ...input.params,
     });
+    if (!ob.repairOf) assertOneRefundPerCharge(all, ob.kind, merged, ob.id);
     const hash = paramsHashOf(ob.kind, merged);
     if (hash !== ob.paramsHash) {
       patch.params = merged;
@@ -749,8 +835,22 @@ export async function updateObligation(
         o.id === ob.id ? { ...o, dependsOn: input.dependsOn! } : o,
       ),
     );
-    patch.dependsOn = input.dependsOn;
-    changed.push("dependsOn");
+    const before = [...ob.dependsOn].sort().join(",");
+    const after = [...new Set(input.dependsOn)].sort().join(",");
+    if (before !== after) {
+      patch.dependsOn = [...new Set(input.dependsOn)];
+      changed.push("dependsOn");
+    }
+  }
+  // The person approved this clause as written, in this order. A new title
+  // or new dependencies change what they approved, so the approval no longer
+  // applies (the parameter hash alone does not cover them).
+  if (
+    ob.requiresApproval &&
+    ob.approval !== "pending" &&
+    (changed.includes("title") || changed.includes("dependsOn"))
+  ) {
+    patch.approval = "pending";
   }
   await db
     .update(obligations)
@@ -794,6 +894,15 @@ export async function addObligation(
     ...defaultsFor(input.draft.kind, subject),
     ...input.draft.params,
   });
+  const existing = await contractObligations(db, owner, contract.id);
+  if (existing.length >= MAX_OBLIGATIONS_PER_CONTRACT) {
+    throw new ContractError(
+      `A contract can hold at most ${MAX_OBLIGATIONS_PER_CONTRACT} obligations.`,
+      "too_many_obligations",
+      422,
+    );
+  }
+  assertOneRefundPerCharge(existing, input.draft.kind, params);
   contract = await bumpVersion(db, contract, input.expectedVersion);
   const all = await contractObligations(db, owner, contract.id);
   const now = nowIso();
@@ -950,6 +1059,23 @@ export async function executeContract(
   const owner = actor.email;
   await assertRateLimit(db, owner, "execute");
   let contract = await requireContract(db, owner, input.contractId);
+  // A run whose function was killed (timeout, deploy, crash) leaves the
+  // contract "executing" with nobody working on it. After a grace period it
+  // is treated as interrupted, so it can be resumed; the executor's
+  // idempotency keys keep the resume from repeating finished work.
+  if (
+    contract.status === "executing" &&
+    Date.now() - Date.parse(contract.updatedAt) > STALE_RUN_MS
+  ) {
+    contract = await transition(db, contract, "interrupted");
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: "worker",
+      caller: actor.caller,
+      type: "execution.interrupted",
+      payload: { reason: "stale_run" },
+    });
+  }
   const status = contract.status as ContractStatus;
   if (status !== "ready" && status !== "interrupted") {
     throw new ContractError(
@@ -984,13 +1110,33 @@ export async function executeContract(
     payload: { runId, round: contract.round },
   });
 
-  const result = await executeObligations(db, {
-    owner,
-    contractId: contract.id,
-    runId,
-    paceMs: Math.max(0, Math.min(input.paceMs ?? 0, 2000)),
-    onEvent: async () => {},
-  });
+  let result: Awaited<ReturnType<typeof executeObligations>>;
+  try {
+    result = await executeObligations(db, {
+      owner,
+      contractId: contract.id,
+      runId,
+      paceMs: Math.max(0, Math.min(input.paceMs ?? 0, 2000)),
+      onEvent: async () => {},
+    });
+  } catch (err) {
+    // Leave the contract resumable instead of stuck in "executing".
+    result = { interrupted: true } as typeof result;
+    contract = await requireContract(db, owner, contract.id);
+    await db
+      .update(runs)
+      .set({ status: "interrupted", finishedAt: nowIso() })
+      .where(and(eq(runs.ownerEmail, owner), eq(runs.id, runId)));
+    await transition(db, contract, "interrupted");
+    await appendAudit(db, owner, {
+      contractId: contract.id,
+      actor: "worker",
+      caller: actor.caller,
+      type: "execution.interrupted",
+      payload: { runId, reason: "error" },
+    });
+    throw err;
+  }
 
   contract = await requireContract(db, owner, contract.id);
   if (result.interrupted) {
@@ -1196,7 +1342,6 @@ export async function proposeRepair(
 
   if (plan.proposals.length) {
     const round = contract.round + 1;
-    contract = await transition(db, contract, "awaiting_approval", { round });
     const now = nowIso();
     const startPos = all.length;
     const rows = [];
@@ -1223,6 +1368,9 @@ export async function proposeRepair(
         updatedAt: now,
       });
     }
+    // Validate every proposal before changing status, so a rejected proposal
+    // cannot leave the contract in a new round with no repairs.
+    contract = await transition(db, contract, "awaiting_approval", { round });
     await db.insert(obligations).values(rows);
     await appendAudit(db, owner, {
       contractId: contract.id,
@@ -1598,7 +1746,34 @@ export async function getLatestReceipt(
   };
 }
 
+/** Depth and key checks for an untrusted receipt before canonicalising it. */
+function receiptShapeProblem(value: unknown, depth = 0): string | null {
+  if (depth > 32) return "it is nested too deeply";
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      const p = receiptShapeProblem(v, depth + 1);
+      if (p) return p;
+    }
+  } else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      if (k === "__proto__" || k === "constructor" || k === "prototype")
+        return `it contains the reserved key "${k}"`;
+      const p = receiptShapeProblem(v, depth + 1);
+      if (p) return p;
+    }
+  }
+  return null;
+}
+
 export function checkReceipt(receipt: Record<string, unknown>) {
+  const problem = receiptShapeProblem(receipt);
+  if (problem) {
+    return {
+      digestMatches: false,
+      signatureValid: false,
+      message: `Malformed: ${problem}.`,
+    };
+  }
   const { integrity, ...body } = receipt as {
     integrity?: { digest?: string; signature?: string };
   } & Record<string, unknown>;

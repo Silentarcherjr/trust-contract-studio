@@ -26,6 +26,10 @@ export default createAgentChatPlugin({
     appApprovalPage: true,
   },
   initialToolNames: INITIAL_TOOL_NAMES,
+  // The agent works through the domain actions only. No raw SQL reads: the
+  // sandbox tables hold provider internals that observe.ts deliberately
+  // does not expose.
+  frameworkTools: { database: "off" },
   resolveOrgId: async (event) => (await getOrgContext(event)).orgId,
   systemPrompt: `You are the agent inside Trust Contract Studio, a workspace that turns promises made on a person's behalf into verifiable commitments.
 

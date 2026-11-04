@@ -14,7 +14,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 
 ### Paste-ready description field
 
-> **Agents make promises. This is where they get checked.** Support teams now let AI agents cancel subscriptions, issue refunds and delete customer data. Agents often report "done" when they are not: in a 2026 study, false success made up 45–48% of failures on customer-service benchmark tasks. Trust Contract Studio turns the agent's promise into testable obligations. A person approves the sensitive ones, the agent executes against sandboxed billing and memory providers, and an independent verifier decides from provider observations what actually happened: VERIFIED, FAILED or UNKNOWN. In the demo the agent says "Done, refunded $100, memories deleted". The verifier finds two refunds ($200), two memories left in a lagging replica, and a reformatted copy of the email that only a pgvector similarity search finds. The agent then reports its own failure, quoting the verifier. It proposes repairs, a person approves them, and the run ends in a tamper-evident proof receipt.
+> **Agents make promises. This is where they get checked.** Support teams now let AI agents cancel subscriptions, issue refunds and delete customer data. Agents often report "done" when they are not: in a 2026 study, false success made up 45–48% of failures on airline and retail customer-service benchmark tasks (τ²-bench). Trust Contract Studio turns the agent's promise into testable obligations. A person approves the sensitive ones, the agent executes against sandboxed billing and memory providers, and an independent verifier decides from provider observations what actually happened: VERIFIED, FAILED or UNKNOWN. In the demo the agent says "Done, refunded $100, memories deleted". The verifier finds two refunds ($200), two memories left in a lagging replica, and a reformatted copy of the email that only a pgvector similarity search finds. The agent then reports its own failure, quoting the verifier. It proposes repairs, a person approves them, and the run ends in a tamper-evident proof receipt.
 >
 > **Measured, not claimed:**
 >
@@ -60,7 +60,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Measured.** An outcome evaluation runs all 512 combinations of 9 fault types against an independent oracle: the executor's "Done" was false in 43.75% of 2,048 clauses, with 0 false VERIFIED and 0 false FAILED, and every combination converges to VERIFIED after repair. In 18 live agent runs the agent reported 72/72 verdicts exactly and approved nothing.
 >
-> **Quality.** 67 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
+> **Quality.** 72 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
 >
 > **Honest limits.** All providers and data are synthetic sandboxes. Verification covers only the stores registered in the workspace. The Studio does not claim legal compliance, universal erasure, exactly-once execution in external systems or immutability. The receipt states what is not proven.
 

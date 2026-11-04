@@ -83,7 +83,7 @@ Faults live inside the providers and are consumed once, so a repair round runs a
 
 ## Vector index on pgvector (`server/sandbox/vector-index.ts`)
 
-The vector index store runs on a real vector engine: PostgreSQL with the `vector` extension (Neon in production, same database, HNSW cosine index). Locally and in tests it uses a separate PGlite instance with `@electric-sql/pglite-pgvector`, because the framework's PGlite cannot load extensions.
+The vector index store runs on a real vector engine: PostgreSQL with the `vector` extension (Neon in production, same database). Searches are exact cosine searches scoped to the workspace's owner, with no approximate index: each workspace holds a handful of vectors, and an approximate scan that filters by owner afterwards could let other workspaces' identical demo vectors crowd out a disguised copy. Locally and in tests it uses a separate PGlite instance with `@electric-sql/pglite-pgvector`, because the framework's PGlite cannot load extensions.
 
 - **Deletes are physical.** An embedding the executor deletes is gone from the engine. `observe.ts` asks the engine, not the sandbox bookkeeping table, which embeddings are live.
 - **Nearest-neighbour search.** `observe.ts` runs a search for each of the subject's identifiers and returns only labels, ids and cosine distances. The pure verifier turns live matches without lineage into `near_duplicate_vector` (FAILED).
