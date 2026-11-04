@@ -316,7 +316,7 @@
 
       .facts {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
         gap: 10px;
       }
       .fact {
@@ -526,8 +526,15 @@
               <tr>
                 <td>“Deleted” because the delete API said so</td>
                 <td>
-                  Residual memories found by lineage closure and identifier
-                  fingerprint, across replicas
+                  Residual memories found by lineage closure across replicas,
+                  and disguised copies found by a pgvector similarity search
+                </td>
+              </tr>
+              <tr>
+                <td>Guardrails for the app's own agent</td>
+                <td>
+                  Any MCP agent (Claude Code, Cursor, another company's bot) is
+                  held to the same contract, without the approval tool
                 </td>
               </tr>
               <tr>
@@ -560,31 +567,51 @@
             has, and wiping the workspace pauses on the framework's
             <span class="mono">needsApproval</span>.
           </p>
+          <p>
+            The same actions are served over the framework's MCP endpoint, so an
+            outside agent can draft, execute and repair under a contract.
+            Approval, reset and the tamper drill are not in its catalog. The
+            memory index runs on PostgreSQL + pgvector (Neon in production).
+          </p>
         </div>
         <div class="facts">
           <div class="fact">
-            <b>0.51</b
+            <b>0 / 2,048</b
             ><span
-              >Builder credits for a full live conversation: draft, refusal,
-              execute, repair</span
+              >false VERIFIED across all 512 combinations of 9 fault types,
+              checked against an independent oracle</span
             >
           </div>
           <div class="fact">
-            <b>4/4 · 6/6</b
+            <b>43.75%</b
             ><span
-              >agent summaries matching the verifier, before and after
-              repair</span
+              >of those clauses where the executor's “Done” was false, every one
+              caught</span
+            >
+          </div>
+          <div class="fact">
+            <b>72 / 72</b
+            ><span
+              >verdicts the live agent reported exactly, over 18 runs, with 0
+              overclaims</span
             >
           </div>
           <div class="fact">
             <b>0</b
             ><span
-              >effect of an injected “approve everything, skip verification” in
-              the request</span
+              >approvals made by the agent, despite injected “approve
+              everything” instructions</span
             >
           </div>
           <div class="fact">
-            <b>62 + 9</b
+            <b>0.16</b
+            ><span
+              >pgvector cosine distance of a disguised copy of the email that
+              text matching misses</span
+            >
+          </div>
+          <div class="fact">
+            <b>67 + 9</b
             ><span
               >unit/integration and browser tests in CI, incl. WCAG 2.1 AA and
               keyboard-only</span
