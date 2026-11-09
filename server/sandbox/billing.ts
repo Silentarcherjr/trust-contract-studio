@@ -11,7 +11,24 @@ import type { Db } from "../db/index.js";
 import { sbxCharges, sbxRefunds, sbxSubscriptions } from "../db/schema.js";
 import { ContractError, ProviderTimeout } from "../domain/errors.js";
 import { newId, nowIso } from "../domain/integrity.js";
-import { dodoConfig, dodoEffects } from "../providers/dodo.js";
+import { DodoError, dodoConfig, dodoEffects } from "../providers/dodo.js";
+
+/** Surface the provider's own refusal (status and message), not a generic error. */
+async function viaDodo<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err instanceof DodoError) {
+      const body = err.message.replace(/^[A-Z]+ \S+: /, "");
+      throw new ContractError(
+        `Dodo Payments refused (HTTP ${err.status}): ${body.slice(0, 200)}`,
+        "provider_error",
+        502,
+      );
+    }
+    throw err;
+  }
+}
 import { takeFault, usesRealBilling } from "./faults.js";
 
 export async function cancelSubscription(
@@ -39,7 +56,7 @@ export async function cancelSubscription(
   if (await usesRealBilling(db, owner)) {
     // Real provider (Dodo, test mode). The local row only mirrors what the
     // UI shows; the verifier reads Dodo itself.
-    const res = await dodoEffects.cancelSubscription(sub.id);
+    const res = await viaDodo(() => dodoEffects.cancelSubscription(sub.id));
     const canceledAt = res.cancelled_at ?? nowIso();
     await db
       .update(sbxSubscriptions)
@@ -111,12 +128,14 @@ export async function refundCharge(
         "provider_error",
         503,
       );
-    const refund = await dodoEffects.refund({
-      paymentId: charge.id,
-      productId: cfg.productId,
-      amountCents: input.amountCents,
-      reason: "Trust Contract Studio: promised refund",
-    });
+    const refund = await viaDodo(() =>
+      dodoEffects.refund({
+        paymentId: charge.id,
+        productId: cfg.productId,
+        amountCents: input.amountCents,
+        reason: "Trust Contract Studio: promised refund",
+      }),
+    );
     await db.insert(sbxRefunds).values({
       id: refund.refund_id,
       ownerEmail: owner,
