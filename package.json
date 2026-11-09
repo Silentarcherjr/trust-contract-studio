@@ -21,7 +21,8 @@
     "demo:external-agent": "tsx scripts/external-agent-demo.ts",
     "lint": "oxlint",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "demo:dodo": "tsx scripts/dodo-live-check.ts"
   },
   "dependencies": {
     "@agent-native/agentkit": "^0.222.0",

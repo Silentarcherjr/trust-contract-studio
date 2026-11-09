@@ -2,6 +2,22 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: Checked against a real provider (Dodo Payments, test mode)
+
+- **Adapter.** [`server/providers/dodo.ts`](../server/providers/dodo.ts) has two parts:
+  - effects: start a subscription with a saved test card, cancel it, create a refund;
+  - read-only observations: GET requests that return the sandbox's observation types, so the **unchanged** verifier judges Dodo's state.
+  - Only succeeded refunds count as money returned. A refund still `pending` or `review` gives UNKNOWN.
+  - The adapter refuses live-mode keys.
+- **`pnpm demo:dodo`.** It starts a fresh $100/month test subscription, cancels it, and refunds $50.
+  - In the default run, the first refund's response is treated as lost and the call is retried. Dodo documents no idempotency key, so the retry creates a second real refund.
+  - Result: cancel VERIFIED; refund **FAILED**, with 2 live refunds totalling $100 (over by $50), while the executor said "Done".
+  - The clean run is VERIFIED for both clauses. Evidence is in `docs/eval/dodo-live-run.md`.
+- **5 adapter tests** with a stubbed `fetch`: duplicate refund, failed refund, pending refund (UNKNOWN), cancelled and active subscription, live key refused.
+- **Limits.**
+  - Cancellation and refunds only, test mode, command line; the Studio still runs on the sandbox.
+  - Refunds at a real provider cannot be voided, so repairing an over-refund needs a person.
+
 ## 2026-11-04: Security review fixes
 
 An independent review read the code against the invariants and confirmed several issues with probes. All the confirmed issues are fixed except the remaining limits listed below.

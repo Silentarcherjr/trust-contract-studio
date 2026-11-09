@@ -57,6 +57,25 @@ Approvals, policy engines, audit logs and memory revocation already exist (see [
 - Memory deletion is checked by **lineage** (everything derived from the person's data), by **identifier fingerprint**, and by **vector similarity** in a real **pgvector** index (Neon Postgres in production). That last check catches a reformatted copy of the customer's email that text matching misses, without trusting the deletion API's response.
 - Failures lead to a human-approved repair loop, and the receipt keeps the full verdict history.
 
+## Checked against a real provider (Dodo Payments, test mode)
+
+The verifier also judges a real billing provider. [`pnpm demo:dodo`](scripts/dodo-live-check.ts) runs in Dodo Payments **test mode**:
+
+1. It starts a fresh test subscription.
+2. It cancels the subscription and refunds $50 of its payment.
+3. It retries the refund once after a simulated lost response. Dodo documents no idempotency key.
+
+The executor reports "Done" for both clauses. The **unchanged pure verifier** then reads Dodo with GET requests only:
+
+| Clause                  | Verifier, from Dodo's state                        |
+| ----------------------- | -------------------------------------------------- |
+| Cancel the subscription | **VERIFIED**: Dodo reports it cancelled            |
+| Refund $50              | **FAILED**: 2 live refunds total $100, over by $50 |
+
+Real IDs and raw observations are in [docs/eval/dodo-live-run.md](docs/eval/dodo-live-run.md). A clean run returns VERIFIED for both clauses.
+
+Scope: cancellation and refunds only, in test mode, from the command line. The Studio itself runs on the sandbox.
+
 ## Agent-Native, for real
 
 Every capability is a `defineAction()` in [`actions/`](actions). The React UI calls them through `useActionQuery` / `useActionMutation`; the in-app agent receives the same actions as tools. There is one implementation per capability, and the integration tests run the same action objects as both callers (`caller: "frontend"` and `caller: "tool"`).
@@ -129,8 +148,8 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 56 unit + integration tests on in-memory PostgreSQL (PGlite)
-pnpm test:e2e       # 8 Playwright tests against the real app (incl. axe-core accessibility audit)
+pnpm test           # 77 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test:e2e       # 9 Playwright tests against the real app (incl. axe-core audit, keyboard-only)
 pnpm build          # production build (Nitro, node preset)
 ```
 
@@ -147,7 +166,7 @@ Latest results are in [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 
 ## Honest limits
 
-- Providers are sandboxes with synthetic data. Verification covers only stores registered in the workspace. It is not evidence of erasure anywhere else and not a legal determination.
+- The Studio's providers are sandboxes with synthetic data. The one real-provider check is Dodo Payments in test mode, for cancellations and refunds only. Verification covers only stores registered in the workspace. It is not evidence of erasure anywhere else and not a legal determination.
 - Vector-index embeddings are lexical (hashed character trigrams), not a language model's. They catch reformatted copies of an identifier, not deep paraphrases.
 - Exactly-once execution is **not** claimed. Side effects use idempotency keys and bounded retries, and the verifier catches what slips through.
 - Integrity is tamper-_evident_: SHA-256 digests on evidence, a hash-chained audit log, HMAC-signed receipts. There is no public-key signature, external timestamping or immutability guarantee. Someone with database and key access could rewrite history.

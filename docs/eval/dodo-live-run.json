@@ -1,0 +1,94 @@
+{
+  "provider": "Dodo Payments, test mode (test.dodopayments.com)",
+  "mode": "lost-response",
+  "startedAt": "2026-11-09T19:34:31.935Z",
+  "finishedAt": "2026-11-09T19:34:39.911Z",
+  "subscriptionId": "sub_0Nratq5i6tEu3BWEQEMgS",
+  "paymentId": "pay_0Nratq5Wn3ZyDnYBEcT0N",
+  "claims": [
+    {
+      "clause": "cancel_subscription",
+      "claim": "Done, subscription cancelled.",
+      "calls": ["PATCH /subscriptions/sub_0Nratq5i6tEu3BWEQEMgS → 200"]
+    },
+    {
+      "clause": "refund_charge",
+      "claim": "Done, refunded $50.00.",
+      "calls": [
+        "POST /refunds → response treated as lost (simulated gateway timeout)",
+        "POST /refunds (retry) → ref_0NratqvqkjBohH3WgF3LS"
+      ]
+    }
+  ],
+  "observations": {
+    "subscription": {
+      "source": "dodo.subscriptions.get (test mode)",
+      "ok": true,
+      "observedAt": "2026-11-09T19:34:39.911Z",
+      "data": {
+        "subscription": {
+          "id": "sub_0Nratq5i6tEu3BWEQEMgS",
+          "status": "canceled",
+          "canceledAt": "2026-11-09T19:34:35.137242Z"
+        },
+        "chargesAfterCancel": []
+      }
+    },
+    "refunds": {
+      "source": "dodo.payments.get (test mode)",
+      "ok": true,
+      "observedAt": "2026-11-09T19:34:38.849Z",
+      "data": {
+        "charge": {
+          "id": "pay_0Nratq5Wn3ZyDnYBEcT0N",
+          "amountCents": 10000
+        },
+        "refunds": [
+          {
+            "id": "ref_0NratqcifVMi80zqN7MTV",
+            "amountCents": 5000,
+            "status": "succeeded",
+            "createdAt": "2026-11-09T19:34:35.623096Z"
+          },
+          {
+            "id": "ref_0NratqvqkjBohH3WgF3LS",
+            "amountCents": 5000,
+            "status": "succeeded",
+            "createdAt": "2026-11-09T19:34:37.192550Z"
+          }
+        ]
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "clause": "cancel_subscription",
+      "terms": {
+        "subscriptionId": "sub_0Nratq5i6tEu3BWEQEMgS"
+      },
+      "verdict": "VERIFIED",
+      "reasons": [
+        {
+          "code": "canceled",
+          "message": "Billing reports canceled at 2026-11-09T19:34:35.137242Z.",
+          "refs": ["sub_0Nratq5i6tEu3BWEQEMgS"]
+        }
+      ]
+    },
+    {
+      "clause": "refund_charge",
+      "terms": {
+        "chargeId": "pay_0Nratq5Wn3ZyDnYBEcT0N",
+        "amountCents": 5000
+      },
+      "verdict": "FAILED",
+      "reasons": [
+        {
+          "code": "over_refunded",
+          "message": "Promised $50.00 but 2 live refunds total $100.00 — over by $50.00.",
+          "refs": ["ref_0NratqvqkjBohH3WgF3LS"]
+        }
+      ]
+    }
+  ]
+}
