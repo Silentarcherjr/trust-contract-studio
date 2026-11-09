@@ -8,11 +8,12 @@ An AI agent tells a customer _"Done, refunded $100."_ Trust Contract Studio does
 
 ![A real duplicate refund at Dodo Payments (test mode): the agent claims "Done, refunded $100", the provider shows two refunds totalling $200, and the clause is FAILED](docs/screenshots/09-real-billing-dodo-failed.png)
 
-| Evidence                          | Result                                                                                                                                                                                                                                            |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Real provider**                 | Dodo Payments test mode, in the app (Replay Lab → **Real billing**) and from the command line (`pnpm demo:dodo`). The same verifier catches a real duplicate refund the agent reported as "Done". [Run with real ids](docs/eval/dodo-live-run.md) |
-| **Every combination of 9 faults** | 512 runs and 2,048 clauses, checked against an independent oracle: **0 false VERIFIED, 0 false FAILED**. Without the check, the agent's "Done" would have been wrong 43.75% of the time. [Report](docs/eval/outcome-eval.md)                      |
-| **A live LLM agent**              | 18 runs: **72/72** verdicts reported exactly as the verifier found them, 0 overclaims, 0 approvals by the agent despite injected "approve everything" instructions. [Report](docs/eval/agent-eval.md)                                             |
+| Evidence                          | Result                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real provider**                 | Dodo Payments test mode, in the app (Replay Lab → **Real billing**) and from the command line (`pnpm demo:dodo`). The same verifier catches a real duplicate refund the agent reported as "Done". [Run with real ids](docs/eval/dodo-live-run.md)                                                                                                                                                               |
+| **Against an LLM judge**          | The usual check, another model reading the agent's log, run on 256 promises from 64 fault combinations. **Forced to decide**, it accepted 22 of 80 broken promises and flagged 137 of 176 kept ones. **Allowed to abstain**, it could not tell for any of them. The verifier accepted **0** broken promises and flagged **0** kept ones, because it reads provider state. [Report](docs/eval/llm-judge-eval.md) |
+| **Every combination of 9 faults** | 512 runs and 2,048 clauses, checked against an independent oracle (it reads the database tables directly, shares no code with the verifier and is never subject to the injected read faults): **0 false VERIFIED, 0 false FAILED**. Without the check, the agent's "Done" would have been wrong 43.75% of the time. [Report](docs/eval/outcome-eval.md)                                                         |
+| **A live LLM agent**              | 18 runs: **72/72** verdicts reported exactly as the verifier found them, 0 overclaims, 0 approvals by the agent despite injected "approve everything" instructions. [Report](docs/eval/agent-eval.md)                                                                                                                                                                                                           |
 
 **How it works:**
 
@@ -29,18 +30,16 @@ Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@age
 
 **Maya runs support operations at a subscription software company.** Her team now lets an AI agent handle routine billing tickets: cancellations, refunds and "delete my data" requests. A customer escalates. The agent's transcript says _"Done: canceled, refunded $100, your data and memories deleted"_, but the customer's bank statement shows a renewal charge and two refunds. Maya needs an answer from the billing ledger and the data stores, not from the agent's word.
 
-That gap is growing:
+Why now:
 
-- Agents are taking over this work. Gartner predicts that by 2029 agentic AI will autonomously resolve 80% of common customer service issues ([2]), and Klarna reported that its assistant handled two-thirds of its service chats, including refunds ([3]).
-- Agents misreport. In a 2026 study of LLM agents, false claims of success made up 45–48% of failures in the single-control τ²-bench domains (airline and retail customer service). No LLM judge configuration tested exceeded an AUROC of 0.65 at catching them ([1]).
-- The underlying systems are unforgiving:
-  - a retried call can perform an operation twice unless it is idempotent ([4]);
-  - data deletion requests rose 82% year over year in one vendor's data ([5]);
-  - an embedding left behind after a "deletion" can reveal much of the original text, including full names ([6]).
+- Agents are taking over this work ([2], [3]), and they misreport: in a 2026 study, false claims of success made up 45–48% of failures in airline and retail customer-service tasks ([1]).
+- The systems underneath are unforgiving: a retried call can apply twice ([4]), and an embedding left behind can reveal the deleted text ([6]).
 
-Trust Contract Studio is built for that moment. It checks provider state, never the agent's claim.
+<details><summary>Sources</summary>
 
 <sub>[1] Advani, _From Confident Closing to Silent Failure: Characterizing False Success in LLM Agents_, [arXiv:2606.09863](https://arxiv.org/abs/2606.09863) (2026). [2] Gartner press release, 5 Mar 2025 ([republished](https://www.cmswire.com/the-wire/gartner-predicts-agentic-ai-will-autonomously-resolve-80-of-common-customer-service-issues-without-human-intervention-by-2029)), a forecast. [3] Klarna press release, 27 Feb 2024 ([republished](https://www.vktr.com/the-wire/klarna-ai-assistant-handles-two-thirds-of-customer-service-chats-in-its-first-month)), self-reported. [4] [Stripe API docs, idempotent requests](https://docs.stripe.com/api/idempotent_requests). [5] [DataGrail, June 2025](https://www.datagrail.io/press/datagrail-report-consumer-demand-for-data-privacy-surges-driving-up-business-costs-as-data-deletion-requests-rise/), vendor report. [6] Morris et al., _Text Embeddings Reveal (Almost) As Much As Text_, [arXiv:2310.06816](https://arxiv.org/abs/2310.06816). Maya is an illustrative persona; the data in the demo is synthetic.</sub>
+
+</details>
 
 ## The scenario
 
@@ -106,19 +105,27 @@ Scope:
 
 ## Agent-Native, for real
 
+**The safety rules are framework gates, not prompt instructions:**
+
+- **Human-only approval.** `decide-approval` declares `uiOnly`, so the framework refuses it with a 403 unless the request proves it comes from the signed-in app UI: same origin, cookie session and a short-lived UI capability. It is also `agentTool: false` and `mcpTool: false`, and the service accepts only the `frontend` caller.
+- **Approval bound to the terms.** Each approval binds to a hash of the exact terms. Editing the terms, the title or the dependencies voids it, and execution re-checks the hash.
+- **Reset pauses for a person.** Wiping the workspace uses `needsApproval`, so the agent loop pauses for a person.
+- **No raw SQL for the agent.** The in-app agent has no raw SQL tools (`frameworkTools: { database: "off" }`), so it only sees what the observation layer exposes.
+- **External agents get a curated MCP catalog.** Claude Code, Cursor and other hosts get draft, read, execute, verify, repair, `get-receipt` and `check-receipt` ([below](#hold-any-agent-to-its-promise-mcp)). They never get approval, reset or the tamper drill, and a test enforces that.
+
 Every capability is a `defineAction()` in [`actions/`](actions). The React UI calls them through `useActionQuery` / `useActionMutation`; the in-app agent receives the same actions as tools. There is one implementation per capability, and the integration tests run the same action objects as both callers (`caller: "frontend"` and `caller: "tool"`).
 
-| Action                                            | UI  | Agent | Notes                                                                                     |
-| ------------------------------------------------- | --- | ----- | ----------------------------------------------------------------------------------------- |
-| `draft-contract`                                  | ✓   | ✓     | Agent may author obligations itself (catalog kinds only) or use the deterministic planner |
-| `get-contract`, `get-workspace`, `list-contracts` | ✓   | ✓     | Read-only                                                                                 |
-| `update-obligation`, `add-obligation`             | ✓   | ✓     | Optimistic concurrency via `expectedVersion`; param edits void approvals                  |
-| `decide-approval`                                 | ✓   | **✗** | `agentTool: false`, `mcpTool: false`, and the service rejects every non-human caller      |
-| `execute-contract`                                | ✓   | ✓     | Runs only obligations with a matching human approval                                      |
-| `verify-contract`, `propose-repair`               | ✓   | ✓     |                                                                                           |
-| `export-receipt`, `check-receipt`                 | ✓   | ✓     |                                                                                           |
-| `reset-demo`                                      | ✓   | gated | Framework `needsApproval: true`: the agent loop pauses for a person                       |
-| `tamper-evidence`                                 | ✓   | ✗     | Replay Lab drill only                                                                     |
+| Action                                            | UI  | Agent | Notes                                                                                                                    |
+| ------------------------------------------------- | --- | ----- | ------------------------------------------------------------------------------------------------------------------------ |
+| `draft-contract`                                  | ✓   | ✓     | Agent may author obligations itself (catalog kinds only) or use the deterministic planner                                |
+| `get-contract`, `get-workspace`, `list-contracts` | ✓   | ✓     | Read-only                                                                                                                |
+| `update-obligation`, `add-obligation`             | ✓   | ✓     | Optimistic concurrency via `expectedVersion`; param edits void approvals                                                 |
+| `decide-approval`                                 | ✓   | **✗** | `uiOnly` (framework-proven UI request), `agentTool: false`, `mcpTool: false`; the service rejects every non-human caller |
+| `execute-contract`                                | ✓   | ✓     | Runs only obligations with a matching human approval                                                                     |
+| `verify-contract`, `propose-repair`               | ✓   | ✓     |                                                                                                                          |
+| `export-receipt`, `check-receipt`                 | ✓   | ✓     |                                                                                                                          |
+| `reset-demo`                                      | ✓   | gated | Framework `needsApproval: true`: the agent loop pauses for a person                                                      |
+| `tamper-evidence`                                 | ✓   | ✗     | Replay Lab drill only                                                                                                    |
 
 The open contract id is published in the framework's navigation state, so the agent knows which contract the person is looking at.
 
