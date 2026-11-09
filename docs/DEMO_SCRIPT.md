@@ -15,6 +15,16 @@ Agent self-approval refusal is now common among entries, so it gets one short li
 
 ## Opening: the real provider (0:00–0:20)
 
+**Preferred: in the app (no terminal).**
+
+1. Before recording, in the Studio: Replay Lab → **Real billing: Dodo Payments (test)** → **Reset sandbox** → **Draft contract** → **Approve all 4** → **Execute contract**.
+2. Start recording on the finished contract, with §2 FAILED in view: "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00", with the agent's "Done — refunded $100.00" next to it.
+3. The providers panel on the Studio home shows "Billing: Dodo Payments (test mode, real API)".
+
+The narration below is the same. Replace "We ask the billing provider" with "The app asks the billing provider". Verified on the deployment on 2026-11-09: 2 of 2 runs ended with §2 FAILED ($200 vs $100) and §1 VERIFIED, read from Dodo.
+
+**Alternative: the terminal**, as below.
+
 Before recording, have a terminal open in the repository with a large font. It needs the Dodo test-mode key and test ids in its environment (see `.env.example`).
 
 The command takes about 10 s and prints the executor's claims next to the verifier's verdicts:
