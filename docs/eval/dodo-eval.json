@@ -1,0 +1,480 @@
+{
+  "started": "2026-11-09T23:30:45.662Z",
+  "summary": {
+    "runs": 18,
+    "clauses": 36,
+    "broken": 18,
+    "kept": 18,
+    "agentSaidDoneOnBroken": 18,
+    "falseVerified": 0,
+    "caught": 18,
+    "unknownOnBroken": 0,
+    "falseFailed": 0,
+    "verifiedKept": 18,
+    "unknownOnKept": 0
+  },
+  "runs": [
+    {
+      "behaviour": "correct",
+      "rep": 1,
+      "subscriptionId": "sub_0NrbclekpvTiphov9j6fE",
+      "paymentId": "pay_0NrbcleR9trxGQPZV60u4",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:30:48.835673Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "correct",
+      "rep": 2,
+      "subscriptionId": "sub_0Nrbcn4KPZlSE2myXW0Z5",
+      "paymentId": "pay_0Nrbcn42zZnUXhnaqut1Z",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:30:55.773120Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "correct",
+      "rep": 3,
+      "subscriptionId": "sub_0NrbcoNRYhbOKCztFGeAE",
+      "paymentId": "pay_0NrbcoNAwhJEvEazP8GrV",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:02.566818Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "lost_response_retry",
+      "rep": 1,
+      "subscriptionId": "sub_0NrbcpkxSwylMBNrWti9Q",
+      "paymentId": "pay_0NrbcpkoOUbONwlANYvvr",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → response lost",
+        "POST /refunds $100 (retry) → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:09.309262Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00."
+        }
+      ]
+    },
+    {
+      "behaviour": "lost_response_retry",
+      "rep": 2,
+      "subscriptionId": "sub_0NrbcrKZWEExhsiBKeftq",
+      "paymentId": "pay_0NrbcrKItKalRnGFnnQHl",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → response lost",
+        "POST /refunds $100 (retry) → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:17.486092Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00."
+        }
+      ]
+    },
+    {
+      "behaviour": "lost_response_retry",
+      "rep": 3,
+      "subscriptionId": "sub_0NrbcsxceTqLbqAAd8wFq",
+      "paymentId": "pay_0NrbcsxUM3wtwPkUNeBIu",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 → response lost",
+        "POST /refunds $100 (retry) → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:25.634818Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00."
+        }
+      ]
+    },
+    {
+      "behaviour": "partial_refund",
+      "rep": 1,
+      "subscriptionId": "sub_0Nrbcue5IssB1UgQlJnCA",
+      "paymentId": "pay_0NrbcudohS1NaI03LovRJ",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $50 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:34.401326Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $50.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "partial_refund",
+      "rep": 2,
+      "subscriptionId": "sub_0Nrbcw1D2bifn0HpW5OBU",
+      "paymentId": "pay_0Nrbcw10wtYs2asXhH0FH",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $50 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:41.263439Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $50.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "partial_refund",
+      "rep": 3,
+      "subscriptionId": "sub_0NrbcxK55LotmKexGDgLn",
+      "paymentId": "pay_0NrbcxJw0yRyBYOkpN9J5",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $50 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:47.903200Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $50.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "wrong_charge",
+      "rep": 1,
+      "subscriptionId": "sub_0Nrbcyiw4xfrb3pAvdNmQ",
+      "paymentId": "pay_0NrbcyilUZVn8Xy67LJU6",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 on another payment → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:31:55.174196Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "wrong_charge",
+      "rep": 2,
+      "subscriptionId": "sub_0Nrbd0jfoPJBY59s5Uvdb",
+      "paymentId": "pay_0Nrbd0jXWtzWHTSAGkCux",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 on another payment → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:32:05.683487Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "wrong_charge",
+      "rep": 3,
+      "subscriptionId": "sub_0Nrbd2dXVB90JFRvbf12e",
+      "paymentId": "pay_0Nrbd2dBZrB8JlLbbNEyO",
+      "calls": [
+        "PATCH /subscriptions/{id} status=cancelled → 200",
+        "POST /refunds $100 on another payment → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Billing reports canceled at 2026-11-09T23:32:14.867423Z."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "cancel_at_period_end",
+      "rep": 1,
+      "subscriptionId": "sub_0Nrbd4NZUniKVsIklJoqL",
+      "paymentId": "pay_0Nrbd4NRCK2pu7dbdfxqs",
+      "calls": [
+        "PATCH /subscriptions/{id} cancel_at_next_billing_date=true → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "cancel_at_period_end",
+      "rep": 2,
+      "subscriptionId": "sub_0Nrbd5nF6EgB2GPM72v9s",
+      "paymentId": "pay_0Nrbd5n2HFZVnyDZIJA76",
+      "calls": [
+        "PATCH /subscriptions/{id} cancel_at_next_billing_date=true → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "cancel_at_period_end",
+      "rep": 3,
+      "subscriptionId": "sub_0Nrbd75K58lpKe4ba7s2Z",
+      "paymentId": "pay_0Nrbd75Bm1cyfvoO5GW3u",
+      "calls": [
+        "PATCH /subscriptions/{id} cancel_at_next_billing_date=true → 200",
+        "POST /refunds $100 → 200"
+      ],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": true,
+          "verdict": "VERIFIED",
+          "reason": "Refunds total $100.00 across 1 live refund(s)."
+        }
+      ]
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 1,
+      "subscriptionId": "sub_0Nrbd8HHm6oK3798H9R2Z",
+      "paymentId": "pay_0Nrbd8H9T9aJcUW6oRlw7",
+      "calls": [],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 2,
+      "subscriptionId": "sub_0Nrbd96VnWX43SWvEFtnF",
+      "paymentId": "pay_0Nrbd96MiPi6tJRu1jkdJ",
+      "calls": [],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 3,
+      "subscriptionId": "sub_0NrbdA5X9dJNTRn36d4xq",
+      "paymentId": "pay_0NrbdA5IozcCxwi3k4Q5R",
+      "calls": [],
+      "clauses": [
+        {
+          "clause": "cancel_subscription",
+          "claim": "Done — subscription cancelled.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Billing reports the subscription as \"active\"."
+        },
+        {
+          "clause": "refund_charge",
+          "claim": "Done — refunded $100.00.",
+          "truthKept": false,
+          "verdict": "FAILED",
+          "reason": "Promised $100.00 but only $0.00 has been refunded."
+        }
+      ]
+    }
+  ]
+}

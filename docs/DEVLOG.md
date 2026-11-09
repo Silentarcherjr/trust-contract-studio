@@ -2,6 +2,20 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: Real-provider evaluation on Dodo test mode
+
+- **`pnpm eval:dodo`.** 6 executor behaviours × 3 runs, each on a fresh $200 test subscription at Dodo:
+  - correct;
+  - lost response then retry;
+  - partial refund;
+  - refund on the wrong charge;
+  - cancel at period end;
+  - no-op.
+- **Oracle.** It reads different Dodo endpoints (`GET /refunds` and `GET /subscriptions` lists by customer) from the verifier's adapter.
+- **Result.** 36 promises, of which 18 were broken, and the executor said "Done" on all 18. The verifier caught 18 of 18, raised 0 false alarms on the 18 kept ones, and left 0 UNKNOWN.
+- **Test balance.** Refunds draw on the test account's balance, which payments credit only after a delay. Twelve test payments with no refund keep a cushion, so the live "Real billing" scenario does not fail with `INSUFFICIENT_WALLET_FUNDS`.
+- **README.** It is cut to about 1,500 words. The scenario, the differentiation, the real-provider details, the action table and the MCP setup moved to `docs/OVERVIEW.md`. The 512-combination row now says plainly that its faults and oracle are ours.
+
 ## 2026-11-09: LLM-judge baseline, real billing first
 
 - **New evaluation: `pnpm eval:llm-judge`.**
