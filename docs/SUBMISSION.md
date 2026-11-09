@@ -67,7 +67,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 
 **Built with:** Agent-Native (`@agent-native/core` 0.222.0, toolkit, agentkit), React 19, React Router 8, Drizzle ORM, PostgreSQL / PGlite, pgvector (Neon in production), zod, Vitest, Playwright, axe-core.
 
-**Links:** Clips video: _to add after recording_. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: private for now; a public repository is encouraged by the rules (owner decision). Live app: deployed on Vercel with Neon Postgres, behind Vercel Authentication until the repository goes public.
+**Links:** Clips video: _to add after recording_. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: https://github.com/Silentarcherjr/trust-contract-studio. Live app: https://trust-contract-studio.vercel.app (Vercel + Neon Postgres).
 
 ## Pre-existing materials disclosure (final review: 2026-11-01)
 

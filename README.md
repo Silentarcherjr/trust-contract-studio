@@ -6,7 +6,7 @@ Trust Contract Studio is a human–agent workspace that turns what an AI agent p
 
 Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@agent-native/core` 0.222.0) for the Builder.io Agent-Native Hackathon 2026.
 
-> Private repository. Synthetic data only. Not a legal-compliance tool.
+> **Live app:** [trust-contract-studio.vercel.app](https://trust-contract-studio.vercel.app) (sign up with any email; each account gets its own sandbox). Synthetic data only. Not a legal-compliance tool.
 
 ## Who it is for
 
