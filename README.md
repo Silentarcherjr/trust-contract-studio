@@ -2,11 +2,28 @@
 
 **Agents make promises. This is where they get checked.**
 
-Trust Contract Studio is a human–agent workspace that turns what an AI agent promises to do for someone into a contract of explicit, testable obligations. A person approves the sensitive ones, the agent executes against real (sandboxed) providers, and an independent, deterministic verifier decides what actually happened: **VERIFIED**, **FAILED**, or **UNKNOWN**. The agent's own report of success is recorded, displayed next to the evidence, and never counted as evidence.
+**[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **Demo video (Clips):** _link added at submission_ · **[Evidence](docs/eval/)**
 
-Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@agent-native/core` 0.222.0) for the Builder.io Agent-Native Hackathon 2026.
+An AI agent tells a customer _"Done, refunded $100."_ Trust Contract Studio does not take its word. It asks the billing provider. Below, the provider is **Dodo Payments in test mode** (a real API with simulated money). The refund's response was lost and the call retried, so the customer was refunded **twice, $200**. The agent said "Done"; the independent check says **FAILED**.
 
-> **Live app:** [trust-contract-studio.vercel.app](https://trust-contract-studio.vercel.app) (sign up with any email; each account gets its own sandbox). Synthetic data only. Not a legal-compliance tool.
+![A real duplicate refund at Dodo Payments (test mode): the agent claims "Done, refunded $100", the provider shows two refunds totalling $200, and the clause is FAILED](docs/screenshots/09-real-billing-dodo-failed.png)
+
+| Evidence                          | Result                                                                                                                                                                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real provider**                 | Dodo Payments test mode, in the app (Replay Lab → **Real billing**) and from the command line (`pnpm demo:dodo`). The same verifier catches a real duplicate refund the agent reported as "Done". [Run with real ids](docs/eval/dodo-live-run.md) |
+| **Every combination of 9 faults** | 512 runs and 2,048 clauses, checked against an independent oracle: **0 false VERIFIED, 0 false FAILED**. Without the check, the agent's "Done" would have been wrong 43.75% of the time. [Report](docs/eval/outcome-eval.md)                      |
+| **A live LLM agent**              | 18 runs: **72/72** verdicts reported exactly as the verifier found them, 0 overclaims, 0 approvals by the agent despite injected "approve everything" instructions. [Report](docs/eval/agent-eval.md)                                             |
+
+**How it works:**
+
+1. A request becomes a checklist of promises, each with what "done" means.
+2. A person approves the sensitive ones.
+3. The agent executes.
+4. An independent check reads the providers, never the agent's words, and answers **VERIFIED**, **FAILED** or **UNKNOWN**.
+5. Repairs come from what the check found, and a person approves them.
+6. A tamper-evident receipt records the result.
+
+Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@agent-native/core` 0.222.0) for the Builder.io Agent-Native Hackathon 2026. Synthetic customer data. Not a legal-compliance tool.
 
 ## Who it is for
 
@@ -74,7 +91,18 @@ The executor reports "Done" for both clauses. The **unchanged pure verifier** th
 
 Real IDs and raw observations are in [docs/eval/dodo-live-run.md](docs/eval/dodo-live-run.md). A clean run returns VERIFIED for both clauses.
 
-Scope: cancellation and refunds only, in test mode, from the command line. The Studio itself runs on the sandbox.
+**In the app:** Replay Lab → **Real billing: Dodo Payments (test)**.
+
+- Each reset starts a fresh $200 test subscription at Dodo.
+- Cancellation and refunds then run against Dodo, and the verifier reads Dodo itself. The providers panel shows "Billing: Dodo Payments (test mode, real API)".
+- Dodo blocks refunds above the payment amount, but within that cap a retried $100 refund pays twice.
+- A real refund cannot be voided through Dodo's API, so the repair says it **needs a person** instead of pretending.
+
+Scope:
+
+- Cancellation and refunds only, in test mode.
+- Erasure and memory purges stay in the sandbox stores, with a real pgvector index.
+- The scenario appears only when the server is configured with a Dodo test-mode key.
 
 ## Agent-Native, for real
 
@@ -148,7 +176,7 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 77 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test           # 79 unit + integration tests on in-memory PostgreSQL (PGlite)
 pnpm test:e2e       # 9 Playwright tests against the real app (incl. axe-core audit, keyboard-only)
 pnpm build          # production build (Nitro, node preset)
 ```
@@ -166,7 +194,7 @@ Latest results are in [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 
 ## Honest limits
 
-- The Studio's providers are sandboxes with synthetic data. The one real-provider check is Dodo Payments in test mode, for cancellations and refunds only. Verification covers only stores registered in the workspace. It is not evidence of erasure anywhere else and not a legal determination.
+- Most scenarios run on sandbox providers with synthetic data. The **Real billing** scenario uses Dodo Payments in test mode, for cancellations and refunds only. Verification covers only stores registered in the workspace. It is not evidence of erasure anywhere else and not a legal determination.
 - Vector-index embeddings are lexical (hashed character trigrams), not a language model's. They catch reformatted copies of an identifier, not deep paraphrases.
 - Exactly-once execution is **not** claimed. Side effects use idempotency keys and bounded retries, and the verifier catches what slips through.
 - Integrity is tamper-_evident_: SHA-256 digests on evidence, a hash-chained audit log, HMAC-signed receipts. There is no public-key signature, external timestamping or immutability guarantee. Someone with database and key access could rewrite history.

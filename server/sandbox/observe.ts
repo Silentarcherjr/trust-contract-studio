@@ -17,7 +17,11 @@ import {
   sbxSubscriptions,
 } from "../db/schema.js";
 import { nowIso } from "../domain/integrity.js";
-import { faultActive } from "./faults.js";
+import {
+  observeDodoRefunds,
+  observeDodoSubscription,
+} from "../providers/dodo.js";
+import { faultActive, usesRealBilling } from "./faults.js";
 import {
   liveVectorIds,
   nearestVectors,
@@ -99,6 +103,9 @@ export async function observeSubscription(
   owner: string,
   subscriptionId: string,
 ): Promise<Observation<SubscriptionObservation>> {
+  // Real billing scenario: read Dodo Payments (test mode) itself.
+  if (await usesRealBilling(db, owner))
+    return observeDodoSubscription(subscriptionId);
   const source = "billing.subscriptions.read";
   if (await billingTimeout(db, owner)) {
     return {
@@ -172,6 +179,7 @@ export async function observeRefunds(
   owner: string,
   chargeId: string,
 ): Promise<Observation<RefundObservation>> {
+  if (await usesRealBilling(db, owner)) return observeDodoRefunds(chargeId);
   const source = "billing.refunds.list";
   if (await billingTimeout(db, owner)) {
     return {

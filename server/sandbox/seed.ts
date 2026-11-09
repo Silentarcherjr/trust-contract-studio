@@ -19,7 +19,19 @@ export interface SeedResult {
   latestChargeId: string;
 }
 
-export async function seedSandbox(db: Db, owner: string): Promise<SeedResult> {
+/** Real Dodo (test mode) ids that replace the requester's billing records. */
+export interface RealBilling {
+  subscriptionId: string;
+  paymentId: string;
+  amountCents: number;
+  createdAt: string;
+}
+
+export async function seedSandbox(
+  db: Db,
+  owner: string,
+  real?: RealBilling,
+): Promise<SeedResult> {
   const ada = newId("cus");
   const ben = newId("cus");
   await db.insert(sbxCustomers).values([
@@ -37,14 +49,16 @@ export async function seedSandbox(db: Db, owner: string): Promise<SeedResult> {
     },
   ]);
 
-  const sub = newId("sub");
+  const sub = real?.subscriptionId ?? newId("sub");
   await db.insert(sbxSubscriptions).values([
     {
       id: sub,
       ownerEmail: owner,
       customerId: ada,
-      plan: "Studio Plus (monthly)",
-      priceCents: 10000,
+      plan: real
+        ? "Studio Plus, 2 seats (Dodo test mode)"
+        : "Studio Plus (monthly)",
+      priceCents: real?.amountCents ?? 10000,
       status: "active",
       canceledAt: null,
       updatedAt: "2026-10-01T08:00:00.000Z",
@@ -62,23 +76,29 @@ export async function seedSandbox(db: Db, owner: string): Promise<SeedResult> {
   ]);
 
   const septCharge = newId("ch");
-  const octCharge = newId("ch");
+  const octCharge = real?.paymentId ?? newId("ch");
   await db.insert(sbxCharges).values([
-    {
-      id: septCharge,
-      ownerEmail: owner,
-      customerId: ada,
-      amountCents: 10000,
-      description: "Studio Plus — September 2026",
-      createdAt: "2026-09-01T08:00:00.000Z",
-    },
+    ...(real
+      ? []
+      : [
+          {
+            id: septCharge,
+            ownerEmail: owner,
+            customerId: ada,
+            amountCents: 10000,
+            description: "Studio Plus — September 2026",
+            createdAt: "2026-09-01T08:00:00.000Z",
+          },
+        ]),
     {
       id: octCharge,
       ownerEmail: owner,
       customerId: ada,
-      amountCents: 10000,
-      description: "Studio Plus — October 2026",
-      createdAt: "2026-10-01T08:00:00.000Z",
+      amountCents: real?.amountCents ?? 10000,
+      description: real
+        ? "Studio Plus, 2 seats — Dodo test payment"
+        : "Studio Plus — October 2026",
+      createdAt: real?.createdAt ?? "2026-10-01T08:00:00.000Z",
     },
     {
       id: newId("ch"),

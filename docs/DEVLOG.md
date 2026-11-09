@@ -2,6 +2,20 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: Real billing inside the Studio
+
+- **New scenario: "Real billing: Dodo Payments (test)".**
+  - Each reset starts a fresh $200 test subscription at Dodo with a saved test card.
+  - Cancellation and refunds go to Dodo. The local rows only mirror what the UI shows.
+  - `observe.ts` reads Dodo directly when the workspace uses real billing, so the verifier is unchanged.
+- **Local UI run:** cancel VERIFIED; refund FAILED, with 2 real refunds totalling $200 against a $100 promise.
+- **Dodo's own protection:** it rejects refunds above the payment amount (`PAYMENT_ALREADY_REFUNDED` on a second full refund). That is why the demo uses a $200 payment and a $100 promise.
+- **Repairs.** A real refund cannot be voided through Dodo's API, so the repair lists it under "Needs your judgment" instead of proposing a void.
+- **Retry text.** The Theater's retry line says Dodo documents no idempotency key.
+- **Availability.** The scenario only appears when the server has the Dodo test configuration; otherwise reset answers 503 `real_billing_unavailable`.
+- **Tests.** 2 integration tests with an in-memory Dodo; the scenario-table test skips the real scenario. Results: 79/79 unit, 9/9 E2E.
+- **README.** The opening now leads with the real catch, three pieces of evidence and a one-line "how it works".
+
 ## 2026-11-09: Checked against a real provider (Dodo Payments, test mode)
 
 - **Adapter.** [`server/providers/dodo.ts`](../server/providers/dodo.ts) has two parts:

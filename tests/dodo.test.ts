@@ -5,11 +5,13 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as svc from "../server/domain/service.js";
 import { verifyObligation } from "../server/domain/verifier.js";
 import {
   observeDodoRefunds,
   observeDodoSubscription,
 } from "../server/providers/dodo.js";
+import { DEMO_GOAL, approveAllPending, freshDb, human } from "./harness.js";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status });
@@ -131,5 +133,104 @@ describe("Dodo test-mode adapter", () => {
     );
     expect(v.verdict).toBe("FAILED");
     expect(v.reasons[0]!.code).toBe("still_active");
+  });
+});
+
+describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
+  const fakeDodo = () => {
+    const sub = {
+      subscription_id: "sub_real1",
+      status: "active",
+      cancelled_at: null as string | null,
+      customer: { customer_id: "cus_t" },
+    };
+    const refunds: ReturnType<typeof refund>[] = [];
+    const pay = () => ({
+      payment_id: "pay_real1",
+      status: "succeeded",
+      total_amount: 20000,
+      created_at: "2026-11-09T20:00:00Z",
+      subscription_id: sub.subscription_id,
+      refunds,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const u = new URL(url);
+        const path = u.pathname;
+        const method = init?.method ?? "GET";
+        if (method === "POST" && path === "/checkouts")
+          return json({ payment_id: "pay_real1" });
+        if (method === "GET" && path === "/payments")
+          return json({ items: [{ payment_id: "pay_real1" }] });
+        if (method === "GET" && path === "/payments/pay_real1")
+          return json(pay());
+        if (path === "/subscriptions/sub_real1") {
+          if (method === "PATCH") {
+            sub.status = "cancelled";
+            sub.cancelled_at = new Date().toISOString();
+          }
+          return json(sub);
+        }
+        if (method === "POST" && path === "/refunds") {
+          const body = JSON.parse(String(init?.body));
+          const r = refund(`ref_${refunds.length + 1}`, body.items[0].amount);
+          refunds.push(r);
+          return json({ refund_id: r.refund_id, status: "succeeded" });
+        }
+        return json({ error: "not found" }, 404);
+      }),
+    );
+  };
+
+  beforeEach(() => {
+    process.env.DODO_TEST_PRODUCT_ID = "pdt_t";
+    process.env.DODO_TEST_CUSTOMER_ID = "cus_t";
+    process.env.DODO_TEST_PAYMENT_METHOD_ID = "pm_t";
+  });
+  afterEach(() => {
+    delete process.env.DODO_TEST_PRODUCT_ID;
+    delete process.env.DODO_TEST_CUSTOMER_ID;
+    delete process.env.DODO_TEST_PAYMENT_METHOD_ID;
+  });
+
+  it("a retried refund pays twice at the provider; the verifier says FAILED and the repair needs a person", async () => {
+    fakeDodo();
+    const { db, close } = await freshDb();
+    try {
+      await svc.resetDemo(db, human(), { scenario: "real_billing" });
+      let view = await svc.draftContract(db, human(), { goal: DEMO_GOAL });
+      view = await approveAllPending(db, view);
+      view = await svc.executeContract(db, human(), {
+        contractId: view.contract.id,
+      });
+      const byKind = Object.fromEntries(
+        view.obligations.map((o) => [o.kind, o.verdict]),
+      );
+      expect(byKind.cancel_subscription).toBe("VERIFIED");
+      expect(byKind.refund_charge).toBe("FAILED");
+      expect(byKind.erase_personal_data).toBe("VERIFIED");
+      expect(byKind.purge_derived_memories).toBe("VERIFIED");
+
+      const { plan } = await svc.proposeRepair(db, human(), {
+        contractId: view.contract.id,
+      });
+      expect(plan.proposals.some((p) => p.kind === "void_refunds")).toBe(false);
+      expect(plan.needsHuman[0]!.reason).toMatch(/cannot reverse a refund/);
+    } finally {
+      await close();
+    }
+  }, 30_000);
+
+  it("is refused with a clear message when the server has no Dodo configuration", async () => {
+    delete process.env.DODO_TEST_PRODUCT_ID;
+    const { db, close } = await freshDb();
+    try {
+      await expect(
+        svc.resetDemo(db, human(), { scenario: "real_billing" }),
+      ).rejects.toMatchObject({ code: "real_billing_unavailable" });
+    } finally {
+      await close();
+    }
   });
 });

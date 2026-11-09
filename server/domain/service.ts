@@ -7,6 +7,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import {
   KIND_INFO,
+  REAL_BILLING_SCENARIOS,
   SCENARIO_INFO,
   obligationParamsSchemas,
   type ContractStatus,
@@ -34,14 +35,20 @@ import {
   sbxSubscriptions,
   verifications,
 } from "../db/schema.js";
-import { consumeFault, getScenario, setScenario } from "../sandbox/faults.js";
+import { dodoConfig, dodoEffects } from "../providers/dodo.js";
+import {
+  consumeFault,
+  getScenario,
+  setScenario,
+  usesRealBilling,
+} from "../sandbox/faults.js";
 import {
   observeMemories,
   observeRefunds,
   observeSubscription,
   type Observation,
 } from "../sandbox/observe.js";
-import { seedSandbox } from "../sandbox/seed.js";
+import { type RealBilling, seedSandbox } from "../sandbox/seed.js";
 import { liveVectorIds, vectorEngineName } from "../sandbox/vector-index.js";
 import { ContractError } from "./errors.js";
 import { executeObligations, executionOrder } from "./executor.js";
@@ -472,6 +479,37 @@ export async function resetDemo(
 ) {
   const owner = actor.email;
   await assertRateLimit(db, owner, "reset");
+  let real: RealBilling | undefined;
+  if (REAL_BILLING_SCENARIOS.includes(input.scenario)) {
+    const cfg = dodoConfig();
+    if (!cfg) {
+      throw new ContractError(
+        "The real-billing scenario is not configured on this server (Dodo Payments test-mode key and test ids).",
+        "real_billing_unavailable",
+        503,
+      );
+    }
+    // Stop the previous real test subscription of this workspace, if any, so
+    // test renewals do not pile up. Best effort: the reset continues anyway.
+    if (await usesRealBilling(db, owner)) {
+      const previous = await db
+        .select({ id: sbxSubscriptions.id, status: sbxSubscriptions.status })
+        .from(sbxSubscriptions)
+        .where(eq(sbxSubscriptions.ownerEmail, owner));
+      for (const p of previous.filter((p) => p.status === "active")) {
+        await dodoEffects.cancelSubscription(p.id).catch(() => undefined);
+      }
+    }
+    try {
+      real = await dodoEffects.startSubscription(cfg);
+    } catch (err) {
+      throw new ContractError(
+        `Dodo Payments (test mode) did not start a test subscription: ${(err as Error).message.slice(0, 160)}`,
+        "real_billing_unavailable",
+        502,
+      );
+    }
+  }
   const tables = [
     contracts,
     obligations,
@@ -492,7 +530,7 @@ export async function resetDemo(
   for (const t of tables) {
     await db.delete(t).where(eq(t.ownerEmail, owner));
   }
-  const seeded = await seedSandbox(db, owner);
+  const seeded = await seedSandbox(db, owner, real);
   await setScenario(db, owner, input.scenario);
   await appendAudit(db, owner, {
     actor: owner,
@@ -595,6 +633,10 @@ export async function getWorkspace(db: Db, owner: string) {
     // Lineage registry: labels and links only. Content is never returned, and
     // the third-party export's live state is unknown by construction.
     vectorEngine,
+    billingProvider: REAL_BILLING_SCENARIOS.includes(scenario)
+      ? "Dodo Payments (test mode, real API)"
+      : "Sandbox",
+    realBillingAvailable: dodoConfig() !== null,
     lineage: mems.map((m) => ({
       id: m.id,
       store: m.store,
@@ -1339,6 +1381,16 @@ export async function proposeRepair(
     failing,
     new Map(charges.map((c) => [c.id, c.amountCents])),
   );
+  // A real provider cannot void a refund: say so instead of proposing it.
+  if (await usesRealBilling(db, owner)) {
+    for (const p of plan.proposals.filter((p) => p.kind === "void_refunds")) {
+      plan.needsHuman.push({
+        obligationId: p.repairOf,
+        reason: `Dodo Payments cannot reverse a refund through its API, so the over-refund (${(p.params.refundIds as string[]).length} extra refund(s)) needs a person to recover. ${p.rationale}`,
+      });
+    }
+    plan.proposals = plan.proposals.filter((p) => p.kind !== "void_refunds");
+  }
 
   if (plan.proposals.length) {
     const round = contract.round + 1;

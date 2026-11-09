@@ -21,7 +21,7 @@ import {
 import type { Db } from "../db/index.js";
 import { approvals, attempts, obligations } from "../db/schema.js";
 import * as billing from "../sandbox/billing.js";
-import { takeFault } from "../sandbox/faults.js";
+import { takeFault, usesRealBilling } from "../sandbox/faults.js";
 import * as memory from "../sandbox/memory.js";
 import { ContractError, ProviderTimeout } from "./errors.js";
 import { newId, nowIso } from "./integrity.js";
@@ -173,6 +173,8 @@ export async function executeObligations(
   ctx: ExecuteContext,
 ): Promise<{ interrupted: boolean }> {
   const { owner, contractId, runId } = ctx;
+  // A real provider (Dodo, test mode) documents no idempotency key.
+  const realBilling = await usesRealBilling(db, owner);
   const rows = await db
     .select()
     .from(obligations)
@@ -317,7 +319,9 @@ export async function executeObligations(
             response: { error: err.message },
             claim:
               attemptNo < MAX_ATTEMPTS
-                ? "No response from provider — retrying with the same idempotency key."
+                ? realBilling && op.provider === "billing"
+                  ? "No response from provider — retrying (Dodo documents no idempotency key)."
+                  : "No response from provider — retrying with the same idempotency key."
                 : "Gave up after repeated timeouts; outcome unknown.",
             durationMs: Date.now() - started,
           });

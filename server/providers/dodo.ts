@@ -20,6 +20,21 @@ import type {
 
 export const DODO_TEST_BASE = "https://test.dodopayments.com";
 
+/**
+ * Server configuration for the "Real billing" scenario: a test-mode key, a
+ * recurring test product, and a test customer with a saved test card.
+ * Returns null when any is missing, so the scenario can say it is off.
+ */
+export function dodoConfig() {
+  const key = process.env.DODO_PAYMENTS_API_KEY;
+  const productId = process.env.DODO_TEST_PRODUCT_ID;
+  const customerId = process.env.DODO_TEST_CUSTOMER_ID;
+  const paymentMethodId = process.env.DODO_TEST_PAYMENT_METHOD_ID;
+  if (!key || !productId || !customerId || !paymentMethodId) return null;
+  if (key.startsWith("dodo_live_")) return null;
+  return { productId, customerId, paymentMethodId };
+}
+
 function key() {
   const k = process.env.DODO_PAYMENTS_API_KEY;
   if (!k) throw new Error("Set DODO_PAYMENTS_API_KEY to a Dodo test-mode key.");
@@ -113,7 +128,12 @@ export const dodoEffects = {
     for (let i = 0; i < 20; i++) {
       const p = await call<DodoPayment>("GET", `/payments/${out.payment_id}`);
       if (p.status === "succeeded" && p.subscription_id)
-        return { paymentId: p.payment_id, subscriptionId: p.subscription_id };
+        return {
+          paymentId: p.payment_id,
+          subscriptionId: p.subscription_id,
+          amountCents: p.total_amount,
+          createdAt: p.created_at,
+        };
       if (p.status === "failed" || p.status === "cancelled")
         throw new Error(`Test payment ${p.payment_id} ended "${p.status}".`);
       await new Promise((r) => setTimeout(r, 1500));

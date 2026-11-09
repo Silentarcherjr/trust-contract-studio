@@ -172,6 +172,7 @@ export const SCENARIOS = [
   "contradictory_evidence",
   "interrupted",
   "disguised_copy",
+  "real_billing",
 ] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 
@@ -265,7 +266,21 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
       purge_derived_memories: "FAILED",
     },
   },
+  real_billing: {
+    title: "Real billing: Dodo Payments (test)",
+    summary:
+      "Cancellation and refund run against a real billing provider, Dodo Payments, in test mode (real API, simulated money). The first refund's response is lost and retried; Dodo documents no idempotency key, so the retry pays a second real refund. Memories stay in the sandbox.",
+    expected: {
+      cancel_subscription: "VERIFIED",
+      refund_charge: "FAILED",
+      erase_personal_data: "VERIFIED",
+      purge_derived_memories: "VERIFIED",
+    },
+  },
 };
+
+/** Scenarios whose billing runs against a real provider (test mode). */
+export const REAL_BILLING_SCENARIOS: readonly Scenario[] = ["real_billing"];
 
 // ---------------------------------------------------------------------------
 // Input schema for agent- or user-authored obligations.

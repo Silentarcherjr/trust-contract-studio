@@ -8,7 +8,7 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import type { Scenario } from "../../shared/domain.js";
+import { REAL_BILLING_SCENARIOS, type Scenario } from "../../shared/domain.js";
 import type { Db } from "../db/index.js";
 import { sbxFaults } from "../db/schema.js";
 import { nowIso } from "../domain/integrity.js";
@@ -43,6 +43,8 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   contradictory_evidence: ["billing.renewal_after_cancel"],
   interrupted: ["worker.crash_after_first"],
   disguised_copy: ["memory.reembed_untracked"],
+  // The retry happens for real at Dodo; only the lost response is simulated.
+  real_billing: ["billing.refund_lost_response"],
 };
 
 /**
@@ -122,4 +124,9 @@ export async function takeFault(db: Db, owner: string, key: FaultKey) {
   const active = await faultActive(db, owner, key);
   if (active) await consumeFault(db, owner, key);
   return active;
+}
+
+/** True when this workspace's billing runs against Dodo Payments (test mode). */
+export async function usesRealBilling(db: Db, owner: string) {
+  return REAL_BILLING_SCENARIOS.includes(await getScenario(db, owner));
 }

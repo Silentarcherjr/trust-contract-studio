@@ -5,6 +5,7 @@ import {
   useActionQuery,
 } from "@agent-native/core/client/hooks";
 import {
+  REAL_BILLING_SCENARIOS,
   SCENARIOS,
   SCENARIO_INFO,
   formatCents,
@@ -187,7 +188,9 @@ export function StudioHome() {
           aria-labelledby="sandbox-heading"
         >
           <h2 id="sandbox-heading" className="tcs-eyebrow">
-            Sandbox providers · synthetic data
+            {ws && ws.billingProvider !== "Sandbox"
+              ? "Providers · billing on Dodo test mode, memories in the sandbox"
+              : "Sandbox providers · synthetic data"}
           </h2>
           {ws ? (
             <dl className="space-y-2 text-sm">
@@ -237,6 +240,10 @@ export function StudioHome() {
                   {ws.lineage.filter((m) => m.state === "unobservable").length}{" "}
                   unobservable
                 </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="tcs-soft">Billing</dt>
+                <dd className="text-right">{ws.billingProvider}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="tcs-soft">Vector index</dt>
@@ -289,7 +296,11 @@ export function StudioHome() {
           role="group"
           aria-label="Scenarios"
         >
-          {SCENARIOS.map((s) => (
+          {SCENARIOS.filter(
+            (s) =>
+              !REAL_BILLING_SCENARIOS.includes(s) ||
+              (ws && ws.realBillingAvailable),
+          ).map((s) => (
             <button
               key={s}
               type="button"

@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../server/db/index.js";
 import * as svc from "../server/domain/service.js";
 import { liveVectorIds } from "../server/sandbox/vector-index.js";
-import { SCENARIO_INFO, type Scenario } from "../shared/domain.js";
+import {
+  REAL_BILLING_SCENARIOS,
+  SCENARIO_INFO,
+  type Scenario,
+} from "../shared/domain.js";
 import {
   DEMO_GOAL,
   approveAllPending,
@@ -270,7 +274,10 @@ describe("scenario: interrupted execution", () => {
 });
 
 describe("expected outcomes table matches reality for every scenario", () => {
-  const scenarios = Object.keys(SCENARIO_INFO) as Scenario[];
+  // The real-billing scenario needs Dodo; tests/dodo.test.ts covers it.
+  const scenarios = (Object.keys(SCENARIO_INFO) as Scenario[]).filter(
+    (s) => !REAL_BILLING_SCENARIOS.includes(s),
+  );
   for (const scenario of scenarios) {
     it(scenario, async () => {
       const approved = await draftAndApprove(db, scenario);

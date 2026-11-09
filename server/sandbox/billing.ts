@@ -11,7 +11,8 @@ import type { Db } from "../db/index.js";
 import { sbxCharges, sbxRefunds, sbxSubscriptions } from "../db/schema.js";
 import { ContractError, ProviderTimeout } from "../domain/errors.js";
 import { newId, nowIso } from "../domain/integrity.js";
-import { takeFault } from "./faults.js";
+import { dodoConfig, dodoEffects } from "../providers/dodo.js";
+import { takeFault, usesRealBilling } from "./faults.js";
 
 export async function cancelSubscription(
   db: Db,
@@ -34,6 +35,17 @@ export async function cancelSubscription(
       "provider_not_found",
       404,
     );
+  }
+  if (await usesRealBilling(db, owner)) {
+    // Real provider (Dodo, test mode). The local row only mirrors what the
+    // UI shows; the verifier reads Dodo itself.
+    const res = await dodoEffects.cancelSubscription(sub.id);
+    const canceledAt = res.cancelled_at ?? nowIso();
+    await db
+      .update(sbxSubscriptions)
+      .set({ status: "canceled", canceledAt, updatedAt: nowIso() })
+      .where(eq(sbxSubscriptions.id, sub.id));
+    return { subscriptionId: sub.id, status: res.status, canceledAt };
   }
   if (sub.status === "canceled") {
     return {
@@ -89,6 +101,43 @@ export async function refundCharge(
   if (!charge) {
     throw new ContractError("Charge not found", "provider_not_found", 404);
   }
+  if (await usesRealBilling(db, owner)) {
+    // Real provider (Dodo, test mode). Dodo documents no idempotency key, so
+    // there is nothing to send that would make a retry safe.
+    const cfg = dodoConfig();
+    if (!cfg)
+      throw new ContractError(
+        "Real billing is not configured.",
+        "provider_error",
+        503,
+      );
+    const refund = await dodoEffects.refund({
+      paymentId: charge.id,
+      productId: cfg.productId,
+      amountCents: input.amountCents,
+      reason: "Trust Contract Studio: promised refund",
+    });
+    await db.insert(sbxRefunds).values({
+      id: refund.refund_id,
+      ownerEmail: owner,
+      customerId: input.customerId,
+      chargeId: input.chargeId,
+      amountCents: input.amountCents,
+      idempotencyKey: `${input.idempotencyKey}:${refund.refund_id}`,
+      status: "succeeded",
+      createdAt: nowIso(),
+      voidedAt: null,
+    });
+    // Fault: the refund is applied at Dodo, but the response is treated as lost.
+    if (await takeFault(db, owner, "billing.refund_lost_response")) {
+      throw new ProviderTimeout("billing", "refunds.create", true);
+    }
+    return {
+      refundId: refund.refund_id,
+      amountCents: input.amountCents,
+      replayed: false,
+    };
+  }
   const [existing] = await db
     .select()
     .from(sbxRefunds)
@@ -130,6 +179,13 @@ export async function voidRefunds(
   owner: string,
   input: { customerId: string; chargeId: string; refundIds: string[] },
 ) {
+  if (await usesRealBilling(db, owner)) {
+    throw new ContractError(
+      "Dodo Payments cannot reverse a refund through its API. Recovering the duplicate needs a person.",
+      "provider_irreversible",
+      422,
+    );
+  }
   const rows = await db
     .select()
     .from(sbxRefunds)

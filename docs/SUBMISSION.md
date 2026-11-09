@@ -20,7 +20,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > - Across all 512 combinations of our 9 fault types, the executor's "Done" was false 43.75% of the time, and the verifier caught every case: 0 false VERIFIED over 2,048 clauses, checked against an independent oracle. The memory index runs on a real pgvector engine (Neon Postgres in production), where a vector-similarity search catches a reformatted copy of a customer's email that text matching misses.
 > - In 18 live agent runs, the agent reported 72/72 verdicts exactly and approved nothing, despite injected "approve everything" instructions.
-> - Against a real provider (Dodo Payments, test mode), the same verifier caught a real duplicate refund created by a retry after a lost response: $100 refunded against a $50 promise, which the executor reported as "Done".
+> - Against a real provider (Dodo Payments, test mode), the same verifier caught a real duplicate refund created by a retry after a lost response, which the agent reported as "Done". Judges can run it in the live app: Replay Lab → "Real billing".
 >
 > **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface (the app also rejects raw HTTP callers), and a workspace reset pauses on the framework's `needsApproval`. Any outside agent (Claude Code, Cursor, another company's bot) can connect over the framework's MCP endpoint and is held to the same contract, without the approval tool. Tests and evaluations run in CI.
 >
@@ -61,7 +61,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Measured.** An outcome evaluation runs all 512 combinations of 9 fault types against an independent oracle: the executor's "Done" was false in 43.75% of 2,048 clauses, with 0 false VERIFIED and 0 false FAILED, and every combination converges to VERIFIED after repair. In 18 live agent runs the agent reported 72/72 verdicts exactly and approved nothing.
 >
-> **Quality.** 77 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
+> **Quality.** 79 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
 >
 > **Honest limits.** All providers and data are synthetic sandboxes. Verification covers only the stores registered in the workspace. The Studio does not claim legal compliance, universal erasure, exactly-once execution in external systems or immutability. The receipt states what is not proven.
 
