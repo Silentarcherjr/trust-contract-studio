@@ -56,7 +56,14 @@ export function StudioHome() {
   const contracts = useActionQuery("list-contracts", {});
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const active = (workspace.data?.scenario ?? "clean") as Scenario;
-  const chosen = scenario ?? active;
+  const realBillingAvailable = workspace.data?.realBillingAvailable === true;
+  // A fresh workspace starts on the real-provider scenario when the server
+  // has it configured: the first thing a visitor sees is a real provider.
+  const chosen =
+    scenario ??
+    (workspace.data?.seeded === false && realBillingAvailable
+      ? "real_billing"
+      : active);
 
   // On slower networks (e.g. the first vector-engine start in production) the
   // page re-renders while a reset settles and its data reloads, which can drop
@@ -176,8 +183,9 @@ export function StudioHome() {
           </p>
           {!seeded && !workspace.isLoading && (
             <div className="tcs-banner text-sm" data-tone="neutral">
-              The sandbox is empty. Choose a scenario in the Replay Lab and
-              reset it to begin.
+              {realBillingAvailable
+                ? "The workspace is empty. Press Reset sandbox below: the preselected scenario runs billing against a real provider (Dodo Payments, test mode)."
+                : "The sandbox is empty. Choose a scenario in the Replay Lab and reset it to begin."}
             </div>
           )}
         </section>
@@ -296,36 +304,43 @@ export function StudioHome() {
           role="group"
           aria-label="Scenarios"
         >
-          {SCENARIOS.filter(
-            (s) =>
-              !REAL_BILLING_SCENARIOS.includes(s) ||
-              (ws && ws.realBillingAvailable),
-          ).map((s) => (
-            <button
-              key={s}
-              type="button"
-              className="tcs-scenario"
-              aria-pressed={chosen === s}
-              onClick={() => setScenario(s)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">
-                  {SCENARIO_INFO[s].title}
-                </span>
-                {s === active && <span className="tcs-chip">active</span>}
-              </div>
-              <p className="tcs-soft mt-1 text-xs leading-snug">
-                {SCENARIO_INFO[s].summary}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {[...new Set(Object.values(SCENARIO_INFO[s].expected))].map(
-                  (v) => (
-                    <Seal key={v} verdict={v} />
-                  ),
-                )}
-              </div>
-            </button>
-          ))}
+          {[...SCENARIOS]
+            // The real-provider scenario comes first when the server has it.
+            .sort(
+              (a, b) =>
+                Number(REAL_BILLING_SCENARIOS.includes(b)) -
+                Number(REAL_BILLING_SCENARIOS.includes(a)),
+            )
+            .filter(
+              (s) =>
+                !REAL_BILLING_SCENARIOS.includes(s) || realBillingAvailable,
+            )
+            .map((s) => (
+              <button
+                key={s}
+                type="button"
+                className="tcs-scenario"
+                aria-pressed={chosen === s}
+                onClick={() => setScenario(s)}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">
+                    {SCENARIO_INFO[s].title}
+                  </span>
+                  {s === active && <span className="tcs-chip">active</span>}
+                </div>
+                <p className="tcs-soft mt-1 text-xs leading-snug">
+                  {SCENARIO_INFO[s].summary}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {[...new Set(Object.values(SCENARIO_INFO[s].expected))].map(
+                    (v) => (
+                      <Seal key={v} verdict={v} />
+                    ),
+                  )}
+                </div>
+              </button>
+            ))}
         </div>
         <p className="tcs-soft text-xs">
           Resetting wipes this workspace's contracts, evidence and receipts and

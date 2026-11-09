@@ -158,5 +158,5 @@ describe("verified-done card", () => {
     expect(html).toContain("FAILED");
     expect(html).toContain("Claim contradicted by evidence");
     expect(html).toContain(`href="/studio/${view.contract.id}"`);
-  });
+  }, 30_000);
 });

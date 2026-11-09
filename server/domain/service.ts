@@ -554,6 +554,7 @@ export async function getWorkspace(db: Db, owner: string) {
       seeded: false as const,
       scenario,
       scenarioInfo: SCENARIO_INFO[scenario],
+      realBillingAvailable: dodoConfig() !== null,
     };
   const [sub] = await db
     .select()

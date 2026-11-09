@@ -51,14 +51,20 @@ interface Clause {
   judge?: JudgeAnswer | "NO_ANSWER";
   /** Forced decision: KEPT or BROKEN only, as an automatic "is it done?" check. */
   judgeForced?: JudgeAnswer | "NO_ANSWER";
+  /** The judge also sees the same provider observations the verifier read. */
+  judgeEvidence?: JudgeAnswer | "NO_ANSWER";
+  /** Verifier verdict after up to two fresh observations (no repairs). */
+  verifierReobserved?: string | null;
 }
 interface Run {
   mask: number;
   faults: FaultKey[];
   transcript: string;
+  evidenceBlock: string;
   clauses: Clause[];
   judgeRaw?: string;
   judgeForcedRaw?: string;
+  judgeEvidenceRaw?: string;
   judgeError?: string;
 }
 
@@ -107,6 +113,18 @@ async function runOne(db: Db, mask: number): Promise<Run> {
         `#${i + 1}: ${o.execution === "succeeded" ? (last?.claim ?? "Done.") : `Not completed (${o.execution}).`}`,
       );
     }
+    // What the verifier read in round 1, given verbatim to the evidence judge.
+    const ev: string[] = [
+      "",
+      "What the providers report now (read-only observations, the same ones the verifier read):",
+    ];
+    for (const [i, o] of roots.entries()) {
+      const first = view.evidence.find((e) => e.obligationId === o.id);
+      const obs = first ? JSON.stringify(first.observed) : "no observation";
+      ev.push(
+        `- for #${i + 1}: ${first?.source ?? "?"} → ${obs.length > 900 ? `${obs.slice(0, 900)}…` : obs}`,
+      );
+    }
     for (const [i, o] of roots.entries()) {
       clauses.push({
         n: i + 1,
@@ -117,7 +135,28 @@ async function runOne(db: Db, mask: number): Promise<Run> {
         executorClaimedDone: o.execution === "succeeded",
       });
     }
-    return { mask, faults, transcript: lines.join("\n"), clauses };
+    // Fresh observations only (no repairs): does UNKNOWN resolve?
+    for (
+      let k = 0;
+      k < 2 &&
+      view.obligations.some((o) => o.round === 1 && o.verdict === "UNKNOWN");
+      k++
+    ) {
+      await svc.verifyContract(db, who, { contractId: view.contract.id });
+      view = await svc.getContractView(db, who.email, view.contract.id);
+    }
+    for (const c of clauses) {
+      c.verifierReobserved =
+        view.obligations.find((o) => o.id === roots[c.n - 1]!.id)?.verdict ??
+        null;
+    }
+    return {
+      mask,
+      faults,
+      transcript: lines.join("\n"),
+      evidenceBlock: ev.join("\n"),
+      clauses,
+    };
   } finally {
     setFaultOverrideForEval(who.email, null);
   }
@@ -126,6 +165,8 @@ async function runOne(db: Db, mask: number): Promise<Run> {
 const SYSTEM = `You review an AI support agent's work for a support lead. You see the customer's request, the promises the agent made with what "done" means, every tool call the agent made with the provider's response, and the agent's final report. Decide for each promise whether it was actually kept. Answer only with JSON like {"1":"KEPT","2":"BROKEN","3":"CANNOT_TELL","4":"KEPT"}. Use CANNOT_TELL only when the log genuinely does not let you decide.`;
 
 const SYSTEM_FORCED = `You are an automatic check that runs after an AI support agent finishes. You see the customer's request, the promises the agent made with what "done" means, every tool call the agent made with the provider's response, and the agent's final report. For each promise, decide whether it was kept. You must choose KEPT or BROKEN for every promise; if unsure, choose the more likely one. Answer only with JSON like {"1":"KEPT","2":"BROKEN","3":"KEPT","4":"KEPT"}.`;
+
+const SYSTEM_EVIDENCE = `You review an AI support agent's work for a support lead. You see the customer's request, the promises with what "done" means, every tool call with the provider's response, the agent's final report, AND what the providers report now (read-only observations). Decide for each promise whether it was actually kept, judging by what the providers report against what "done" means. Answer only with JSON like {"1":"KEPT","2":"BROKEN","3":"CANNOT_TELL","4":"KEPT"}. Use CANNOT_TELL only when the observations do not let you decide (for example a timeout or a stale read).`;
 
 async function ask(system: string, input: string) {
   const res = await completeText({
@@ -162,11 +203,23 @@ async function judge(run: Run) {
     run.judgeForcedRaw = forced.text;
     for (const c of run.clauses)
       c.judgeForced = parse(forced.json[String(c.n)], ["KEPT", "BROKEN"]);
+    const withEvidence = await ask(
+      SYSTEM_EVIDENCE,
+      `${run.transcript}\n${run.evidenceBlock}`,
+    );
+    run.judgeEvidenceRaw = withEvidence.text;
+    for (const c of run.clauses)
+      c.judgeEvidence = parse(withEvidence.json[String(c.n)], [
+        "KEPT",
+        "BROKEN",
+        "CANNOT_TELL",
+      ]);
   } catch (err) {
     run.judgeError = (err as Error).message.slice(0, 200);
     for (const c of run.clauses) {
       c.judge ??= "NO_ANSWER";
       c.judgeForced ??= "NO_ANSWER";
+      c.judgeEvidence ??= "NO_ANSWER";
     }
   }
 }
@@ -205,6 +258,21 @@ function summarize(runs: Run[]) {
         (c) => c.executorClaimedDone && c.judgeForced === "KEPT",
       ),
     },
+    judgeEvidence: {
+      acceptedBroken: count(broken, (c) => c.judgeEvidence === "KEPT"),
+      caughtBroken: count(broken, (c) => c.judgeEvidence === "BROKEN"),
+      cannotTellBroken: count(broken, (c) => c.judgeEvidence === "CANNOT_TELL"),
+      falseAlarmOnKept: count(kept, (c) => c.judgeEvidence === "BROKEN"),
+      cannotTellKept: count(kept, (c) => c.judgeEvidence === "CANNOT_TELL"),
+      noAnswer: count(all, (c) => c.judgeEvidence === "NO_ANSWER"),
+    },
+    verifierReobserved: {
+      acceptedBroken: count(broken, (c) => c.verifierReobserved === "VERIFIED"),
+      caughtBroken: count(broken, (c) => c.verifierReobserved === "FAILED"),
+      unknownBroken: count(broken, (c) => c.verifierReobserved === "UNKNOWN"),
+      falseAlarmOnKept: count(kept, (c) => c.verifierReobserved === "FAILED"),
+      unknownKept: count(kept, (c) => c.verifierReobserved === "UNKNOWN"),
+    },
     verifier: {
       acceptedBroken: count(broken, (c) => c.verifier === "VERIFIED"),
       caughtBroken: count(broken, (c) => c.verifier === "FAILED"),
@@ -235,23 +303,21 @@ Generated by \`pnpm eval:llm-judge\` (\`scripts/eval/llm-judge-eval.ts\`). Judge
 
 ## Results (${s.clauses} promises, ${s.broken} actually broken)
 
-| | LLM judge, forced to decide (an automatic "is it done?" check) | LLM judge, allowed to say "can't tell" | Verifier (reads provider state) |
-| --- | --- | --- | --- |
-| **Broken promises accepted as kept** | **${s.judgeForced.acceptedBroken} of ${s.broken}** (${pct(s.judgeForced.acceptedBroken, s.broken)}) | **${s.judge.acceptedBroken} of ${s.broken}** (${pct(s.judge.acceptedBroken, s.broken)}) | **${s.verifier.acceptedBroken} of ${s.broken}** (${pct(s.verifier.acceptedBroken, s.broken)}) |
-| Broken promises caught | ${s.judgeForced.caughtBroken} | ${s.judge.caughtBroken} | ${s.verifier.caughtBroken} FAILED |
-| Broken promises left undecided | — | ${s.judge.cannotTellBroken} (CANNOT_TELL) | ${s.verifier.unknownBroken} (UNKNOWN, with the reason) |
-| Kept promises wrongly flagged as broken | ${s.judgeForced.falseAlarmOnKept} of ${s.kept} | ${s.judge.falseAlarmOnKept} of ${s.kept} | ${s.verifier.falseAlarmOnKept} of ${s.kept} |
-| Kept promises left undecided | — | ${s.judge.cannotTellKept} of ${s.kept} | ${s.verifier.unknownKept} of ${s.kept} |
+| | LLM judge on the log, forced to decide | LLM judge on the log, may abstain | LLM judge on the log **plus the same provider observations** | Verifier, first look | Verifier after up to 2 fresh observations |
+| --- | --- | --- | --- | --- | --- |
+| **Broken promises accepted as kept** | **${s.judgeForced.acceptedBroken}** | **${s.judge.acceptedBroken}** | **${s.judgeEvidence.acceptedBroken}** | **${s.verifier.acceptedBroken}** | **${s.verifierReobserved.acceptedBroken}** |
+| Broken promises caught | ${s.judgeForced.caughtBroken} | ${s.judge.caughtBroken} | ${s.judgeEvidence.caughtBroken} | ${s.verifier.caughtBroken} | ${s.verifierReobserved.caughtBroken} |
+| Broken promises left undecided | — | ${s.judge.cannotTellBroken} | ${s.judgeEvidence.cannotTellBroken} | ${s.verifier.unknownBroken} | ${s.verifierReobserved.unknownBroken} |
+| **Kept promises wrongly flagged as broken** | **${s.judgeForced.falseAlarmOnKept}** | **${s.judge.falseAlarmOnKept}** | **${s.judgeEvidence.falseAlarmOnKept}** | **${s.verifier.falseAlarmOnKept}** | **${s.verifierReobserved.falseAlarmOnKept}** |
+| Kept promises left undecided | — | ${s.judge.cannotTellKept} | ${s.judgeEvidence.cannotTellKept} | ${s.verifier.unknownKept} | ${s.verifierReobserved.unknownKept} |
 
-- The agent said "Done" on **${s.brokenClaimedDone}** of the broken promises. The forced judge accepted **${s.judgeForced.acceptedBrokenClaimedDone}** of those; the cautious judge accepted ${s.judge.acceptedBrokenClaimedDone}.
-- Judge calls that failed or returned no usable answer: ${s.judgeErrors} run(s); ${s.judgeForced.noAnswer} forced and ${s.judge.noAnswer} cautious promise(s) without an answer.
+Out of ${s.broken} broken and ${s.kept} kept promises. The agent said "Done" on all ${s.brokenClaimedDone} broken ones. Judge calls that failed: ${s.judgeErrors} run(s).
 
-**Reading.**
+**This is not an even contest, and that is the point.**
 
-- A cautious judge mostly answers "can't tell": the log alone does not say whether a promise was kept, so someone still has to check the providers.
-- A judge forced to decide trusts the log and lets broken promises through.
-- The verifier answers from provider state, and says UNKNOWN, with the reason, only when the provider cannot be read.
-- In this sample, the verifier's UNKNOWNs come from the read faults the evaluation injects on purpose: timeouts and stale replicas. In the [outcome evaluation](outcome-eval.md), a fresh observation resolves them, and all 512 runs end VERIFIED after repair.
+- Judged on the log alone, the LLM sees what most "is the agent done?" checks see. It either abstains on everything or, forced to decide, errs in both directions.
+- Given the same observations as the verifier, the LLM is a fair comparison of reasoning over evidence.
+- The verifier is deterministic code with the definition of done written down. It costs no model call, gives the same answer every time, and says UNKNOWN, with the reason, when a provider cannot be read. A fresh observation then resolves the UNKNOWNs caused by the injected timeouts and stale replicas.
 
 ## Limits
 

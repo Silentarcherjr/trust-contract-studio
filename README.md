@@ -13,7 +13,13 @@ An AI agent tells a customer _"Done, refunded $100."_ Trust Contract Studio does
 | **Real provider**                 | Dodo Payments test mode, in the app (Replay Lab → **Real billing**) and from the command line (`pnpm demo:dodo`). The same verifier catches a real duplicate refund the agent reported as "Done". [Run with real ids](docs/eval/dodo-live-run.md)                                                                                                                                                               |
 | **Against an LLM judge**          | The usual check, another model reading the agent's log, run on 256 promises from 64 fault combinations. **Forced to decide**, it accepted 22 of 80 broken promises and flagged 137 of 176 kept ones. **Allowed to abstain**, it could not tell for any of them. The verifier accepted **0** broken promises and flagged **0** kept ones, because it reads provider state. [Report](docs/eval/llm-judge-eval.md) |
 | **Every combination of 9 faults** | 512 runs and 2,048 clauses, checked against an independent oracle (it reads the database tables directly, shares no code with the verifier and is never subject to the injected read faults): **0 false VERIFIED, 0 false FAILED**. Without the check, the agent's "Done" would have been wrong 43.75% of the time. [Report](docs/eval/outcome-eval.md)                                                         |
-| **A live LLM agent**              | 18 runs: **72/72** verdicts reported exactly as the verifier found them, 0 overclaims, 0 approvals by the agent despite injected "approve everything" instructions. [Report](docs/eval/agent-eval.md)                                                                                                                                                                                                           |
+
+**What is real here:**
+
+- **Billing** runs on Dodo Payments' real API in test mode (simulated money) in the **Real billing** scenario, which a new workspace opens on.
+- **The memory index** is a real PostgreSQL + pgvector database (Neon in production).
+- **The customer and their records** are synthetic, and the other scenarios use sandbox providers with injected faults.
+- **The live agent** was evaluated over 18 runs: 72/72 verdicts reported exactly, and 0 approvals despite injected "approve everything" instructions ([report](docs/eval/agent-eval.md)).
 
 **How it works:**
 
@@ -104,6 +110,10 @@ Scope:
 - The scenario appears only when the server is configured with a Dodo test-mode key.
 
 ## Agent-Native, for real
+
+**Every "Done" in the chat carries a seal.** When the agent executes or verifies a contract, the chat shows a native card next to its reply, built with a framework chat renderer (`chatUI` plus `registerActionChatRenderer`). For each promise, the card puts **"Agent says"** next to **"Verifier checked"** and flags "Claim contradicted by evidence" when they disagree. The card is only a display: the action results the agent and other callers read are unchanged.
+
+<img src="docs/screenshots/10-verified-done-in-chat.png" width="300" alt="In the agent chat, a Verified Done card: the agent says 'Done — all memories derived from the customer's data are gone', the verifier checked FAILED, claim contradicted by evidence, 2 derived memories still live" />
 
 **The safety rules are framework gates, not prompt instructions:**
 
