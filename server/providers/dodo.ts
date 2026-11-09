@@ -141,6 +141,13 @@ export const dodoEffects = {
     throw new Error(`Test payment ${out.payment_id} did not settle in time.`);
   },
 
+  /** Cancels only at the end of the billing period: the subscription stays active now. */
+  scheduleCancelAtPeriodEnd(subscriptionId: string) {
+    return call<DodoSubscription>("PATCH", `/subscriptions/${subscriptionId}`, {
+      cancel_at_next_billing_date: true,
+    });
+  },
+
   cancelSubscription(subscriptionId: string) {
     return call<DodoSubscription>("PATCH", `/subscriptions/${subscriptionId}`, {
       status: "cancelled",
@@ -300,4 +307,46 @@ export async function observeDodoRefunds(
       detail: `Dodo read failed: ${(err as Error).message.slice(0, 160)}`,
     };
   }
+}
+
+// --- Independent reads for evaluation oracles ---------------------------------
+// Different endpoints from the observation functions above (list endpoints
+// filtered by customer), so an oracle built on them does not share the
+// verifier's read path.
+
+export async function listRefundsForCustomer(
+  customerId: string,
+  since: string,
+) {
+  const out: {
+    refund_id: string;
+    payment_id: string;
+    amount: number;
+    status: string;
+    created_at: string;
+  }[] = [];
+  for (let page = 0; page < 10; page++) {
+    const res = await call<{ items: typeof out }>(
+      "GET",
+      `/refunds?customer_id=${encodeURIComponent(customerId)}&created_at_gte=${encodeURIComponent(since)}&page_size=100&page_number=${page}`,
+    );
+    out.push(...res.items);
+    if (res.items.length < 100) break;
+  }
+  return out;
+}
+
+export async function listSubscriptionsForCustomer(customerId: string) {
+  const res = await call<{
+    items: {
+      subscription_id: string;
+      status: string;
+      cancelled_at: string | null;
+      cancel_at_next_billing_date?: boolean;
+    }[];
+  }>(
+    "GET",
+    `/subscriptions?customer_id=${encodeURIComponent(customerId)}&page_size=100`,
+  );
+  return res.items;
 }
