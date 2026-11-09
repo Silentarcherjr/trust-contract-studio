@@ -2,6 +2,12 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: External MCP agent on real billing
+
+- **Recorded run.** `pnpm demo:external-agent --as-human --reset "Real billing"` plays an outside agent over MCP against Dodo test mode. It drafts and executes the contract and says "Done — refunded $100.00". The verifier reads Dodo and answers FAILED: two live refunds totalling $200. Its call to `decide-approval` gets "Unknown tool". It leaves with a signed receipt that says FAILED and checks as intact. Transcript and screenshot are in `docs/eval/external-agent-run.md`.
+- **Fix.** When a repair round has nothing the agent may run itself (in real billing, voiding a refund needs a person), the demo agent now stops and lists what a person must decide instead of looping.
+- **README.** The MCP section links the recorded run; "Why now" is one line with one citation.
+
 ## 2026-11-09: Real-provider evaluation on Dodo test mode
 
 - **`pnpm eval:dodo`.** 6 executor behaviours × 3 runs, each on a fresh $200 test subscription at Dodo:

@@ -38,16 +38,7 @@ Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@age
 
 **Maya runs support operations at a subscription software company.** Her team now lets an AI agent handle routine billing tickets: cancellations, refunds and "delete my data" requests. A customer escalates. The agent's transcript says _"Done: canceled, refunded $100, your data and memories deleted"_, but the customer's bank statement shows a renewal charge and two refunds. Maya needs an answer from the billing ledger and the data stores, not from the agent's word.
 
-Why now:
-
-- Agents are taking over this work ([2], [3]), and they misreport: in a 2026 study, false claims of success made up 45–48% of failures in airline and retail customer-service tasks ([1]).
-- The systems underneath are unforgiving: a retried call can apply twice ([4]), and an embedding left behind can reveal the deleted text ([6]).
-
-<details><summary>Sources</summary>
-
-<sub>[1] Advani, _From Confident Closing to Silent Failure: Characterizing False Success in LLM Agents_, [arXiv:2606.09863](https://arxiv.org/abs/2606.09863) (2026). [2] Gartner press release, 5 Mar 2025 ([republished](https://www.cmswire.com/the-wire/gartner-predicts-agentic-ai-will-autonomously-resolve-80-of-common-customer-service-issues-without-human-intervention-by-2029)), a forecast. [3] Klarna press release, 27 Feb 2024 ([republished](https://www.vktr.com/the-wire/klarna-ai-assistant-handles-two-thirds-of-customer-service-chats-in-its-first-month)), self-reported. [4] [Stripe API docs, idempotent requests](https://docs.stripe.com/api/idempotent_requests). [5] [DataGrail, June 2025](https://www.datagrail.io/press/datagrail-report-consumer-demand-for-data-privacy-surges-driving-up-business-costs-as-data-deletion-requests-rise/), vendor report. [6] Morris et al., _Text Embeddings Reveal (Almost) As Much As Text_, [arXiv:2310.06816](https://arxiv.org/abs/2310.06816). Maya is an illustrative persona; the data in the demo is synthetic.</sub>
-
-</details>
+Why now: agents are taking over this work, and they misreport. In a 2026 study, false claims of success were about half of agent failures on customer-service tasks ([Advani, arXiv:2606.09863](https://arxiv.org/abs/2606.09863)).
 
 ## Screenshots
 
@@ -83,6 +74,10 @@ Any MCP host (Claude Code, Cursor, another company's support bot) can connect to
 4. It proposes repairs.
 5. It leaves with a signed receipt it can check.
 
+**Recorded run on the real billing provider ([evidence](docs/eval/external-agent-run.md)).** The external agent drafts and executes. Its "Done — refunded $100.00" is contradicted by Dodo's state: two refunds, $200. Its attempt to approve itself gets "Unknown tool", and it leaves with a signed receipt that says FAILED.
+
+<img src="docs/screenshots/11-external-agent-mcp-real-billing.png" width="640" alt="Contract drafted and executed by an external MCP agent on Dodo test mode: the refund clause is FAILED, read from dodo.payments.get" />
+
 `pnpm demo:external-agent` plays such an agent with a 60-line MCP client. The setup commands, including `claude mcp add`, are in [docs/OVERVIEW.md](docs/OVERVIEW.md#hold-any-agent-to-its-promise-mcp).
 
 ## Quick start
@@ -105,7 +100,7 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 79 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test           # 83 unit + integration tests on in-memory PostgreSQL (PGlite)
 pnpm test:e2e       # 9 Playwright tests against the real app (incl. axe-core audit, keyboard-only)
 pnpm build          # production build (Nitro, node preset)
 ```

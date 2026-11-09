@@ -205,11 +205,20 @@ async function main() {
   printVerdicts(view);
 
   for (let round = 0; view.contract.status === "failed" && round < 3; round++) {
-    await mutate("propose-repair", { contractId });
+    const proposal = await mutate("propose-repair", { contractId });
     const proposed = await tool("get-contract", { contractId });
     const repairs = proposed.obligations.filter(
       (o: { approval: string }) => o.approval === "pending",
     );
+    if (!repairs.length) {
+      // A real provider cannot always undo a mistake (a refund cannot be
+      // voided at Dodo); the planner then says a person must decide.
+      const needsHuman: { reason: string }[] = proposal.plan?.needsHuman ?? [];
+      console.log(
+        `\n🙋 Nothing I can repair myself. A person has to decide:${needsHuman.map((n) => `\n   - ${n.reason}`).join("") || " (see the Studio)"}`,
+      );
+      break;
+    }
     console.log(
       `\n🛠  I propose ${repairs.length} repair(s) derived from the verifier's reasons: ${repairs.map((o: { title: string }) => o.title).join("; ")}`,
     );
