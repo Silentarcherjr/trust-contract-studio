@@ -34,11 +34,13 @@ In the agent's own chat, every "Done" gets a seal: what the agent says, next to 
 
 Built on the [Agent-Native](https://www.agent-native.com/docs/) framework (`@agent-native/core` 0.222.0) for the Builder.io Agent-Native Hackathon 2026. Synthetic customer data. Not a legal-compliance tool.
 
+**Built during the event.** The only pre-existing code is the framework's Chat starter, scaffolded on Oct 29, 2026 (commit `6511b5f`). Everything after it was written during the event: the domain core and pure verifier, the providers (sandbox and Dodo test mode), the actions, the Studio UI, the chat seal, the evaluations and the docs. Full disclosure: [docs/SUBMISSION.md](docs/SUBMISSION.md#pre-existing-materials-disclosure-final-review-2026-11-01).
+
 ## Who it is for
 
 **Maya runs support operations at a subscription software company.** Her team now lets an AI agent handle routine billing tickets: cancellations, refunds and "delete my data" requests. A customer escalates. The agent's transcript says _"Done: canceled, refunded $100, your data and memories deleted"_, but the customer's bank statement shows a renewal charge and two refunds. Maya needs an answer from the billing ledger and the data stores, not from the agent's word.
 
-Why now: agents are taking over this work, and they misreport. In a 2026 study, false claims of success were about half of agent failures on customer-service tasks ([Advani, arXiv:2606.09863](https://arxiv.org/abs/2606.09863)).
+Why now: agents are taking over this work, and they misreport. In a 2026 study, false claims of success were about half of agent failures on customer-service tasks (Advani, ["From Confident Closing to Silent Failure: Characterizing False Success in LLM Agents"](https://arxiv.org/abs/2606.09863), arXiv:2606.09863).
 
 ## Screenshots
 

@@ -136,11 +136,23 @@ test("the studio has no horizontal overflow on a phone", async ({ page }) => {
 });
 
 async function expectNoA11yViolations(page: Page) {
+  // Measure settled colours: rows fade in, and axe would read a mid-fade blend.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState !== "running"),
+  );
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .include(".tcs")
     .analyze();
-  expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+  expect(
+    result.violations.map(
+      (v) =>
+        `${v.id}: ${v.help} — ${v.nodes
+          .slice(0, 3)
+          .map((n) => `${n.target.join(" ")} ${n.failureSummary ?? ""}`)
+          .join(" | ")}`,
+    ),
+  ).toEqual([]);
 }
 
 for (const colorScheme of ["light", "dark"] as const) {

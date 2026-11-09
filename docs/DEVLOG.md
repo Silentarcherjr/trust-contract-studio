@@ -2,6 +2,12 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: Review fixes
+
+- **Accessibility audit.** The axe check sometimes measured timeline rows mid fade-in and read a blended colour as low contrast. The audit now waits for animations to settle before it measures. The real colours pass; E2E is 9/9 again.
+- **Docs.** The README gives the cited study's title and states what was built during the event. SUBMISSION no longer says every provider is a sandbox, and it names the team. TEST_REPORT is re-dated after a full rerun (typecheck, lint, format, 83/83 Vitest, 9/9 Playwright, build).
+- **Lint.** Removed unused imports and helpers. Fixed a GET request that passed a null body and an ambiguous `new Array(n)`. The only warning left is in an unmodified starter file.
+
 ## 2026-11-09: External MCP agent on real billing
 
 - **Recorded run.** `pnpm demo:external-agent --as-human --reset "Real billing"` plays an outside agent over MCP against Dodo test mode. It drafts and executes the contract and says "Done — refunded $100.00". The verifier reads Dodo and answers FAILED: two live refunds totalling $200. Its call to `decide-approval` gets "Unknown tool". It leaves with a signed receipt that says FAILED and checks as intact. Transcript and screenshot are in `docs/eval/external-agent-run.md`.

@@ -25,7 +25,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface (the app also rejects raw HTTP callers), and a workspace reset pauses on the framework's `needsApproval`. Any outside agent (Claude Code, Cursor, another company's bot) can connect over the framework's MCP endpoint and is held to the same contract, without the approval tool. Tests and evaluations run in CI.
 >
-> **Team:** [TEAM MEMBERS: names and roles, to fill in].
+> **Team:** Proof of Done — Silentarcherjr (GitHub), design and development, with Claude Code as AI coding assistant.
 >
 > **Pre-existing work:**
 >
@@ -64,7 +64,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Quality.** 83 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
 >
-> **Honest limits.** All providers and data are synthetic sandboxes. Verification covers only the stores registered in the workspace. The Studio does not claim legal compliance, universal erasure, exactly-once execution in external systems or immutability. The receipt states what is not proven.
+> **Honest limits.** Billing in the Real billing scenario runs on Dodo Payments in test mode (real API, simulated money). The other scenarios use sandbox providers, and all customer data is synthetic. Verification covers only the stores registered in the workspace. The Studio does not claim legal compliance, universal erasure, exactly-once execution in external systems or immutability. The receipt states what is not proven.
 
 **Built with:** Agent-Native (`@agent-native/core` 0.222.0, toolkit, agentkit), React 19, React Router 8, Drizzle ORM, PostgreSQL / PGlite, pgvector (Neon in production), zod, Vitest, Playwright, axe-core.
 

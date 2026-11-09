@@ -56,7 +56,7 @@ async function call<T>(
       authorization: `Bearer ${key()}`,
       ...(body ? { "content-type": "application/json" } : {}),
     },
-    body: body ? JSON.stringify(body) : null,
+    ...(body ? { body: JSON.stringify(body) } : {}),
     signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();

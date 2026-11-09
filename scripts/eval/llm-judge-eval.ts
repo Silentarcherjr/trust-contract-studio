@@ -284,9 +284,6 @@ function summarize(runs: Run[]) {
   };
 }
 
-const pct = (n: number, d: number) =>
-  d ? `${((100 * n) / d).toFixed(1)} %` : "n/a";
-
 function markdown(s: ReturnType<typeof summarize>, model: string) {
   return `# LLM judge vs verifier
 

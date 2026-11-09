@@ -24,7 +24,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { PGlite } from "@electric-sql/pglite";
-import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 
 import { setDbForTesting, type Db } from "../../server/db/index.js";

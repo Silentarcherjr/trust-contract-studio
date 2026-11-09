@@ -66,7 +66,7 @@ function bucket(feature: string) {
 
 /** Deterministic lexical embedding (character trigrams + words). */
 export function embed(text: string): number[] {
-  const v = new Array<number>(VECTOR_DIMENSIONS).fill(0);
+  const v: number[] = Array.from({ length: VECTOR_DIMENSIONS }, () => 0);
   const norm = normalise(text);
   const compact = norm.replace(/[\s.@-]+/g, "");
   for (let i = 0; i + 3 <= compact.length; i++) {
