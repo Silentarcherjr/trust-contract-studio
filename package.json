@@ -22,7 +22,8 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "demo:dodo": "tsx scripts/dodo-live-check.ts"
+    "demo:dodo": "tsx scripts/dodo-live-check.ts",
+    "eval:llm-judge": "tsx scripts/eval/llm-judge-eval.ts"
   },
   "dependencies": {
     "@agent-native/agentkit": "^0.222.0",
