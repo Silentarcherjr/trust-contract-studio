@@ -105,7 +105,7 @@ const BEATS: Beat[] = [
     name: "Terms hash, then Approve all 4",
     run: async (page, { spot, waitUntil }) => {
       await spot(
-        clause(page, "Refund $100.00").getByText(/bound to these exact terms/),
+        clause(page, "Refund charge").getByText(/bound to these exact terms/),
         4000,
       );
       await waitUntil(26);
@@ -129,9 +129,9 @@ const BEATS: Beat[] = [
     until: 60,
     name: "Triptych §2 and §4, Memory Lineage",
     run: async (page, { spot, waitUntil }) => {
-      await spot(clause(page, "Refund $100.00"), 5000);
+      await spot(clause(page, "Refund charge"), 5000);
       await waitUntil(51);
-      await spot(clause(page, "Purge memories"), 4000);
+      await spot(clause(page, "Purge derived memories"), 4000);
       await waitUntil(55);
       await spot(page.getByRole("heading", { name: "Memory Lineage" }), 3000);
     },
@@ -218,7 +218,7 @@ const AGENT_STEPS: AgentStep[] = [
     name: "Human approves (terms hash)",
     run: async (page, { spot }) => {
       await spot(
-        clause(page, "Refund $100.00").getByText(/bound to these exact terms/),
+        clause(page, "Refund charge").getByText(/bound to these exact terms/),
         2500,
       );
       await page.getByRole("button", { name: /Approve all 4/ }).click();
@@ -232,8 +232,8 @@ const AGENT_STEPS: AgentStep[] = [
       await page
         .locator('.tcs-seal[data-size="lg"][data-verdict="FAILED"]')
         .waitFor({ timeout: 120_000 });
-      await spot(clause(page, "Refund $100.00"), 4500);
-      await spot(clause(page, "Purge memories"), 4500);
+      await spot(clause(page, "Refund charge"), 4500);
+      await spot(clause(page, "Purge derived memories"), 4500);
       await agentDone(3);
       await page.waitForTimeout(4000); // the agent's report, read on screen
     },
