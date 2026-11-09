@@ -2,13 +2,30 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-09: LLM-judge baseline, real billing first
+
+- **New evaluation: `pnpm eval:llm-judge`.**
+  - It runs 64 of the 512 fault combinations (256 promises, 80 broken).
+  - An LLM judge (GPT-6 Luna through the Builder gateway) reviews the agent's work in three modes:
+    - on the agent's log, forced to decide;
+    - on the log, allowed to abstain;
+    - on the log plus the same provider observations the verifier read.
+  - **Results:**
+    - On the log alone, the judge abstains on 245 promises, or, forced to decide, accepts 26 broken promises and flags 131 kept ones.
+    - Even with the observations, it leaves 152 undecided and flags 8 kept promises.
+    - The verifier, after up to two fresh observations, classifies all 256 correctly with no model call.
+  - The oracle now lives in `scripts/eval/oracle.ts`, shared by both evaluations.
+  - The comparison is not even by design, and the report says so.
+- **Real billing first.** A fresh workspace opens with the real-billing scenario preselected and listed first, when the server has the Dodo test configuration.
+- **README.** The opening now shows three headline numbers, a "what is real" block (Dodo test API, pgvector on Neon, synthetic customer), and the Verified Done chat seal with a screenshot.
+
 ## 2026-11-09: "Verified Done" seal in the agent chat
 
 - **What.** When the in-app agent calls `execute-contract` or `verify-contract`, the chat transcript now shows a seal card: for each clause, what the agent/executor **says** beside what the verifier **checked** (verdict, first reason, observation source), plus a link to `/studio/<contractId>`.
   - Example (duplicate refund): §2 says "Done — refunded $100.00 …"; checked: FAILED, "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00", labelled "Claim contradicted by evidence".
 - **How.** `server/lib/verified-done.ts` projects an existing contract view into a compact seal (`buildVerifiedDoneSeal`, `loadVerifiedDoneSeal`). The two actions declare `chatUI: { renderer: "tcs.verified-done", when, projectResult }`; only the chat widget gets the projection, so the actions' own results (read by the agent, UI hooks, MCP and scripts) are unchanged. `app/components/studio/VerifiedDoneCard.tsx` registers the renderer with `registerActionChatRenderer` from `app/root.tsx`.
 - **Invariants.** The seal only reads data. Claims are displayed, never passed to the verifier; a test rewrites a stored claim and re-verifies to show the verdict does not move. `get-contract` does not render the seal, so the card is not repeated on every read.
-- **Tests.** 4 new (seal payload, claims display-only, chatUI wiring and owner scoping, static render). Results: 83/83 unit, 9/9 E2E. The live agent path was not exercised (no model key in the dev container); the card was checked by rendering it into the running app in light and dark theme.
+- **Tests.** 4 new (seal payload, claims display-only, chatUI wiring and owner scoping, static render). Results: 83/83 unit, 9/9 E2E. Verified live: in an agent-led take with the real agent (GPT-6 Luna), the card appeared in the chat with §2 and §4 FAILED ("Claim contradicted by evidence") before the agent's summary.
 
 ## 2026-11-09: Real billing inside the Studio
 
