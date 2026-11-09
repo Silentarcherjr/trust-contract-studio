@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getDb } from "../server/db/index.js";
 import { executeContract } from "../server/domain/service.js";
 import { actorFrom, guarded } from "../server/lib/action-kit.js";
+import { verifiedDoneChatUI } from "../server/lib/verified-done.js";
 
 export default defineAction({
   description:
@@ -19,6 +20,8 @@ export default defineAction({
       .describe("Delay between steps so the timeline is watchable."),
   }),
   deferLoading: false,
+  // Chat shows a "Verified Done" seal: claims beside verifier verdicts.
+  chatUI: verifiedDoneChatUI,
   run: async (args, ctx) =>
     guarded(() => executeContract(getDb(), actorFrom(ctx), args)),
 });
