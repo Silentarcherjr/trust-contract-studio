@@ -18,6 +18,7 @@ import {
 } from "../db/schema.js";
 import { nowIso } from "../domain/integrity.js";
 import {
+  observeDodoProfile,
   observeDodoRefunds,
   observeDodoSubscription,
 } from "../providers/dodo.js";
@@ -266,20 +267,47 @@ export async function observeMemories(
   }
   const isLive = (r: (typeof rows)[number]) =>
     r.store === "vector_index" ? liveVectors.has(r.id) : r.deletedAt === null;
+  // With real billing, the customer's profile at Dodo is a personal-data
+  // store too, read from Dodo itself. Without it, that store is unobservable.
+  const realBilling = await usesRealBilling(db, owner);
+  const profile = realBilling ? await observeDodoProfile(customerId) : null;
+  if (profile && !profile.ok) {
+    return {
+      source: `${source} + ${profile.source}`,
+      ok: false,
+      observedAt: nowIso(),
+      error: "timeout",
+      detail: profile.detail,
+    };
+  }
+  const profileRecords: MemoryRecordObservation[] =
+    profile && profile.ok
+      ? profile.fields.map((f) => ({
+          id: `dodo:${customerId}:${f.field}`,
+          store: "billing_profile",
+          kind: "pii",
+          label: f.label,
+          derivedFrom: [],
+          deleted: !f.live,
+          containsSubjectIdentifier: false,
+        }))
+      : [];
   return {
-    source,
+    source: profile ? `${source} + ${profile.source}` : source,
     ok: true,
     observedAt: nowIso(),
     data: {
       stale,
       replicaLagMs: stale ? 4200 : 0,
-      observableStores: [...OBSERVABLE_STORES],
+      observableStores: OBSERVABLE_STORES.filter(
+        (s) => s !== "billing_profile" || profile !== null,
+      ),
       vectorEngine: engineName,
       nearDuplicates: [...nearDuplicates.values()].sort((a, b) =>
         a.id.localeCompare(b.id),
       ),
-      records: rows
-        .map((r) => ({
+      records: [
+        ...rows.map((r) => ({
           id: r.id,
           store: r.store as StoreName,
           kind: r.kind,
@@ -290,8 +318,9 @@ export async function observeMemories(
             isLive(r) &&
             r.kind !== "pii" &&
             identifiers.some((id) => r.content.toLowerCase().includes(id)),
-        }))
-        .sort((a, b) => a.id.localeCompare(b.id)),
+        })),
+        ...profileRecords,
+      ].sort((a, b) => a.id.localeCompare(b.id)),
     },
   };
 }

@@ -84,7 +84,30 @@ export function planRepairs(
             });
           }
           break;
-        case "residual_personal_data":
+        case "residual_personal_data": {
+          // Fields of the customer's profile at Dodo are not local records:
+          // repair them by erasing the profile at the provider again.
+          const refs = reason.refs ?? [];
+          const atDodo = refs.filter((r) => r.startsWith("dodo:"));
+          const local = refs.filter((r) => !r.startsWith("dodo:"));
+          if (atDodo.length)
+            plan.proposals.push({
+              kind: "erase_personal_data",
+              title: `Erase the customer profile at Dodo again (${atDodo.length} field(s) still live)`,
+              params: { customerId, stores: ["billing_profile"] },
+              repairOf: ob.id,
+              rationale: reason.message,
+            });
+          if (local.length)
+            plan.proposals.push({
+              kind: "delete_memories",
+              title: `Delete ${local.length} residual record(s)`,
+              params: { customerId, memoryIds: local },
+              repairOf: ob.id,
+              rationale: reason.message,
+            });
+          break;
+        }
         case "residual_lineage":
         case "untracked_copy":
         case "near_duplicate_vector":

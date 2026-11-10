@@ -2,6 +2,12 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-10: Personal data at a real provider; shorter README
+
+- **The customer's profile at Dodo is a personal-data store.** Each Real billing reset creates a test customer at Dodo for the workspace, tagged with the app, holding synthetic name, email and phone. That customer is the workspace's requester, so workspaces never share a profile. The erasure clause now covers `profile_db` and `billing_profile`. The observation reads `GET /customers/{id}`, and the verifier stays unchanged except that its scope now comes from the observation's own list of observable stores.
+- **A real provider behaviour, found by probing.** Dodo ignores `phone_number: null` and rejects `""`, so the only way to erase a phone is to overwrite it. In the Real billing scenario the executor "deletes" the phone with null (fault `billing.profile_null_phone`). Live run: the erasure is FAILED with "1 personal-data record(s) are still live: Phone number at Dodo". The repair erases the profile at Dodo again by overwriting it, and the clause becomes VERIFIED. The in-memory Dodo test reproduces both steps.
+- **README.** Cut from about 2,000 words to about 1,000. It now starts with "try it in 30 seconds": the home has a one-click **Audit transcript** that seeds an empty workspace first. Details moved to `docs/OVERVIEW.md`.
+
 ## 2026-11-10: Kept promises are watched
 
 - **Event.** `tcs.verdict.changed` is registered on the framework event bus (`server/lib/events.ts`). Verification emits it, awaited, whenever a clause's verdict changes on a fresh observation.

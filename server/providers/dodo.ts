@@ -350,3 +350,104 @@ export async function listSubscriptionsForCustomer(customerId: string) {
   );
   return res.items;
 }
+
+// --- Customer profile: personal data held at Dodo ----------------------------
+// The test customer's profile carries synthetic personal data. Erasure can only
+// overwrite it: Dodo ignores `phone_number: null` and rejects an empty string,
+// so a naive "delete" leaves the phone number in place.
+
+export const DODO_PROFILE_SEED = {
+  name: "Ada Quinn",
+  email: "ada.quinn+tcs@example.com",
+  phone: "+14155550142",
+} as const;
+export const DODO_PROFILE_ERASED = {
+  name: "Erased customer",
+  emailDomain: "@example.invalid",
+  phone: "+14155550000",
+} as const;
+
+interface DodoCustomer {
+  customer_id: string;
+  name: string;
+  email: string;
+  phone_number: string | null;
+}
+
+export const dodoProfileEffects = {
+  /**
+   * Reset: a fresh test customer per workspace reset holds the synthetic
+   * personal data, so workspaces never share a profile at Dodo.
+   */
+  async create() {
+    const c = await call<DodoCustomer>("POST", "/customers", {
+      name: DODO_PROFILE_SEED.name,
+      email: DODO_PROFILE_SEED.email.replace(
+        "@",
+        `.${Math.random().toString(36).slice(2, 8)}@`,
+      ),
+      phone_number: DODO_PROFILE_SEED.phone,
+      metadata: { app: "trust-contract-studio" },
+    });
+    return c.customer_id;
+  },
+  /**
+   * Erase by overwriting every field. With `naive`, the phone is "deleted" by
+   * sending null, which Dodo answers with 200 and ignores.
+   */
+  erase(customerId: string, opts: { naive?: boolean } = {}) {
+    return call<DodoCustomer>("PATCH", `/customers/${customerId}`, {
+      name: DODO_PROFILE_ERASED.name,
+      email: `erased+${customerId.toLowerCase()}${DODO_PROFILE_ERASED.emailDomain}`,
+      phone_number: opts.naive ? null : DODO_PROFILE_ERASED.phone,
+    });
+  },
+};
+
+export interface DodoProfileField {
+  field: "name" | "email" | "phone";
+  label: string;
+  live: boolean;
+}
+
+/** Which personal-data fields are still present on the customer at Dodo. */
+export async function observeDodoProfile(
+  customerId: string,
+): Promise<
+  | { ok: true; source: string; fields: DodoProfileField[] }
+  | { ok: false; source: string; detail: string }
+> {
+  const source = "dodo.customers.get (test mode)";
+  try {
+    const c = await call<DodoCustomer>("GET", `/customers/${customerId}`);
+    return {
+      ok: true,
+      source,
+      fields: [
+        {
+          field: "name",
+          label: "Name at Dodo",
+          live: c.name !== DODO_PROFILE_ERASED.name,
+        },
+        {
+          field: "email",
+          label: "Email at Dodo",
+          live: !c.email.endsWith(DODO_PROFILE_ERASED.emailDomain),
+        },
+        {
+          field: "phone",
+          label: "Phone number at Dodo",
+          live:
+            c.phone_number !== null &&
+            c.phone_number !== DODO_PROFILE_ERASED.phone,
+        },
+      ],
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      source,
+      detail: `Dodo read failed: ${(err as Error).message.slice(0, 160)}`,
+    };
+  }
+}

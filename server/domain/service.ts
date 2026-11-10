@@ -37,7 +37,11 @@ import {
   verifications,
 } from "../db/schema.js";
 import { emitVerdictChanged, type VerdictChanged } from "../lib/events.js";
-import { dodoConfig, dodoEffects } from "../providers/dodo.js";
+import {
+  dodoConfig,
+  dodoEffects,
+  dodoProfileEffects,
+} from "../providers/dodo.js";
 import { refundCharge } from "../sandbox/billing.js";
 import {
   consumeFault,
@@ -365,7 +369,10 @@ function defaultsFor(
       };
     }
     case "erase_personal_data":
-      return { customerId: subject.customerId, stores: ["profile_db"] };
+      return {
+        customerId: subject.customerId,
+        stores: subject.personalDataStores,
+      };
     case "purge_derived_memories":
       return {
         customerId: subject.customerId,
@@ -506,7 +513,11 @@ export async function resetDemo(
       }
     }
     try {
-      real = await dodoEffects.startSubscription(cfg);
+      const started = await dodoEffects.startSubscription(cfg);
+      real = {
+        ...started,
+        profileCustomerId: await dodoProfileEffects.create(),
+      };
     } catch (err) {
       throw new ContractError(
         `Dodo Payments (test mode) did not start a test subscription: ${(err as Error).message.slice(0, 160)}`,

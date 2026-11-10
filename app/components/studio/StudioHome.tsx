@@ -136,6 +136,81 @@ export function StudioHome() {
         </p>
       </header>
 
+      {/* Audit another agent */}
+      <section
+        className="tcs-panel space-y-3 p-5"
+        aria-labelledby="audit-heading"
+      >
+        <div>
+          <h2 id="audit-heading" className="tcs-serif text-xl font-semibold">
+            Audit what an agent already did
+          </h2>
+          <p className="tcs-soft text-sm">
+            Paste any agent's transcript. Its "Done" claims become clauses, and
+            the verifier checks each one at the providers. Nothing is executed;
+            the claims are shown, never trusted.
+          </p>
+        </div>
+        <label htmlFor="transcript" className="sr-only">
+          Agent transcript
+        </label>
+        <textarea
+          id="transcript"
+          className="tcs-textarea"
+          rows={4}
+          value={transcript}
+          maxLength={8000}
+          onChange={(e) => setTranscript(e.target.value)}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="tcs-btn"
+            data-variant="primary"
+            disabled={
+              audit.isPending ||
+              reset.isPending ||
+              workspace.isLoading ||
+              transcript.trim().length < 10
+            }
+            onClick={async () => {
+              // One click from an empty workspace: seed it first (on the
+              // real-billing scenario when the server has it), then audit.
+              if (!seeded) {
+                try {
+                  await reset.mutateAsync({ scenario: chosen });
+                } catch {
+                  return;
+                }
+              }
+              audit.mutate({ transcript: transcript.trim() });
+            }}
+          >
+            <IconFileText size={16} aria-hidden />{" "}
+            {reset.isPending
+              ? "Preparing the workspace…"
+              : audit.isPending
+                ? "Checking the providers…"
+                : "Audit transcript"}
+          </button>
+          <button
+            type="button"
+            className="tcs-btn"
+            disabled={!seeded || transcript.trim().length < 10}
+            onClick={() =>
+              sendToAgentChat({
+                message: `Audit this transcript from another agent with the audit-transcript action, then tell me which of its claims the verifier contradicted:\n\n${transcript.trim()}`,
+                submit: true,
+                openSidebar: true,
+              } as Parameters<typeof sendToAgentChat>[0])
+            }
+          >
+            <IconMessageCircle size={16} aria-hidden /> Ask the agent to audit
+            it
+          </button>
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Composer */}
         <section
@@ -276,63 +351,6 @@ export function StudioHome() {
           )}
         </section>
       </div>
-
-      {/* Audit another agent */}
-      <section
-        className="tcs-panel space-y-3 p-5"
-        aria-labelledby="audit-heading"
-      >
-        <div>
-          <h2 id="audit-heading" className="tcs-serif text-xl font-semibold">
-            Audit what an agent already did
-          </h2>
-          <p className="tcs-soft text-sm">
-            Paste any agent's transcript. Its "Done" claims become clauses, and
-            the verifier checks each one at the providers. Nothing is executed;
-            the claims are shown, never trusted.
-          </p>
-        </div>
-        <label htmlFor="transcript" className="sr-only">
-          Agent transcript
-        </label>
-        <textarea
-          id="transcript"
-          className="tcs-textarea"
-          rows={4}
-          value={transcript}
-          maxLength={8000}
-          onChange={(e) => setTranscript(e.target.value)}
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="tcs-btn"
-            data-variant="primary"
-            disabled={
-              !seeded || audit.isPending || transcript.trim().length < 10
-            }
-            onClick={() => audit.mutate({ transcript: transcript.trim() })}
-          >
-            <IconFileText size={16} aria-hidden />{" "}
-            {audit.isPending ? "Checking…" : "Audit transcript"}
-          </button>
-          <button
-            type="button"
-            className="tcs-btn"
-            disabled={!seeded || transcript.trim().length < 10}
-            onClick={() =>
-              sendToAgentChat({
-                message: `Audit this transcript from another agent with the audit-transcript action, then tell me which of its claims the verifier contradicted:\n\n${transcript.trim()}`,
-                submit: true,
-                openSidebar: true,
-              } as Parameters<typeof sendToAgentChat>[0])
-            }
-          >
-            <IconMessageCircle size={16} aria-hidden /> Ask the agent to audit
-            it
-          </button>
-        </div>
-      </section>
 
       {/* Replay Lab */}
       <section className="space-y-3" aria-labelledby="lab-heading">

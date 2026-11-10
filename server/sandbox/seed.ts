@@ -25,6 +25,8 @@ export interface RealBilling {
   paymentId: string;
   amountCents: number;
   createdAt: string;
+  /** The workspace's own test customer at Dodo, holding the synthetic profile. */
+  profileCustomerId: string;
 }
 
 export async function seedSandbox(
@@ -32,7 +34,8 @@ export async function seedSandbox(
   owner: string,
   real?: RealBilling,
 ): Promise<SeedResult> {
-  const ada = newId("cus");
+  // With real billing, the requester is the workspace's customer at Dodo.
+  const ada = real?.profileCustomerId ?? newId("cus");
   const ben = newId("cus");
   await db.insert(sbxCustomers).values([
     {

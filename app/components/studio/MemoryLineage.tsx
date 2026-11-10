@@ -1,6 +1,14 @@
-import { ALL_STORES, type StoreName } from "@shared/domain";
+import type { StoreName } from "@shared/domain";
 
-const COLUMN_LABELS: Record<StoreName, string> = {
+/** The memory lineage lives in these stores; the Dodo profile is billing data. */
+const LINEAGE_STORES = [
+  "profile_db",
+  "memory_store",
+  "vector_index",
+  "analytics_export",
+] as const satisfies readonly StoreName[];
+
+const COLUMN_LABELS: Record<(typeof LINEAGE_STORES)[number], string> = {
   profile_db: "Profile database",
   memory_store: "Agent memory",
   vector_index: "Vector index",
@@ -31,7 +39,7 @@ export function MemoryLineage({
   nodes: LineageNode[];
   residualIds: Set<string>;
 }) {
-  const columns = ALL_STORES.map((store) =>
+  const columns = LINEAGE_STORES.map((store) =>
     nodes.filter((n) => n.store === store),
   );
   const pos = new Map<string, { x: number; y: number }>();
@@ -52,7 +60,8 @@ export function MemoryLineage({
     return p.length ? Math.min(...p) : -1;
   }
 
-  const width = ALL_STORES.length * NODE_W + (ALL_STORES.length - 1) * COL_GAP;
+  const width =
+    LINEAGE_STORES.length * NODE_W + (LINEAGE_STORES.length - 1) * COL_GAP;
   const rows = Math.max(1, ...columns.map((c) => c.length));
   const height = TOP + rows * (NODE_H + ROW_GAP);
 
@@ -105,14 +114,14 @@ export function MemoryLineage({
               />
             </pattern>
           </defs>
-          {ALL_STORES.map((store, ci) => (
+          {LINEAGE_STORES.map((store, ci) => (
             <text
               key={store}
               className="tcs-lineage-col-label"
               x={ci * (NODE_W + COL_GAP)}
               y={14}
             >
-              {COLUMN_LABELS[store as StoreName]}
+              {COLUMN_LABELS[store]}
             </text>
           ))}
           {nodes.flatMap((n) =>
@@ -179,9 +188,9 @@ export function MemoryLineage({
           </span>
         </li>
         <li className="self-center">
-          Coverage: {ALL_STORES.length - 1} of {ALL_STORES.length} stores have a
-          read interface. Deletion in the analytics export cannot be confirmed
-          from here.
+          Coverage: {LINEAGE_STORES.length - 1} of {LINEAGE_STORES.length}{" "}
+          stores have a read interface. Deletion in the analytics export cannot
+          be confirmed from here.
         </li>
       </ul>
     </div>

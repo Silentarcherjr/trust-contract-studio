@@ -22,7 +22,9 @@ export type FaultKey =
   | "memory.skip_vector_index"
   | "memory.stale_read"
   | "worker.crash_after_first"
-  | "memory.reembed_untracked";
+  | "memory.reembed_untracked"
+  // Real billing only: erase the Dodo phone with null, which Dodo ignores.
+  | "billing.profile_null_phone";
 
 export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   clean: [],
@@ -44,7 +46,7 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   interrupted: ["worker.crash_after_first"],
   disguised_copy: ["memory.reembed_untracked"],
   // The retry happens for real at Dodo; only the lost response is simulated.
-  real_billing: ["billing.refund_lost_response"],
+  real_billing: ["billing.refund_lost_response", "billing.profile_null_phone"],
   real_billing_clean: [],
 };
 

@@ -7,7 +7,6 @@
  * claims nor the executor's attempt log can influence a verdict.
  */
 import {
-  OBSERVABLE_STORES,
   formatCents,
   type ObligationKind,
   type StoreName,
@@ -190,11 +189,16 @@ export function verifyRefund(
   };
 }
 
-function scopeCheck(stores: StoreName[]): {
+function scopeCheck(
+  stores: StoreName[],
+  observableStores: readonly StoreName[],
+): {
   unobservable: StoreName[];
   observable: StoreName[];
 } {
-  const observableSet = new Set<StoreName>(OBSERVABLE_STORES);
+  // What the observation itself says it could read (the Dodo profile only
+  // when billing runs there).
+  const observableSet = new Set<StoreName>(observableStores);
   return {
     observable: stores.filter((s) => observableSet.has(s)),
     unobservable: stores.filter((s) => !observableSet.has(s)),
@@ -227,7 +231,7 @@ function memoryPreamble(
       },
     };
   }
-  return { data, ...scopeCheck(stores) };
+  return { data, ...scopeCheck(stores, data.observableStores) };
 }
 
 export function verifyErase(

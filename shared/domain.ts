@@ -52,6 +52,8 @@ export const OBSERVABLE_STORES = [
   "profile_db",
   "memory_store",
   "vector_index",
+  // Only observable when billing runs on Dodo (the customer profile there).
+  "billing_profile",
 ] as const;
 export const ALL_STORES = [...OBSERVABLE_STORES, "analytics_export"] as const;
 export type StoreName = (typeof ALL_STORES)[number];
@@ -61,6 +63,7 @@ export const STORE_LABELS: Record<StoreName, string> = {
   memory_store: "Agent memory store",
   vector_index: "Vector index",
   analytics_export: "Analytics export (third party)",
+  billing_profile: "Customer profile at Dodo (test mode)",
 };
 
 const storeSchema = z.enum(ALL_STORES);
@@ -271,11 +274,11 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
   real_billing: {
     title: "Real billing: Dodo Payments (test)",
     summary:
-      "Cancellation and refund run against a real billing provider, Dodo Payments, in test mode (real API, simulated money). The first refund's response is lost and retried; Dodo documents no idempotency key, so the retry pays a second real refund. Memories stay in the sandbox.",
+      "Billing and the customer's profile live at a real provider, Dodo Payments, in test mode (real API, simulated money). The first refund's response is lost and retried; Dodo documents no idempotency key, so the retry pays a second real refund. The erasure \"deletes\" the phone number by sending null, which Dodo answers 200 and ignores. Memories stay in the sandbox.",
     expected: {
       cancel_subscription: "VERIFIED",
       refund_charge: "FAILED",
-      erase_personal_data: "VERIFIED",
+      erase_personal_data: "FAILED",
       purge_derived_memories: "VERIFIED",
     },
   },

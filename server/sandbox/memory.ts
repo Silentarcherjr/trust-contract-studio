@@ -12,7 +12,8 @@ import type { Db } from "../db/index.js";
 import { sbxMemories } from "../db/schema.js";
 import { ContractError } from "../domain/errors.js";
 import { newId, nowIso } from "../domain/integrity.js";
-import { takeFault } from "./faults.js";
+import { DodoError, dodoProfileEffects } from "../providers/dodo.js";
+import { takeFault, usesRealBilling } from "./faults.js";
 import { deleteVectors, upsertVectors } from "./vector-index.js";
 
 export async function erasePersonalData(
@@ -21,7 +22,9 @@ export async function erasePersonalData(
   input: { customerId: string; stores: StoreName[] },
 ) {
   const deletedAt = nowIso();
-  const local = input.stores.filter((s) => s !== "analytics_export");
+  const local = input.stores.filter(
+    (s) => s !== "analytics_export" && s !== "billing_profile",
+  );
   const erased = local.length
     ? await db
         .update(sbxMemories)
@@ -37,8 +40,30 @@ export async function erasePersonalData(
         )
         .returning({ id: sbxMemories.id })
     : [];
+  // The customer's profile at Dodo (real billing only): overwrite it there.
+  let atProvider: string[] = [];
+  if (
+    input.stores.includes("billing_profile") &&
+    (await usesRealBilling(db, owner))
+  ) {
+    // Fault: the executor "deletes" the phone with null, which Dodo ignores.
+    const naive = await takeFault(db, owner, "billing.profile_null_phone");
+    try {
+      await dodoProfileEffects.erase(input.customerId, { naive });
+    } catch (err) {
+      if (err instanceof DodoError)
+        throw new ContractError(
+          `Dodo Payments refused the profile update (HTTP ${err.status}).`,
+          "provider_error",
+          502,
+        );
+      throw err;
+    }
+    atProvider = ["billing_profile"];
+  }
   return {
     erased: erased.map((r) => r.id),
+    atProvider,
     forwarded: input.stores.includes("analytics_export")
       ? ["analytics_export"]
       : [],

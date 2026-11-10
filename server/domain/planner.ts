@@ -19,6 +19,7 @@ import {
 } from "../../shared/domain.js";
 import type { Db } from "../db/index.js";
 import { sbxCharges, sbxCustomers, sbxSubscriptions } from "../db/schema.js";
+import { usesRealBilling } from "../sandbox/faults.js";
 import { ContractError } from "./errors.js";
 
 export interface PlannedObligation {
@@ -39,6 +40,8 @@ export interface Plan {
 export interface SubjectContext {
   customerId: string;
   displayName: string;
+  /** Stores that hold the subject's personal data in this workspace. */
+  personalDataStores: StoreName[];
   subscriptionId: string | null;
   charges: {
     id: string;
@@ -88,6 +91,10 @@ export async function loadSubject(
   return {
     customerId: customer.id,
     displayName: customer.displayName,
+    // With real billing, the customer's profile at Dodo holds personal data too.
+    personalDataStores: (await usesRealBilling(db, owner))
+      ? ["profile_db", "billing_profile"]
+      : ["profile_db"],
     subscriptionId: sub?.id ?? null,
     charges: charges.map((c) => ({
       id: c.id,
@@ -211,7 +218,7 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
       title: `Erase ${subject.displayName}'s personal data`,
       params: {
         customerId: subject.customerId,
-        stores: ["profile_db"] satisfies StoreName[],
+        stores: subject.personalDataStores,
       },
       dependsOn: deps.slice(0, 1),
     });

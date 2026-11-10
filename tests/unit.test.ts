@@ -279,6 +279,7 @@ describe("planner", () => {
   const subject = {
     customerId: "cus_1",
     displayName: "Ada",
+    personalDataStores: ["profile_db" as const],
     subscriptionId: "sub_1",
     charges: [
       { id: "ch_1", amountCents: 10000, createdAt: at, description: "Oct" },

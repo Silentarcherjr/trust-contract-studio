@@ -145,6 +145,12 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       customer: { customer_id: "cus_t" },
     };
     const refunds: ReturnType<typeof refund>[] = [];
+    const profile = {
+      customer_id: "cus_prof1",
+      name: "",
+      email: "",
+      phone_number: null as string | null,
+    };
     const pay = () => ({
       payment_id: "pay_real1",
       status: "succeeded",
@@ -172,6 +178,25 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
           }
           return json(sub);
         }
+        // Customer profile, with Dodo's real behaviour: a null phone is ignored.
+        if (method === "POST" && path === "/customers") {
+          const body = JSON.parse(String(init?.body));
+          Object.assign(profile, {
+            name: body.name,
+            email: body.email,
+            phone_number: body.phone_number,
+          });
+          return json(profile);
+        }
+        if (path === "/customers/cus_prof1") {
+          if (method === "PATCH") {
+            const body = JSON.parse(String(init?.body));
+            if (body.name) profile.name = body.name;
+            if (body.email) profile.email = body.email;
+            if (body.phone_number) profile.phone_number = body.phone_number;
+          }
+          return json(profile);
+        }
         if (method === "POST" && path === "/refunds") {
           const body = JSON.parse(String(init?.body));
           const r = refund(`ref_${refunds.length + 1}`, body.items[0].amount);
@@ -181,6 +206,7 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
         return json({ error: "not found" }, 404);
       }),
     );
+    return { profile };
   };
 
   beforeEach(() => {
@@ -195,7 +221,7 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
   });
 
   it("a retried refund pays twice at the provider; the verifier says FAILED and the repair needs a person", async () => {
-    fakeDodo();
+    const { profile } = fakeDodo();
     const { db, close } = await freshDb();
     try {
       await svc.resetDemo(db, human(), { scenario: "real_billing" });
@@ -209,7 +235,14 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       );
       expect(byKind.cancel_subscription).toBe("VERIFIED");
       expect(byKind.refund_charge).toBe("FAILED");
-      expect(byKind.erase_personal_data).toBe("VERIFIED");
+      // The phone was "deleted" with null: Dodo kept it.
+      expect(byKind.erase_personal_data).toBe("FAILED");
+      const erase = view.verifications.find(
+        (v) =>
+          v.obligationId ===
+          view.obligations.find((o) => o.kind === "erase_personal_data")!.id,
+      )!;
+      expect(erase.reasons[0]!.message).toMatch(/Phone number at Dodo/);
       expect(byKind.purge_derived_memories).toBe("VERIFIED");
 
       const { plan } = await svc.proposeRepair(db, human(), {
@@ -217,6 +250,20 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       });
       expect(plan.proposals.some((p) => p.kind === "void_refunds")).toBe(false);
       expect(plan.needsHuman[0]!.reason).toMatch(/cannot reverse a refund/);
+      // The erasure repair overwrites the phone, and Dodo then shows it gone.
+      expect(plan.proposals.map((p) => p.kind)).toContain(
+        "erase_personal_data",
+      );
+      view = await svc.getContractView(db, human().email, view.contract.id);
+      view = await approveAllPending(db, view);
+      view = await svc.executeContract(db, human(), {
+        contractId: view.contract.id,
+      });
+      const repaired = view.obligations.filter(
+        (o) => o.kind === "erase_personal_data",
+      );
+      expect(repaired[repaired.length - 1]!.verdict).toBe("VERIFIED");
+      expect(profile.phone_number).toBe("+14155550000");
     } finally {
       await close();
     }
