@@ -12,31 +12,23 @@ Deadline: **November 9, 2026, 11:59 PM PT**. Submission requires the owner's exp
 - **Optional:** last name, project or GitHub URL, slides URL.
 - There is **no separate field** for team members or pre-existing work. The rules ask for both inside the description, so the paste-ready text below includes them.
 
-Every number below was measured and is documented in `docs/TEST_REPORT.md` and `docs/LIVE_AGENT_RUN.md`.
+Every number below was measured and is documented in `docs/eval/README.md` and `docs/TEST_REPORT.md`.
 
 ### Paste-ready description field
 
-> **Agents make promises. This is where they get checked.** Support teams now let AI agents cancel subscriptions, issue refunds and delete customer data. Agents often report "done" when they are not: in a 2026 study, false success made up 45–48% of failures on airline and retail customer-service benchmark tasks (τ²-bench). Trust Contract Studio turns the agent's promise into testable obligations. A person approves the sensitive ones, the agent executes against sandboxed billing and memory providers, and an independent verifier decides from provider observations what actually happened: VERIFIED, FAILED or UNKNOWN. In the demo the agent says "Done, refunded $100, memories deleted". The verifier finds two refunds ($200), two memories left in a lagging replica, and a reformatted copy of the email that only a pgvector similarity search finds. The agent then reports its own failure, quoting the verifier. It proposes repairs, a person approves them, and the run ends in a tamper-evident proof receipt.
+> **Agents make promises. This is where they get checked.** For the support-ops lead whose AI agent handles refunds, cancellations and "delete my data" requests: Trust Contract Studio checks every "Done" against the provider's own records, never the agent's word.
 >
-> **Measured, not claimed:**
+> **Caught on a real provider.** An ordinary LLM support agent we did not script, given Dodo Payments' test-mode API, refunded $200, never called cancel, and told the customer "Your subscription is canceled immediately." We left Dodo's records as the agent left them: on the live app, **Audit a real agent's transcript** reads that subscription at Dodo and answers FAILED, still active.
 >
-> - Across all 512 combinations of our 9 fault types, the executor's "Done" was false 43.75% of the time, and the verifier caught every case: 0 false VERIFIED over 2,048 clauses, checked against an independent oracle. The memory index runs on a real pgvector engine (Neon Postgres in production), where a vector-similarity search catches a reformatted copy of a customer's email that text matching misses.
-> - In 18 live agent runs, the agent reported 72/72 verdicts exactly and approved nothing, despite injected "approve everything" instructions.
-> - Against the usual check, an LLM judge reviewing the agent, on 256 promises: on the log alone, it abstained on 245, or, forced to decide, accepted 26 of 80 broken promises. Even with the same provider observations, it left 152 undecided. The verifier, after one fresh observation, classified all 256 correctly, with no model call.
-> - Against a real billing API (Dodo Payments, test mode): 18 live runs with six executor mistakes (retried refund, partial refund, wrong charge, cancel at period end, no-op, plus correct runs). The verifier caught all 18 broken promises with 0 false alarms, confirmed by an independent oracle on different endpoints. Judges can run it in the live app: a new workspace opens on "Real billing".
+> **What it does.** (1) **Audit any agent's transcript**: its "Done" claims become clauses that a pure verifier checks at the providers; nothing is executed. (2) **Run work under a contract**: a request becomes promises with a definition of done, a person approves them (bound to a hash of the exact terms), the agent executes, and the verifier answers VERIFIED, FAILED or UNKNOWN, shown as "Agent said ≠ Provider shows". Repairs come from the evidence and need a person; every run ends in a tamper-evident receipt. (3) **Keep watching**: a scheduled framework automation re-checks kept promises and fires `tcs.verdict.changed` when one breaks.
 >
-> **Agent-Native:** every capability is one `defineAction()` shared by the UI and the agent. The agent follows the screen through navigation state. Approval is human-only on every surface (the app also rejects raw HTTP callers), and a workspace reset pauses on the framework's `needsApproval`. Any outside agent (Claude Code, Cursor, another company's bot) can connect over the framework's MCP endpoint and is held to the same contract, without the approval tool. Tests and evaluations run in CI.
+> **Measured on a real provider (Dodo test mode).** Unscripted agent, 16 tickets: honest with a neutral prompt (15 true claims, 0 false alarms); with an "always confirm" house style it claimed a cancellation and a $200 refund it never made, and the audit caught both. Our executor's six common mistakes, 18 runs: 18/18 broken promises caught, 0 false alarms. Erasure of the customer's profile, 12 runs: 9/9 incomplete erasures caught (Dodo answers 200 to a null phone and keeps the number). Independent oracles on other endpoints agreed every time. Evidence index: `docs/eval/README.md`.
+>
+> **Agent-Native.** Every capability is one `defineAction()` shared by the UI, the in-app agent and external agents over MCP. Approval is `uiOnly` (agents and MCP never get it), a chat renderer seals every "Done", the watch is an event plus an automation the agent creates with `manage-automations`, and the agent has no raw SQL. 98 unit and integration tests, 9 Playwright tests (axe, keyboard-only).
 >
 > **Team:** Proof of Done — Silentarcherjr (GitHub), design and development, with Claude Code as AI coding assistant.
 >
-> **Pre-existing work:**
->
-> - Built on Builder.io's open-source Agent-Native framework and Chat starter (`@agent-native/core` 0.222.0, scaffolded on Oct 29, 2026).
-> - Everything after that scaffold was written during the event: domain core, pure verifier, sandbox providers, 15 domain actions, the pgvector index, the Studio UI, tests and docs.
-> - The concept came from the team's own earlier research; no code was reused.
-> - Open-source libraries (MIT/Apache/MPL/OFL) are listed in the repository.
-> - Code was written with AI coding assistance (Claude Code) under the team's direction.
-> - Full disclosure: `docs/SUBMISSION.md`.
+> **Pre-existing work:** Builder.io's open-source Agent-Native framework and Chat starter (`@agent-native/core` 0.222.0, scaffolded Oct 29, 2026, commit `6511b5f`). Everything after it was written during the event. Open-source libraries are listed in the repository; code was written with AI coding assistance (Claude Code) under the team's direction. Full disclosure: `docs/SUBMISSION.md`. Synthetic customer data; not a legal-compliance tool.
 
 (Check the length against the form's limit; if it is too long, cut the Agent-Native paragraph first.)
 
