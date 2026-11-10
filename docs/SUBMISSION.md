@@ -16,19 +16,31 @@ Every number below was measured and is documented in `docs/eval/README.md` and `
 
 ### Paste-ready description field
 
-> **Agents make promises. This is where they get checked.** For the support-ops lead whose AI agent handles refunds, cancellations and "delete my data" requests: Trust Contract Studio checks every "Done" against the provider's own records, never the agent's word.
+> **Agents make promises. This is where they get checked.**
 >
-> **Caught on a real provider.** An ordinary LLM support agent we did not script, given Dodo Payments' test-mode API, refunded $200, never called cancel, and told the customer "Your subscription is canceled immediately." We left Dodo's records as the agent left them: on the live app, **Audit a real agent's transcript** reads that subscription at Dodo and answers FAILED, still active.
+> An AI support agent tells a customer "Done: cancelled, refunded $100, your data is deleted." Trust Contract Studio doesn't take its word. It checks every "Done" against the provider's own records — here Dodo Payments, a real billing API in test mode — and answers VERIFIED, FAILED or UNKNOWN, with the evidence.
 >
-> **What it does.** (1) **Audit any agent's transcript**: its "Done" claims become clauses that a pure verifier checks at the providers; nothing is executed. (2) **Run work under a contract**: a request becomes promises with a definition of done, a person approves them (bound to a hash of the exact terms), the agent executes, and the verifier answers VERIFIED, FAILED or UNKNOWN, shown as "Agent said ≠ Provider shows". Repairs come from the evidence and need a person; every run ends in a tamper-evident receipt. (3) **Keep watching**: a scheduled framework automation re-checks kept promises and fires `tcs.verdict.changed` when one breaks.
+> **Caught live.** An ordinary LLM support agent we did not script refunded $200, never called cancel, and told the customer "Your subscription is canceled immediately." We left Dodo's records exactly as the agent left them. On the live app, press **Audit a real agent's transcript**: the Studio reads that subscription at Dodo and answers FAILED — still active. Try it in 30 seconds: https://trust-contract-studio.vercel.app (sign up with any email).
 >
-> **Measured on a real provider (Dodo test mode).** Unscripted agent, 16 tickets: honest with a neutral prompt (15 true claims, 0 false alarms); with an "always confirm" house style it claimed a cancellation and a $200 refund it never made, and the audit caught both. Our executor's six common mistakes, 18 runs: 18/18 broken promises caught, 0 false alarms. Erasure of the customer's profile, 12 runs: 9/9 incomplete erasures caught (Dodo answers 200 to a null phone and keeps the number). Independent oracles on other endpoints agreed every time. Evidence index: `docs/eval/README.md`.
+> **What it does:**
 >
-> **Agent-Native.** Every capability is one `defineAction()` shared by the UI, the in-app agent and external agents over MCP. Approval is `uiOnly` (agents and MCP never get it), a chat renderer seals every "Done", the watch is an event plus an automation the agent creates with `manage-automations`, and the agent has no raw SQL. 98 unit and integration tests, 9 Playwright tests (axe, keyboard-only).
+> 1. **Audit any agent's transcript.** Its "Done" claims become clauses; a pure verifier checks each one at the providers. Nothing is executed. The screen puts "Agent said" next to "Provider shows".
+> 2. **Run work under a contract.** A request becomes promises with a definition of done. A person approves them (bound to a hash of the exact terms; the agent cannot approve). The agent executes; the verifier reads the providers. Repairs come from the evidence and need a person. Every run ends in a tamper-evident receipt.
+> 3. **Keep watching.** A scheduled automation re-checks kept promises; if a refund changes at Dodo later, the promise turns FAILED and an event fires.
+>
+> **Measured on a real provider** (Dodo test mode), with independent oracles reading other endpoints:
+>
+> - An unscripted agent on 16 tickets: honest with a neutral prompt (15 true claims, 0 false alarms). With a common "always confirm" house style, it claimed a cancellation and a $200 refund it never made. Both caught.
+> - 18 runs with six common executor mistakes (retried refund paid twice, partial refund, wrong charge, cancel-at-period-end, no-op): 18/18 broken promises caught, 0 false alarms.
+> - 12 erasure runs on the customer's profile: 9/9 incomplete erasures caught. Dodo answers "200 OK" to a null phone number and keeps it.
+>
+> **Agent-Native:** every capability is one `defineAction()` shared by the UI, the in-app agent and external agents over MCP. Approval is `uiOnly` (agents and MCP never get it), a chat renderer puts a seal on every "Done", the watch is a framework event plus an automation the agent creates, and the agent has no raw SQL. 98 unit/integration tests, 9 Playwright tests (axe, keyboard-only).
+>
+> **Demo video:** recorded on the live app with browser automation; narration by Gemini TTS. Evidence: `docs/eval` in the repository.
 >
 > **Team:** Proof of Done — Silentarcherjr (GitHub), design and development, with Claude Code as AI coding assistant.
 >
-> **Pre-existing work:** Builder.io's open-source Agent-Native framework and Chat starter (`@agent-native/core` 0.222.0, scaffolded Oct 29, 2026, commit `6511b5f`). Everything after it was written during the event. Open-source libraries are listed in the repository; code was written with AI coding assistance (Claude Code) under the team's direction. Full disclosure: `docs/SUBMISSION.md`. Synthetic customer data; not a legal-compliance tool.
+> **Pre-existing work:** Builder.io's open-source Agent-Native framework and Chat starter (`@agent-native/core` 0.222.0, scaffolded Oct 29, 2026). Everything after it was written during the event. Open-source libraries are listed in the repository; code was written with AI coding assistance (Claude Code) under the team's direction. Synthetic customer data; not a legal-compliance tool.
 
 (Check the length against the form's limit; if it is too long, cut the Agent-Native paragraph first.)
 
