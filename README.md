@@ -2,6 +2,8 @@
 
 **Agents make promises. This is where they get checked.**
 
+For the support-ops lead whose AI agent handles refunds, cancellations and "delete my data" requests: check every "Done" against the provider's own records, not the agent's word.
+
 **[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **Demo video (Clips):** _link added at submission_ · **[Evidence](docs/eval/)** · **[Full overview](docs/OVERVIEW.md)**
 
 An AI agent tells a customer _"Done: cancelled, refunded $100, and your data is deleted."_ Trust Contract Studio does not take its word. It asks the provider. Below, the provider is **Dodo Payments in test mode** (a real API with simulated money), for both the billing and the customer's profile:

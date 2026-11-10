@@ -91,7 +91,9 @@ const bigSeal = (page: Page) =>
 test("the full loop works with the keyboard alone", async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/studio");
-  await expect(page.getByText(/Adversarial Replay Lab/)).toBeVisible();
+  await expect(
+    page.getByText(/Scenarios: replay a real mistake/),
+  ).toBeVisible();
 
   // Replay Lab: pick a scenario and reset (Space activates buttons too).
   await press(page, /^Showcase \(demo\)/, " ");
@@ -150,11 +152,11 @@ test("the full loop works with the keyboard alone", async ({ page }) => {
   );
   expect((await focused(page)).name).toBe("Receipt");
   await page.keyboard.press("End");
-  expect((await focused(page)).name).toBe("Lab");
+  expect((await focused(page)).name).toBe("Drills");
   await page.keyboard.press("Home");
-  expect((await focused(page)).name).toBe("Theater");
+  expect((await focused(page)).name).toBe("Timeline");
   await page.keyboard.press("ArrowLeft");
-  expect((await focused(page)).name).toBe("Lab");
+  expect((await focused(page)).name).toBe("Drills");
   await page.keyboard.press("ArrowLeft");
   expect((await focused(page)).name).toBe("Receipt");
 

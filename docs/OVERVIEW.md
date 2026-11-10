@@ -21,7 +21,7 @@ A verdict is a snapshot, but the provider can change afterwards. `recheck-verifi
 To see it on the real provider:
 
 1. Reset **Real billing, clean run**, then draft, approve and execute. All four clauses come back VERIFIED at Dodo.
-2. In the Lab, **Make a late refund**. This makes a real $10 refund at Dodo, outside the Studio.
+2. In the **Drills** tab, **Make a late refund**. This makes a real $10 refund at Dodo, outside the Studio.
 3. Press **Re-check kept promises**. The refund clause turns FAILED: "Promised $100.00 but 2 live refunds total $110.00".
 
 <img src="screenshots/13-kept-promise-breaks-dodo.png" width="640" alt="A contract that was VERIFIED at Dodo turns FAILED after a late $10 refund made outside the Studio: promised $100.00 but 2 live refunds total $110.00" />
@@ -74,7 +74,7 @@ Every capability is one `defineAction()` shared by the UI and the agent (one imp
 2. **See it become obligations.** Four clauses with dependencies: cancel → refund → erase personal data → purge derived memories. Clauses with no verifier (e.g. “send me a handwritten apology”) are listed as _unverifiable_, never silently dropped.
 3. **Inspect and edit** each clause on the Promise Canvas (amount, deletion scope, dependencies).
 4. **Approve sensitive actions.** Each decision is bound to a hash of the exact terms reviewed; editing the terms voids it. The agent cannot approve on any surface.
-5. **Watch execution** in the Execution Theater: every provider call, timeout, retry (same idempotency key), human decision and verdict.
+5. **Watch execution** in the Timeline: every provider call, timeout, retry (same idempotency key), human decision and verdict.
 6. **Inspect evidence** gathered by read-only observation of provider state, hashed at capture.
 7. **Discover failures**: a duplicate refund, a vector-index replica that ignored a purge, a 200 OK that changed nothing, a renewal charged after cancellation, a timeout or stale read (→ UNKNOWN).
 8. **Authorize a repair** proposed from the verifier's findings (void the duplicate refund, delete residual embeddings, refund a late charge…).
@@ -151,7 +151,7 @@ The in-app agent is not the only one that can be checked. Any MCP host (Claude C
 4. It proposes repairs (`propose-repair`).
 5. It leaves with a signed receipt (`export-receipt` → `get-receipt` → `check-receipt`).
 
-In the Execution Theater, its calls appear as **External agent · MCP**. The catalog lives in [`server/lib/mcp-catalog.ts`](../server/lib/mcp-catalog.ts). It also never includes the tamper drill or the workspace reset, and a test guards that.
+In the Timeline, its calls appear as **External agent · MCP**. The catalog lives in [`server/lib/mcp-catalog.ts`](../server/lib/mcp-catalog.ts). It also never includes the tamper drill or the workspace reset, and a test guards that.
 
 Try it locally. The token stays in your shell and is never committed.
 

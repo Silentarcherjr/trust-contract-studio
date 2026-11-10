@@ -102,7 +102,7 @@ test("forged evidence is caught by the integrity check", async ({ page }) => {
   await expect(
     page.locator('.tcs-seal[data-size="lg"][data-verdict="VERIFIED"]'),
   ).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("tab", { name: "Lab" }).click();
+  await page.getByRole("tab", { name: "Drills" }).click();
   await page.getByRole("button", { name: /Forge latest evidence/ }).click();
   await page.getByRole("tab", { name: "Evidence" }).click();
   await expect(page.getByText(/digest mismatch — tampered/)).toBeVisible({
@@ -174,7 +174,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await page.getByRole("button", { name: /Execute contract/ }).click();
     await expect(bigSeal(page)).toHaveText(/FAILED/, { timeout: 30_000 });
     await expectNoA11yViolations(page);
-    for (const tab of ["Evidence", "Receipt", "Lab"]) {
+    for (const tab of ["Evidence", "Receipt", "Drills"]) {
       await page.getByRole("tab", { name: tab }).click();
       await expectNoA11yViolations(page);
     }

@@ -17,7 +17,7 @@ Agent self-approval refusal is now common among entries, so it gets one short li
 
 **Preferred: in the app (no terminal).**
 
-1. Before recording, in the Studio: Replay Lab → **Real billing: Dodo Payments (test)** → **Reset sandbox** → **Draft contract** → **Approve all 4** → **Execute contract**.
+1. Before recording, in the Studio: Scenarios → **Real billing: Dodo Payments (test)** → **Reset sandbox** → **Draft contract** → **Approve all 4** → **Execute contract**.
 2. Start recording on the finished contract, with §2 FAILED in view: "Promised $100.00 but 2 live refunds total $200.00 — over by $100.00", with the agent's "Done — refunded $100.00" next to it.
 3. The providers panel on the Studio home shows "Billing: Dodo Payments (test mode, real API)".
 
@@ -91,7 +91,7 @@ Autopilot rehearsal at 1800 ms: every beat finished inside its slot. Execute →
 
 `pnpm demo:autopilot` (without `--agent`) plays this table on a fixed clock.
 
-Before recording by hand: Studio → Replay Lab → **Showcase (demo)** → **Reset sandbox**, with `?demo=1` in the URL. Light theme, 1440×900, browser zoom 100%. Close the agent sidebar.
+Before recording by hand: Studio → Scenarios → **Showcase (demo)** → **Reset sandbox**, with `?demo=1` in the URL. Light theme, 1440×900, browser zoom 100%. Close the agent sidebar.
 
 | Time      | Screen                        | Action                                                                  | Narration (suggested)                                                                                                                                                                                                                                                                                            |
 | --------- | ----------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

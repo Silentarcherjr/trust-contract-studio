@@ -271,7 +271,7 @@ export function StudioHome() {
             <div className="tcs-banner text-sm" data-tone="neutral">
               {realBillingAvailable
                 ? "The workspace is empty. Press Reset sandbox below: the preselected scenario runs billing against a real provider (Dodo Payments, test mode)."
-                : "The sandbox is empty. Choose a scenario in the Replay Lab and reset it to begin."}
+                : "The sandbox is empty. Choose a scenario below and reset it to begin."}
             </div>
           )}
         </section>
@@ -357,7 +357,7 @@ export function StudioHome() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="lab-heading" className="tcs-serif text-xl font-semibold">
-              Adversarial Replay Lab
+              Scenarios: replay a real mistake
             </h2>
             <p className="tcs-soft text-sm">
               Each scenario injects one realistic fault inside the providers —

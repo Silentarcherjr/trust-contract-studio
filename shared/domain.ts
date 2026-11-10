@@ -285,7 +285,7 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
   real_billing_clean: {
     title: "Real billing, clean run",
     summary:
-      "Billing on Dodo Payments in test mode with no injected fault: every clause should be VERIFIED. Use it to watch a kept promise over time: the Lab's late-refund drill then makes a real refund at Dodo, outside the Studio.",
+      "Billing on Dodo Payments in test mode with no injected fault: every clause should be VERIFIED. Use it to watch a kept promise over time: the late-refund drill (Drills tab) then makes a real refund at Dodo, outside the Studio.",
     expected: {
       cancel_subscription: "VERIFIED",
       refund_charge: "VERIFIED",

@@ -29,10 +29,10 @@ import { Seal } from "./Seal";
 import type { ContractView } from "./types";
 
 const TABS = [
-  { id: "theater", label: "Theater" },
+  { id: "theater", label: "Timeline" },
   { id: "evidence", label: "Evidence" },
   { id: "receipt", label: "Receipt" },
-  { id: "lab", label: "Lab" },
+  { id: "lab", label: "Drills" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -398,7 +398,7 @@ function PrimaryAction({
             {s === "verifying" ? "Verifying" : "Executing"} against sandbox
             providers.
           </strong>{" "}
-          Follow each call in the Execution Theater.
+          Follow each call in the Timeline.
         </p>
       </div>
     );
