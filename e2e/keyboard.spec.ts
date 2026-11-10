@@ -143,7 +143,7 @@ test("the full loop works with the keyboard alone", async ({ page }) => {
   ).toHaveAttribute("open", "");
 
   // Inspector tabs: one Tab stop, arrows move selection AND focus.
-  await tabTo(page, /^Theater$/, { role: "tab" });
+  await tabTo(page, /^Timeline$/, { role: "tab" });
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("tab", { name: "Receipt" })).toHaveAttribute(
