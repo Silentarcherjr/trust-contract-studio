@@ -142,3 +142,13 @@ export function extractClaims(transcript: string): TranscriptClaim[] {
   }
   return out;
 }
+
+/** Provider ids a transcript names (Dodo formats), if any. */
+export function extractReferences(transcript: string) {
+  const one = (re: RegExp) => transcript.match(re)?.[0];
+  return {
+    subscriptionId: one(/\bsub_[A-Za-z0-9]{5,}\b/),
+    paymentId: one(/\bpay_[A-Za-z0-9]{5,}\b/),
+    customerId: one(/\bcus_[A-Za-z0-9]{5,}\b/),
+  };
+}

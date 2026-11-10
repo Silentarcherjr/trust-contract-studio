@@ -143,6 +143,7 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       status: "active",
       cancelled_at: null as string | null,
       customer: { customer_id: "cus_t" },
+      metadata: { app: "trust-contract-studio" },
     };
     const refunds: ReturnType<typeof refund>[] = [];
     const profile = {
@@ -150,6 +151,7 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       name: "",
       email: "",
       phone_number: null as string | null,
+      metadata: { app: "trust-contract-studio" },
     };
     const pay = () => ({
       payment_id: "pay_real1",
@@ -157,6 +159,7 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       total_amount: 20000,
       created_at: "2026-11-09T20:00:00Z",
       subscription_id: sub.subscription_id,
+      metadata: { app: "trust-contract-studio" },
       refunds,
     });
     vi.stubGlobal(
@@ -264,6 +267,30 @@ describe("Real billing scenario (Dodo test mode, simulated in memory)", () => {
       );
       expect(repaired[repaired.length - 1]!.verdict).toBe("VERIFIED");
       expect(profile.phone_number).toBe("+14155550000");
+    } finally {
+      await close();
+    }
+  }, 30_000);
+
+  it("audits a transcript that names its Dodo objects, and refuses objects this app did not create", async () => {
+    fakeDodo();
+    const { db, close } = await freshDb();
+    try {
+      await svc.resetDemo(db, human(), { scenario: "real_billing" });
+      const transcript = `Customer: Cancel my subscription and refund the full $200.
+Records: subscription sub_real1, payment pay_real1, customer cus_prof1.
+Agent: Your subscription is canceled immediately, and the full $200 refund succeeded.`;
+      const view = await svc.auditTranscript(db, human(), { transcript });
+      expect(view.contract.plannedBy).toBe("transcript");
+      expect(
+        view.obligations.find((o) => o.kind === "cancel_subscription")!.verdict,
+      ).toBe("FAILED");
+      // An object this app did not create (unknown to the fake) is refused.
+      await expect(
+        svc.auditTranscript(db, human(), {
+          transcript: transcript.replace("sub_real1", "sub_foreign1"),
+        }),
+      ).rejects.toMatchObject({ code: "foreign_provider_ids" });
     } finally {
       await close();
     }

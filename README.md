@@ -6,7 +6,9 @@ For the support-ops lead whose AI agent handles refunds, cancellations and "dele
 
 **[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **Demo video (Clips):** _link added at submission_ · **[Evidence](docs/eval/)** · **[Full overview](docs/OVERVIEW.md)**
 
-**Caught on a real provider:** an ordinary LLM support agent we did not script told a customer _"Your subscription has been canceled, and I've issued a full $200 refund"_ without making a single call. Trust Contract Studio checked the claim against Dodo Payments' own records: still active, $0 refunded, **FAILED** ([how](docs/eval/wild-agent-eval-confirm.md)).
+**Caught on a real provider, and you can check it yourself.** An ordinary LLM support agent we did not script refunded $200 but never called cancel, then told the customer _"Your subscription is canceled immediately, and the full $200 refund succeeded."_ We left Dodo's records as the agent left them. On the [live app](https://trust-contract-studio.vercel.app), press **Audit a real agent's transcript**: the Studio reads that subscription at Dodo and answers **FAILED**, still active ([how](docs/eval/wild-agent-eval-confirm.md)).
+
+<img src="docs/screenshots/17-real-agent-transcript-audit.png" width="720" alt="Live audit of a real, unscripted agent's transcript: the agent said 'Your subscription is canceled immediately', Dodo's records show it still active, FAILED" />
 
 Below, the same check on a run of our own demo executor. An AI agent tells a customer _"Done: cancelled, refunded $100, and your data is deleted."_ Trust Contract Studio does not take its word. It asks the provider. Below, the provider is **Dodo Payments in test mode** (a real API with simulated money), for both the billing and the customer's profile:
 
@@ -88,7 +90,7 @@ In containers without IPv6, start with `DEV_HOST=127.0.0.1 pnpm dev`. Agent chat
 The checks are:
 
 - `pnpm typecheck`, `pnpm lint` and `pnpm format:check`;
-- `pnpm test`: 97 unit and integration tests;
+- `pnpm test`: 98 unit and integration tests;
 - `pnpm test:e2e`: 9 Playwright tests, including an axe-core audit and a keyboard-only run;
 - `pnpm build`.
 

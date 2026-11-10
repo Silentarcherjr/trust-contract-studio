@@ -123,6 +123,10 @@ describe("audit-transcript", () => {
       true,
     );
     expect(view.obligations.every((o) => o.verdict === "FAILED")).toBe(true);
+    // The Studio never repairs another agent's work.
+    await expect(
+      svc.proposeRepair(db, human(), { contractId: view.contract.id }),
+    ).rejects.toMatchObject({ code: "audit_only" });
     // The claims are shown, attributed to the external agent.
     expect(view.attempts.map((a) => a.provider)).toEqual(
       Array(4).fill("external agent"),

@@ -483,3 +483,39 @@ export async function findCustomerInList(customerId: string) {
   }
   return null;
 }
+
+/**
+ * Provider ids a transcript names, and whether each is a test object this app
+ * created (metadata.app). Audits by id are limited to those objects.
+ */
+export async function dodoTaggedReferences(refs: {
+  subscriptionId?: string | undefined;
+  paymentId?: string | undefined;
+  customerId?: string | undefined;
+}) {
+  const read = async (path: string) => {
+    try {
+      return await call<{
+        metadata?: Record<string, string>;
+        total_amount?: number;
+        subscription_id?: string | null;
+      }>("GET", path);
+    } catch {
+      return null;
+    }
+  };
+  const [sub, pay, cus] = await Promise.all([
+    refs.subscriptionId ? read(`/subscriptions/${refs.subscriptionId}`) : null,
+    refs.paymentId ? read(`/payments/${refs.paymentId}`) : null,
+    refs.customerId ? read(`/customers/${refs.customerId}`) : null,
+  ]);
+  const tagged = (o: { metadata?: Record<string, string> } | null) =>
+    o?.metadata?.app === "trust-contract-studio";
+  return {
+    ok:
+      (!refs.subscriptionId || tagged(sub)) &&
+      (!refs.paymentId || tagged(pay)) &&
+      (!refs.customerId || tagged(cus)),
+    paymentTotalCents: pay?.total_amount ?? null,
+  };
+}

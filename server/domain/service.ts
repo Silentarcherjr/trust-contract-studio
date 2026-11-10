@@ -41,6 +41,7 @@ import {
   dodoConfig,
   dodoEffects,
   dodoProfileEffects,
+  dodoTaggedReferences,
 } from "../providers/dodo.js";
 import { refundCharge } from "../sandbox/billing.js";
 import {
@@ -79,7 +80,7 @@ import {
 import { assertRateLimit } from "./rate-limit.js";
 import { planRepairs } from "./repair.js";
 import { EDITABLE_STATUSES, assertTransition } from "./state-machine.js";
-import { extractClaims } from "./transcript.js";
+import { extractClaims, extractReferences } from "./transcript.js";
 import {
   VERIFIER_VERSION,
   combine,
@@ -857,9 +858,60 @@ export async function auditTranscript(
   const limitations: string[] = [
     "Audited from a transcript: the Studio did not perform these actions and checks only their outcome at the registered providers.",
   ];
+  // A transcript may name the provider objects it is about. With real
+  // billing, those are audited directly, if this app created them.
+  const refs = extractReferences(input.transcript);
+  const byId =
+    (refs.subscriptionId || refs.paymentId || refs.customerId) &&
+    (await usesRealBilling(db, owner));
+  let paymentTotal: number | null = null;
+  if (byId) {
+    const check = await dodoTaggedReferences(refs);
+    if (!check.ok)
+      throw new ContractError(
+        "This transcript names Dodo objects this app did not create. Audits by id are limited to the app's own test objects.",
+        "foreign_provider_ids",
+        403,
+      );
+    paymentTotal = check.paymentTotalCents;
+    limitations.push(
+      "The transcript names its provider objects; the audit read those objects at Dodo (test mode).",
+    );
+  }
   const planned: PlannedObligation[] = [];
   const claimOf: string[] = [];
   for (const c of claims) {
+    if (byId && c.kind === "purge_derived_memories") continue;
+    if (byId) {
+      const customerId = refs.customerId ?? subject.customerId;
+      const params: Record<string, unknown> =
+        c.kind === "cancel_subscription" && refs.subscriptionId
+          ? { customerId, subscriptionId: refs.subscriptionId }
+          : c.kind === "refund_charge" && refs.paymentId
+            ? {
+                customerId,
+                chargeId: refs.paymentId,
+                amountCents: c.amountCents ?? paymentTotal,
+              }
+            : c.kind === "erase_personal_data" && refs.customerId
+              ? { customerId, stores: ["billing_profile"] }
+              : {};
+      if (!Object.keys(params).length) continue;
+      planned.push({
+        kind: c.kind,
+        title:
+          c.kind === "refund_charge" && c.amountCents !== null
+            ? `Refund ${formatCents(c.amountCents)} (as claimed)`
+            : `${KIND_INFO[c.kind].label} (as claimed)`,
+        params: obligationParamsSchemas[c.kind].parse(params) as Record<
+          string,
+          unknown
+        >,
+        dependsOn: [],
+      });
+      claimOf.push(c.claim);
+      continue;
+    }
     const params = defaultsFor(c.kind, subject);
     if (c.kind === "refund_charge") {
       if (c.amountCents !== null) params.amountCents = c.amountCents;
@@ -880,6 +932,12 @@ export async function auditTranscript(
     claimOf.push(c.claim);
   }
 
+  if (!planned.length)
+    throw new ContractError(
+      "None of this transcript's claims concern the provider objects it names.",
+      "no_verifiable_claims",
+      422,
+    );
   const scenario = await getScenario(db, owner);
   const now = nowIso();
   const contractId = newId("ctr");
@@ -1565,6 +1623,14 @@ export async function proposeRepair(
       409,
     );
   }
+  // An audited transcript describes work another agent did elsewhere. The
+  // Studio never acts on it: the fix belongs where that agent works.
+  if (contract.plannedBy === "transcript")
+    throw new ContractError(
+      "This contract audits another agent's transcript. The Studio did not perform these actions and will not change them; repair them where that agent works, then re-verify here.",
+      "audit_only",
+      409,
+    );
   const all = await contractObligations(db, owner, contract.id);
   const latest = await latestVerifications(db, owner, contract.id);
   const failing = all
@@ -2159,6 +2225,12 @@ export async function lateRefundDrill(
   requireHuman(actor, "The late-refund drill");
   const owner = actor.email;
   const contract = await requireContract(db, owner, input.contractId);
+  if (contract.plannedBy === "transcript")
+    throw new ContractError(
+      "Drills run on the Studio's own contracts, not on audited transcripts.",
+      "audit_only",
+      409,
+    );
   const refund = (await contractObligations(db, owner, contract.id)).find(
     (o) => o.kind === "refund_charge" && o.verdict === "VERIFIED",
   );

@@ -58,7 +58,10 @@ export function RepairStudio({
   const tone = contract.status === "failed" ? "failed" : "unknown";
   const askAgent = () =>
     sendToAgentChat({
-      message: `Explain why contract ${contract.id} is ${contract.status.toUpperCase()} using only the verifier's reasons, then propose a repair.`,
+      message:
+        contract.plannedBy === "transcript"
+          ? `Explain why the audited transcript in contract ${contract.id} is ${contract.status.toUpperCase()}, using only the verifier's reasons.`
+          : `Explain why contract ${contract.id} is ${contract.status.toUpperCase()} using only the verifier's reasons, then propose a repair.`,
       submit: true,
       openSidebar: true,
     } as Parameters<typeof sendToAgentChat>[0]);
@@ -100,17 +103,19 @@ export function RepairStudio({
             />{" "}
             Re-verify
           </button>
-          <button
-            type="button"
-            className="tcs-btn"
-            data-variant="primary"
-            data-size="sm"
-            data-primary-action
-            disabled={propose.isPending}
-            onClick={() => propose.mutate({ contractId: contract.id })}
-          >
-            <IconTool size={14} aria-hidden /> Propose repair
-          </button>
+          {contract.plannedBy !== "transcript" && (
+            <button
+              type="button"
+              className="tcs-btn"
+              data-variant="primary"
+              data-size="sm"
+              data-primary-action
+              disabled={propose.isPending}
+              onClick={() => propose.mutate({ contractId: contract.id })}
+            >
+              <IconTool size={14} aria-hidden /> Propose repair
+            </button>
+          )}
         </div>
       </div>
       {/* Claim ≠ reality: what the agent said, next to what the provider shows. */}

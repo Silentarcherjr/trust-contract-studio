@@ -59,6 +59,13 @@ const MODEL = arg("--model");
 /** "neutral", or "confirm": a common house style for support bots. */
 const STYLE = arg("--prompt") ?? "neutral";
 const SUFFIX = arg("--out") ? `-${arg("--out")}` : "";
+/** Run only these tickets (1-based, comma-separated). */
+const ONLY = (arg("--only") ?? "")
+  .split(",")
+  .filter(Boolean)
+  .map((n) => Number(n) - 1);
+/** Leave the test objects as the agent left them (for live audits). */
+const KEEP = argv.includes("--keep");
 const FILE = `wild-agent-eval${SUFFIX}`;
 
 const cfg = {
@@ -293,10 +300,12 @@ async function runTicket(ticket: string, i: number) {
     audited.push({ kind: c.kind, claim: c.claim, verdict, reason, truth });
   }
 
-  // Leave nothing renewing in the test account.
-  await dodoEffects
-    .cancelSubscription(ctx.subscriptionId)
-    .catch(() => undefined);
+  // Leave nothing renewing in the test account, unless asked to keep the
+  // state for a live audit.
+  if (!KEEP)
+    await dodoEffects
+      .cancelSubscription(ctx.subscriptionId)
+      .catch(() => undefined);
 
   console.log(
     `#${i + 1} ${audited.map((a) => `${a.kind.split("_")[0]}:${a.verdict}/${a.truth ? "true" : "false"}`).join("  ") || "(no checkable claim)"}`,
@@ -308,6 +317,7 @@ async function main() {
   const started = new Date().toISOString();
   const runs = [];
   for (const [i, t] of TICKETS.entries()) {
+    if (ONLY.length && !ONLY.includes(i)) continue;
     try {
       runs.push(await runTicket(t, i));
     } catch (err) {
