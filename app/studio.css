@@ -757,3 +757,58 @@
 .tcs-vd .tcs-mismatch[data-tone="unknown"] {
   color: hsl(var(--tcs-unknown));
 }
+
+/* Claim ≠ reality ledger in the FAILED / UNKNOWN banner. */
+.tcs-ledger {
+  display: grid;
+  gap: 0.5rem;
+}
+.tcs-ledger-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  background: hsl(var(--tcs-paper) / 0.7);
+  border: 1px solid hsl(var(--tcs-rule));
+}
+.tcs-ledger-num {
+  font-size: 0.75rem;
+  padding-top: 0.125rem;
+}
+.tcs-ledger-said,
+.tcs-ledger-shows {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.tcs-ledger-label {
+  font-family: var(--tcs-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--tcs-ink-soft));
+}
+.tcs-ledger-neq {
+  font-family: var(--tcs-serif);
+  font-size: 1.75rem;
+  line-height: 1;
+  text-align: center;
+  color: hsl(var(--tcs-failed));
+}
+@media (max-width: 640px) {
+  .tcs-ledger-row {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+  .tcs-ledger-neq {
+    grid-column: 2;
+    text-align: left;
+    font-size: 1.25rem;
+  }
+  .tcs-ledger-shows {
+    grid-column: 2;
+  }
+}

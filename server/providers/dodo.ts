@@ -66,6 +66,12 @@ async function call<T>(
   return (text ? JSON.parse(text) : {}) as T;
 }
 
+/**
+ * Raw test-mode API access, for evaluations that give an outside agent the
+ * provider's own API as its tools. Test mode only, like everything here.
+ */
+export const dodoApi = call;
+
 export class DodoError extends Error {
   constructor(
     readonly status: number,
@@ -430,22 +436,28 @@ export async function observeDodoProfile(
       ok: true,
       source,
       fields: [
+        // A field is live while it still holds the subject's identifier,
+        // whatever an eraser wrote instead.
         {
           field: "name",
           label: "Name at Dodo",
-          live: c.name !== DODO_PROFILE_ERASED.name,
+          live:
+            c.name.trim().toLowerCase() ===
+            DODO_PROFILE_SEED.name.toLowerCase(),
         },
         {
           field: "email",
           label: "Email at Dodo",
-          live: !c.email.endsWith(DODO_PROFILE_ERASED.emailDomain),
+          live: c.email
+            .toLowerCase()
+            .startsWith(DODO_PROFILE_SEED.email.split("+")[0]!.toLowerCase()),
         },
         {
           field: "phone",
           label: "Phone number at Dodo",
           live:
-            c.phone_number !== null &&
-            c.phone_number !== DODO_PROFILE_ERASED.phone,
+            (c.phone_number ?? "").replace(/\D/g, "") ===
+            DODO_PROFILE_SEED.phone.replace(/\D/g, ""),
         },
       ],
     };

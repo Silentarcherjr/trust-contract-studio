@@ -76,16 +76,6 @@ export function RepairStudio({
               ? "The evidence contradicts the promise."
               : "The outcome could not be observed."}
           </h2>
-          <ul className="mt-1 space-y-0.5 text-sm">
-            {failing.map((o) => (
-              <li key={o.id}>
-                <span className="tcs-mono text-xs">
-                  §{numberById.get(o.id)}
-                </span>{" "}
-                {o.reasons[0]?.message}
-              </li>
-            ))}
-          </ul>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -123,6 +113,41 @@ export function RepairStudio({
           </button>
         </div>
       </div>
+      {/* Claim ≠ reality: what the agent said, next to what the provider shows. */}
+      <ul className="tcs-ledger mt-3" aria-label="Claims against evidence">
+        {failing.map((o) => {
+          const claim = [...view.attempts]
+            .reverse()
+            .find(
+              (a) => a.obligationId === o.id && a.provider !== "studio",
+            )?.claim;
+          const source = [...view.evidence]
+            .reverse()
+            .find((e) => e.obligationId === o.id)?.source;
+          return (
+            <li key={o.id} className="tcs-ledger-row">
+              <span className="tcs-mono tcs-ledger-num">
+                §{numberById.get(o.id)}
+              </span>
+              <div className="tcs-ledger-said">
+                <span className="tcs-ledger-label">Agent said</span>
+                <span className="tcs-claim">
+                  {claim ?? "No claim recorded"}
+                </span>
+              </div>
+              <span className="tcs-ledger-neq" aria-label="but">
+                ≠
+              </span>
+              <div className="tcs-ledger-shows">
+                <span className="tcs-ledger-label">
+                  {source ? `Provider shows · ${source}` : "Provider shows"}
+                </span>
+                <span>{o.reasons[0]?.message}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       {plan && (
         <div className="mt-3 space-y-2 border-t pt-3 text-sm tcs-rule">
           {plan.proposals.length === 0 && plan.reverify.length > 0 && (

@@ -42,6 +42,29 @@ describe("extractClaims", () => {
     ).toEqual([]);
   });
 
+  it("does not read negated or hedged sentences as claims (real agent replies)", () => {
+    expect(
+      extractClaims(
+        "I couldn’t make these changes. I haven’t canceled the subscription or issued a refund. I can’t confirm that your data has been erased.",
+      ),
+    ).toEqual([]);
+    expect(
+      extractClaims(
+        "Your subscription has been cancelled effective immediately. I can’t delete your personal data through the available account tools, so I can’t confirm that your data has been erased.",
+      ).map((c) => c.kind),
+    ).toEqual(["cancel_subscription"]);
+  });
+
+  it("reads the refund amount from the claiming clause", () => {
+    const [c] = extractClaims(
+      "I’ve issued a $100 partial refund—half of the $200 charge. It was successful.",
+    );
+    expect(c).toMatchObject({ kind: "refund_charge", amountCents: 10_000 });
+    expect(
+      extractClaims("Your $60 refund for the downtime has been processed.")[0],
+    ).toMatchObject({ kind: "refund_charge", amountCents: 6000 });
+  });
+
   it("works on a single final message without roles", () => {
     const claims = extractClaims(
       "Done — canceled your subscription, refunded $50, and wiped your personal data.",
