@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trust Contract Studio</title>
+    <meta
+      name="description"
+      content="Agents make promises. This is where they get checked: every 'Done' checked against the provider's own records."
+    />
+    <style>
+      :root {
+        --ink: #16181d;
+        --soft: #5c616f;
+        --paper: #faf8f4;
+        --card: #ffffff;
+        --rule: #e6e1d8;
+        --failed: #c2361f;
+        --ok: #1f7a4a;
+        --agent: #5b3fc4;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #eceae4;
+          --soft: #a6a39a;
+          --paper: #15171c;
+          --card: #1d2027;
+          --rule: #30333b;
+          --failed: #f07a64;
+          --ok: #5fcf93;
+          --agent: #a99bff;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          17px/1.55 Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+      }
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+      }
+      .slide {
+        padding: 40px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .slide:last-child {
+        border-bottom: 0;
+      }
+      .eyebrow {
+        font:
+          600 12px/1 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--soft);
+        margin: 0 0 14px;
+      }
+      h1,
+      h2 {
+        font-family: "Iowan Old Style", Georgia, serif;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 56px);
+        line-height: 1.05;
+      }
+      h2 {
+        font-size: clamp(26px, 4vw, 36px);
+        line-height: 1.15;
+        margin-bottom: 14px;
+      }
+      .lede {
+        font-size: 20px;
+        color: var(--soft);
+        max-width: 46em;
+        margin: 18px 0 0;
+      }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+      .links a {
+        text-decoration: none;
+        color: var(--ink);
+        border: 1px solid var(--rule);
+        background: var(--card);
+        padding: 9px 14px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .links a.primary {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .said {
+        color: var(--agent);
+      }
+      .bad {
+        color: var(--failed);
+        font-weight: 700;
+      }
+      .good {
+        color: var(--ok);
+        font-weight: 700;
+      }
+      figure {
+        margin: 22px 0 0;
+      }
+      figure img {
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        border: 1px solid var(--rule);
+        display: block;
+      }
+      figcaption {
+        color: var(--soft);
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        padding: 18px 18px 16px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--soft);
+        font-size: 15.5px;
+      }
+      .num {
+        font:
+          700 44px/1 "Iowan Old Style",
+          Georgia,
+          serif;
+        margin-bottom: 8px;
+      }
+      ul {
+        padding-left: 1.1em;
+        margin: 10px 0 0;
+      }
+      li {
+        margin: 6px 0;
+      }
+      code {
+        font:
+          14px ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 1px 5px;
+      }
+      .foot {
+        color: var(--soft);
+        font-size: 14px;
+      }
+      @media (max-width: 760px) {
+        .grid3 {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding-top: 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="slide">
+        <p class="eyebrow">
+          Trust Contract Studio · Builder.io Agent-Native Hackathon 2026
+        </p>
+        <h1>Agents make promises.<br />This is where they get checked.</h1>
+        <p class="lede">
+          An AI support agent tells a customer
+          <span class="said"
+            >“Done: cancelled, refunded $100, your data is deleted.”</span
+          >
+          Trust Contract Studio doesn’t take its word. It checks every “Done”
+          against the provider’s own records and answers
+          <span class="good">VERIFIED</span>, <span class="bad">FAILED</span> or
+          UNKNOWN, with the evidence.
+        </p>
+        <div class="links">
+          <a class="primary" href="https://trust-contract-studio.vercel.app"
+            >Try it live</a
+          >
+          <a href="https://clips.agent-native.com/r/3dXb1RkO1Hh4">Demo video</a>
+          <a href="https://github.com/Silentarcherjr/trust-contract-studio"
+            >Repository</a
+          >
+          <a
+            href="https://github.com/Silentarcherjr/trust-contract-studio/tree/main/docs/eval"
+            >Evidence</a
+          >
+        </div>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">Caught live, on a real provider</p>
+        <h2>
+          An agent we didn’t script said it cancelled. It never called cancel.
+        </h2>
+        <p>
+          An ordinary LLM support agent, given Dodo Payments’ test-mode API,
+          refunded $200 and told the customer
+          <span class="said">“Your subscription is canceled immediately.”</span>
+          We left Dodo’s records as the agent left them. On the live app, press
+          <b>Audit a real agent’s transcript</b>: the Studio reads that
+          subscription at Dodo and answers <span class="bad">FAILED</span>,
+          still active.
+        </p>
+        <figure>
+          <img
+            src="/one-pager/real-agent.jpg"
+            alt="Live audit: the agent said 'Your subscription is canceled immediately'; Dodo's records show it still active; FAILED"
+            loading="lazy"
+          />
+          <figcaption>
+            The live audit of the real transcript, read from
+            <code>dodo.subscriptions.get</code>.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">What it does</p>
+        <h2>Audit any agent. Run work under a contract. Keep watching.</h2>
+        <div class="grid3">
+          <div class="card">
+            <h3>Audit a transcript</h3>
+            <p>
+              Paste any agent’s transcript. Its “Done” claims become clauses
+              that a pure verifier checks at the providers. Nothing is executed.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Run under a contract</h3>
+            <p>
+              A request becomes promises with a definition of done. A person
+              approves, bound to a hash of the exact terms; the agent can’t.
+              Repairs come from the evidence.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Keep watching</h3>
+            <p>
+              A scheduled automation re-checks kept promises. If a refund
+              changes at Dodo later, the promise turns FAILED and an event
+              fires.
+            </p>
+          </div>
+        </div>
+        <figure>
+          <img
+            src="/one-pager/ledger.jpg"
+            alt="Agent said 'refunded $100' but Dodo shows two refunds totalling $200; agent said 'personal data erased' but the phone number is still at Dodo"
+            loading="lazy"
+          />
+          <figcaption>
+            “Agent said ≠ Provider shows”: the refund was paid twice, and Dodo
+            answered 200 to a null phone number and kept it.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">Measured on Dodo Payments (test mode)</p>
+        <h2>Caught every broken promise. No false alarms.</h2>
+        <div class="grid3">
+          <div class="card">
+            <div class="num">2 / 2</div>
+            <h3>Unscripted agent’s false claims</h3>
+            <p>
+              16 tickets. Honest with a neutral prompt (15 true claims). With an
+              “always confirm” house style it claimed a cancellation and a $200
+              refund it never made. Both caught.
+            </p>
+          </div>
+          <div class="card">
+            <div class="num">18 / 18</div>
+            <h3>Broken promises caught</h3>
+            <p>
+              Six common executor mistakes: retried refund paid twice, partial
+              refund, wrong charge, cancel at period end, no-op. 0 false alarms
+              on 18 kept ones.
+            </p>
+          </div>
+          <div class="card">
+            <div class="num">9 / 9</div>
+            <h3>Incomplete erasures caught</h3>
+            <p>
+              On the customer’s profile at Dodo, 0 false alarms on 3 real ones.
+              Independent oracles on other endpoints agreed every time.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">Built on Agent-Native</p>
+        <h2>The safety rules are framework gates, not prompts.</h2>
+        <ul>
+          <li>
+            Every capability is one <code>defineAction()</code> shared by the
+            UI, the in-app agent and external agents over MCP.
+          </li>
+          <li>
+            Approval is <code>uiOnly</code>: agents and MCP clients never get
+            it. An external agent that tries gets “Unknown tool”.
+          </li>
+          <li>
+            A chat renderer puts a seal on every “Done”: what the agent says,
+            next to what the verifier checked.
+          </li>
+          <li>
+            The watch is a framework event (<code>tcs.verdict.changed</code>)
+            plus an automation the agent creates with
+            <code>manage-automations</code>.
+          </li>
+          <li>
+            98 unit and integration tests, 9 Playwright tests including an
+            axe-core audit and a keyboard-only run.
+          </li>
+        </ul>
+        <p class="foot">
+          Team: Proof of Done (Silentarcherjr). Built during the event on the
+          Agent-Native Chat starter (<code>@agent-native/core</code> 0.222.0,
+          Oct 29, 2026), with Claude Code as AI coding assistant. Synthetic
+          customer data; Dodo in test mode (simulated money). Not a
+          legal-compliance tool. The demo video was recorded on the live app
+          with browser automation; narration by Gemini TTS.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
