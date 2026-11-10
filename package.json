@@ -26,7 +26,8 @@
     "eval:llm-judge": "tsx scripts/eval/llm-judge-eval.ts",
     "eval:dodo": "tsx scripts/eval/dodo-eval.ts",
     "eval:dodo-erasure": "tsx scripts/eval/dodo-erasure-eval.ts",
-    "eval:wild-agent": "tsx scripts/eval/wild-agent-eval.ts"
+    "eval:wild-agent": "tsx scripts/eval/wild-agent-eval.ts",
+    "demo:real-take": "tsx scripts/demo-real-take.ts"
   },
   "dependencies": {
     "@agent-native/agentkit": "^0.222.0",
