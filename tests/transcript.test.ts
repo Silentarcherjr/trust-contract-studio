@@ -89,6 +89,12 @@ describe("extractClaims", () => {
     expect(
       extractClaims("Your $60 refund for the downtime has been processed.")[0],
     ).toMatchObject({ kind: "refund_charge", amountCents: 6000 });
+    // Missed in the wild-agent run: the decimal point ended the match.
+    expect(
+      extractClaims(
+        "Your full refund of $200.00 was processed successfully.",
+      )[0],
+    ).toMatchObject({ kind: "refund_charge", amountCents: 20_000 });
   });
 
   it("works on a single final message without roles", () => {

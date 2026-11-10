@@ -126,9 +126,12 @@ export function extractClaims(transcript: string): TranscriptClaim[] {
   for (const kind of ORDER) {
     let found: { sentence: string; clause: string } | null = null;
     for (const sentence of said)
-      for (const clause of clauses(sentence))
+      for (const raw of clauses(sentence)) {
+        // "$200.00" would end a [^.] match early; use a decimal comma.
+        const clause = raw.replace(/(\d)\.(\d)/g, "$1,$2");
         if (DONE_PATTERNS[kind].test(clause) && !NOT_A_CLAIM.test(clause))
           found = { sentence, clause };
+      }
     if (!found) continue;
     const { sentence, clause } = found;
     out.push({

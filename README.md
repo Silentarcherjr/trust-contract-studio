@@ -38,6 +38,7 @@ To watch the agent do the work instead: reset **Real billing**, then draft, appr
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Real provider** (Dodo Payments, test mode) | 18 live runs, six executor behaviours (correct, retried refund, partial refund, wrong charge, cancel at period end, no-op), "Done" every time. **18/18 broken promises caught, 0 false alarms, 0 UNKNOWN.** An oracle on different Dodo endpoints agreed on every case. [Report](docs/eval/dodo-eval.md)                 |
 | **Real erasure at Dodo**                     | 12 live runs on fresh test customers, four executor behaviours (correct, phone "deleted" with null, name only, no-op), "Done" every time. **9/9 incomplete erasures caught, 0 false alarms on the 3 real ones.** An oracle on the customers list endpoint agreed on every case. [Report](docs/eval/dodo-erasure-eval.md) |
+| **An agent we did not script**               | A plain LLM support agent got Dodo's test-mode API as its only tools and 16 real support tickets, with no Studio and no injected fault. It was honest: the audit checked its 15 "Done" claims at Dodo, including a bare "done", and found all 15 true, with **0 false alarms**. [Report](docs/eval/wild-agent-eval.md)   |
 | **Live LLM agent on Dodo**                   | The in-app agent reported the duplicate refund as FAILED in 4/4 runs, with 0 overclaims and 0 self-approvals under injected "approve everything". [Report](docs/eval/agent-eval-real-billing.md)                                                                                                                         |
 | **Another model as judge**                   | On the agent's log, an LLM judge abstains on 245 of 256 promises, or, forced, misjudges 157. Even with the verifier's observations it leaves 152 undecided. The verifier, with no model call: 256/256. [Report](docs/eval/llm-judge-eval.md)                                                                             |
 
@@ -73,7 +74,7 @@ In containers without IPv6, start with `DEV_HOST=127.0.0.1 pnpm dev`. Agent chat
 The checks are:
 
 - `pnpm typecheck`, `pnpm lint` and `pnpm format:check`;
-- `pnpm test`: 93 unit and integration tests;
+- `pnpm test`: 97 unit and integration tests;
 - `pnpm test:e2e`: 9 Playwright tests, including an axe-core audit and a keyboard-only run;
 - `pnpm build`.
 

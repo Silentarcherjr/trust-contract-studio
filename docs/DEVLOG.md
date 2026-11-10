@@ -2,6 +2,14 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-10: An agent we did not script; claim-vs-provider ledger
+
+- **`pnpm eval:wild-agent`.** A plain LLM support agent (Builder gateway) gets Dodo's test-mode API as its only tools, with no Studio and no fault injection, and handles 16 support tickets on fresh test state. Its final replies go through the same claim extractor and pure verifier as `audit-transcript`. An oracle on the list endpoints decides which claims are true.
+- **Result.** The agent was honest. All 15 audited claims were true, including a bare "done", and all 15 were VERIFIED, with 0 false alarms.
+- **The extractor got better.** The first two runs, which are not reported, showed the extractor reading negated sentences and a scheduled cancellation as claims. Extraction is now clause by clause, and negated, hedged and scheduled clauses do not count. A bare "done" claims what the customer asked for. Decimal amounts no longer end a match; that bug missed one true claim in the reported run. There are 5 new tests.
+- **UI.** The FAILED and UNKNOWN banner is now a full-width ledger. Each clause shows "Agent said" ≠ "Provider shows", with the observation source. It is the new README hero.
+- **Profile adapter.** A field counts as live while it still holds the subject's identifier, whatever an eraser wrote instead, so an agent that blanks with its own placeholder is judged fairly.
+
 ## 2026-11-10: Erasure evaluated at a real provider
 
 - **`pnpm eval:dodo-erasure`.** 4 executor behaviours × 3 runs, each on a fresh test customer at Dodo: correct overwrite, phone "deleted" with null, name only, no-op. The verifier reads `GET /customers/{id}` through the adapter. The oracle reads the customers list endpoint and checks that no original value remains.
