@@ -24,7 +24,8 @@
     "format:check": "oxfmt --check",
     "demo:dodo": "tsx scripts/dodo-live-check.ts",
     "eval:llm-judge": "tsx scripts/eval/llm-judge-eval.ts",
-    "eval:dodo": "tsx scripts/eval/dodo-eval.ts"
+    "eval:dodo": "tsx scripts/eval/dodo-eval.ts",
+    "eval:dodo-erasure": "tsx scripts/eval/dodo-erasure-eval.ts"
   },
   "dependencies": {
     "@agent-native/agentkit": "^0.222.0",

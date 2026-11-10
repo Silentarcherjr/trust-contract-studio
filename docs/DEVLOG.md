@@ -2,6 +2,12 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-10: Erasure evaluated at a real provider
+
+- **`pnpm eval:dodo-erasure`.** 4 executor behaviours × 3 runs, each on a fresh test customer at Dodo: correct overwrite, phone "deleted" with null, name only, no-op. The verifier reads `GET /customers/{id}` through the adapter. The oracle reads the customers list endpoint and checks that no original value remains.
+- **Result.** 9 of 9 incomplete erasures FAILED, 3 of 3 real ones VERIFIED, 0 UNKNOWN; the oracle agreed on all 12.
+- **README.** It now says which failures our executor stages and which behaviour is Dodo's own (a 200 that keeps the phone number). The evidence table keeps the external rows.
+
 ## 2026-11-10: Personal data at a real provider; shorter README
 
 - **The customer's profile at Dodo is a personal-data store.** Each Real billing reset creates a test customer at Dodo for the workspace, tagged with the app, holding synthetic name, email and phone. That customer is the workspace's requester, so workspaces never share a profile. The erasure clause now covers `profile_db` and `billing_profile`. The observation reads `GET /customers/{id}`, and the verifier stays unchanged except that its scope now comes from the observation's own list of observable stores.

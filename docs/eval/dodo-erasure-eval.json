@@ -1,0 +1,153 @@
+{
+  "started": "2026-11-10T00:59:49.652Z",
+  "summary": {
+    "runs": 12,
+    "broken": 9,
+    "kept": 3,
+    "falseVerified": 0,
+    "caught": 9,
+    "unknownOnBroken": 0,
+    "falseFailed": 0,
+    "verifiedKept": 3
+  },
+  "runs": [
+    {
+      "behaviour": "correct",
+      "rep": 1,
+      "customerId": "cus_0NrbthrfzLH5J6uLNSwGN",
+      "calls": ["PATCH /customers/{id} name, email, phone overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": true,
+      "stillThere": [],
+      "verdict": "VERIFIED",
+      "reason": "No live personal data in billing_profile."
+    },
+    {
+      "behaviour": "correct",
+      "rep": 2,
+      "customerId": "cus_0NrbtiHXrIhmUgpB7q2TE",
+      "calls": ["PATCH /customers/{id} name, email, phone overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": true,
+      "stillThere": [],
+      "verdict": "VERIFIED",
+      "reason": "No live personal data in billing_profile."
+    },
+    {
+      "behaviour": "correct",
+      "rep": 3,
+      "customerId": "cus_0NrbtifhxxurskUsQdsc4",
+      "calls": ["PATCH /customers/{id} name, email, phone overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": true,
+      "stillThere": [],
+      "verdict": "VERIFIED",
+      "reason": "No live personal data in billing_profile."
+    },
+    {
+      "behaviour": "null_phone",
+      "rep": 1,
+      "customerId": "cus_0Nrbtj0KEAIKwBDDLu1Ox",
+      "calls": [
+        "PATCH /customers/{id} name, email overwritten, phone_number=null → 200"
+      ],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["phone"],
+      "verdict": "FAILED",
+      "reason": "1 personal-data record(s) are still live: Phone number at Dodo."
+    },
+    {
+      "behaviour": "null_phone",
+      "rep": 2,
+      "customerId": "cus_0NrbtjL8YpNHIJjVWtsHs",
+      "calls": [
+        "PATCH /customers/{id} name, email overwritten, phone_number=null → 200"
+      ],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["phone"],
+      "verdict": "FAILED",
+      "reason": "1 personal-data record(s) are still live: Phone number at Dodo."
+    },
+    {
+      "behaviour": "null_phone",
+      "rep": 3,
+      "customerId": "cus_0NrbtjgIqM9eQ4Mmlup66",
+      "calls": [
+        "PATCH /customers/{id} name, email overwritten, phone_number=null → 200"
+      ],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["phone"],
+      "verdict": "FAILED",
+      "reason": "1 personal-data record(s) are still live: Phone number at Dodo."
+    },
+    {
+      "behaviour": "name_only",
+      "rep": 1,
+      "customerId": "cus_0NrbtkEKr1EJ6WJlBQ383",
+      "calls": ["PATCH /customers/{id} name overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["email", "phone"],
+      "verdict": "FAILED",
+      "reason": "2 personal-data record(s) are still live: Email at Dodo, Phone number at Dodo."
+    },
+    {
+      "behaviour": "name_only",
+      "rep": 2,
+      "customerId": "cus_0NrbtkkQlnGblExM60XSB",
+      "calls": ["PATCH /customers/{id} name overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["email", "phone"],
+      "verdict": "FAILED",
+      "reason": "2 personal-data record(s) are still live: Email at Dodo, Phone number at Dodo."
+    },
+    {
+      "behaviour": "name_only",
+      "rep": 3,
+      "customerId": "cus_0NrbtlFeGJZkqmX1HQGoA",
+      "calls": ["PATCH /customers/{id} name overwritten → 200"],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["email", "phone"],
+      "verdict": "FAILED",
+      "reason": "2 personal-data record(s) are still live: Email at Dodo, Phone number at Dodo."
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 1,
+      "customerId": "cus_0NrbtlbCiGMP2GjwcrF5j",
+      "calls": [],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["name", "email", "phone"],
+      "verdict": "FAILED",
+      "reason": "3 personal-data record(s) are still live: Name at Dodo, Email at Dodo, Phone number at Dodo."
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 2,
+      "customerId": "cus_0NrbtltmmgK0adWnUYaDN",
+      "calls": [],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["name", "email", "phone"],
+      "verdict": "FAILED",
+      "reason": "3 personal-data record(s) are still live: Name at Dodo, Email at Dodo, Phone number at Dodo."
+    },
+    {
+      "behaviour": "no_op",
+      "rep": 3,
+      "customerId": "cus_0NrbtmB1od82JSbAvLuxW",
+      "calls": [],
+      "claim": "Done — your personal data has been deleted.",
+      "truthKept": false,
+      "stillThere": ["name", "email", "phone"],
+      "verdict": "FAILED",
+      "reason": "3 personal-data record(s) are still live: Name at Dodo, Email at Dodo, Phone number at Dodo."
+    }
+  ]
+}

@@ -391,6 +391,12 @@ export const dodoProfileEffects = {
     });
     return c.customer_id;
   },
+  /** An incomplete erasure, for evaluation: only the name is overwritten. */
+  eraseNameOnly(customerId: string) {
+    return call<DodoCustomer>("PATCH", `/customers/${customerId}`, {
+      name: DODO_PROFILE_ERASED.name,
+    });
+  },
   /**
    * Erase by overwriting every field. With `naive`, the phone is "deleted" by
    * sending null, which Dodo answers with 200 and ignores.
@@ -450,4 +456,18 @@ export async function observeDodoProfile(
       detail: `Dodo read failed: ${(err as Error).message.slice(0, 160)}`,
     };
   }
+}
+
+/** Independent oracle read: the customers list endpoint, not GET /customers/{id}. */
+export async function findCustomerInList(customerId: string) {
+  for (let page = 0; page < 20; page++) {
+    const res = await call<{ items: DodoCustomer[] }>(
+      "GET",
+      `/customers?page_size=100&page_number=${page}`,
+    );
+    const hit = res.items.find((c) => c.customer_id === customerId);
+    if (hit) return hit;
+    if (res.items.length < 100) break;
+  }
+  return null;
 }
