@@ -193,7 +193,12 @@ async function main() {
   await page.keyboard.press("Enter");
   await agentReply(page, before);
   await page.waitForTimeout(3500);
-  await page.getByRole("button", { name: "Toggle agent" }).click();
+  // Close the agent sidebar if its toggle is still labelled; otherwise keep it.
+  await page
+    .getByRole("button", { name: /Toggle agent|Close agent|Hide agent/ })
+    .first()
+    .click({ timeout: 5000 })
+    .catch(() => undefined);
 
   // 5. A person approves; execution; Dodo contradicts.
   await caption(
