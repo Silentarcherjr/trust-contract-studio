@@ -239,7 +239,7 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
     );
   }
   limitations.push(
-    "Verification covers only the sandbox providers registered in this workspace. It is not evidence of erasure anywhere else, and not a legal compliance determination.",
+    "Verification covers only the providers registered in this workspace. It is not evidence of erasure anywhere else, and not a legal compliance determination.",
   );
   return {
     obligations,

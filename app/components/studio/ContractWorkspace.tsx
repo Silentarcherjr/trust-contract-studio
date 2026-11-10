@@ -414,7 +414,7 @@ function PrimaryAction({
         <IconBolt size={18} className="tcs-live" aria-hidden />
         <p className="text-sm">
           <strong>
-            {s === "verifying" ? "Verifying" : "Executing"} against sandbox
+            {s === "verifying" ? "Verifying" : "Executing"} against the
             providers.
           </strong>{" "}
           Follow each call in the Timeline.
