@@ -138,13 +138,19 @@ async function main() {
   await page
     .getByRole("heading", { name: "Audit what an agent already did" })
     .waitFor();
+  // Fold the app navigation: more room, and no chat history on screen.
+  await page
+    .getByRole("button", { name: "Collapse sidebar" })
+    .first()
+    .click({ timeout: 5000 })
+    .catch(() => undefined);
   await page.waitForTimeout(800);
   await caption(
     page,
     "Maya runs support. Her AI bot told a customer: <i>“cancelled, refunded $100, your data is deleted.”</i> Is it true?",
   );
   mark("home: the transcript");
-  await spot(page, page.locator("#transcript"), 6000);
+  await spot(page, page.locator("#transcript"), 4500);
 
   // 2. One-click audit against Dodo.
   await caption(
@@ -159,12 +165,12 @@ async function main() {
     "Every “Done” is <b>FAILED</b>, from Dodo’s own records: still active, $0 refunded, the data still there.",
   );
   mark("audit: ledger FAILED");
-  await spot(page, page.locator(".tcs-ledger"), 7000);
+  await spot(page, page.locator(".tcs-ledger"), 5500);
   await caption(
     page,
     "Not hypothetical: an unscripted support agent told a customer <i>“cancelled and refunded $200”</i> without making a single call. The audit caught it.",
   );
-  await page.waitForTimeout(6000);
+  await page.waitForTimeout(4500);
 
   // 3. Now an agent does the work, under a contract.
   await page.goto(`${BASE}/studio`);
@@ -194,9 +200,10 @@ async function main() {
   await agentReply(page, before);
   await page.waitForTimeout(3500);
   // Close the agent sidebar if its toggle is still labelled; otherwise keep it.
+  // The agent panel has its own "Collapse sidebar" button, the last one.
   await page
-    .getByRole("button", { name: /Toggle agent|Close agent|Hide agent/ })
-    .first()
+    .getByRole("button", { name: "Collapse sidebar" })
+    .last()
     .click({ timeout: 5000 })
     .catch(() => undefined);
 
@@ -215,7 +222,7 @@ async function main() {
     page,
     "Dodo shows the refund <b>paid twice</b> ($200), and the phone number <b>still there</b>: Dodo answered 200 to the delete and kept it.",
   );
-  await spot(page, page.locator(".tcs-ledger"), 8000);
+  await spot(page, page.locator(".tcs-ledger"), 6500);
 
   // 6. Repair from the evidence.
   await caption(
@@ -228,7 +235,7 @@ async function main() {
     .getByRole("button", { name: /Execute/ })
     .first()
     .click();
-  await page.waitForTimeout(15_000);
+  await page.waitForTimeout(12_000);
   mark("repair executed");
   await caption(
     page,
