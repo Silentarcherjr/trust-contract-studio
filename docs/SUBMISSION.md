@@ -36,7 +36,7 @@ Every number below was measured and is documented in `docs/eval/README.md` and `
 >
 > **Agent-Native:** every capability is one `defineAction()` shared by the UI, the in-app agent and external agents over MCP. Approval is `uiOnly` (agents and MCP never get it), a chat renderer puts a seal on every "Done", the watch is a framework event plus an automation the agent creates, and the agent has no raw SQL. 98 unit/integration tests, 9 Playwright tests (axe, keyboard-only).
 >
-> **Demo video:** recorded live on the app (Dodo test mode) with browser automation, no narration. A narrated 2-minute walkthrough is linked from the README and the one-pager: it was recorded with browser automation on a local build of the same code (billing on Dodo test mode, local PGlite database), with a Gemini TTS voice. Evidence: `docs/eval` in the repository.
+> **Demo video:** recorded with Clips on the live app (Dodo test mode); the clicks are driven by browser automation and the voice-over is Gemini TTS played during the recording. Evidence: `docs/eval` in the repository.
 >
 > **Team:** Proof of Done — Silentarcherjr (GitHub), design and development, with Claude Code as AI coding assistant.
 >
@@ -74,7 +74,7 @@ Every number below was measured and is documented in `docs/eval/README.md` and `
 
 **Built with:** Agent-Native (`@agent-native/core` 0.222.0, toolkit, agentkit), React 19, React Router 8, Drizzle ORM, PostgreSQL / PGlite, pgvector (Neon in production), zod, Vitest, Playwright, axe-core.
 
-**Links:** Clips video: https://clips.agent-native.com/r/3dXb1RkO1Hh4. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: https://github.com/Silentarcherjr/trust-contract-studio. Live app: https://trust-contract-studio.vercel.app (Vercel + Neon Postgres).
+**Links:** Clips video: https://clips.agent-native.com/r/A3O7a6gFABwo (narrated). Earlier take without narration: https://clips.agent-native.com/r/3dXb1RkO1Hh4. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: https://github.com/Silentarcherjr/trust-contract-studio. Live app: https://trust-contract-studio.vercel.app (Vercel + Neon Postgres).
 
 ## Pre-existing materials disclosure (final review: 2026-11-01)
 
@@ -134,7 +134,7 @@ All application code in this repository after commit `6511b5f` (Oct 29, 2026, 05
 - [x] Live agent tested with an LLM (`docs/eval/agent-eval.md`, `docs/eval/agent-eval-real-billing.md`)
 - [x] Evidence index (`docs/eval/README.md`)
 - [x] Clips script (`docs/DEMO_SCRIPT.md`) and an automated take (`pnpm demo:real-take`)
-- [x] Public Clips recording (https://clips.agent-native.com/r/3dXb1RkO1Hh4)
+- [x] Public Clips recording (https://clips.agent-native.com/r/A3O7a6gFABwo)
 - [x] Screenshots (`docs/screenshots/`)
 - [x] Project description for the submission form (above), reviewed by the owner
 - [x] Pre-existing materials disclosure (above), reviewed and approved by the owner, including the AI-assistance row

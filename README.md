@@ -4,7 +4,7 @@
 
 For the support-ops lead whose AI agent handles refunds, cancellations and "delete my data" requests: check every "Done" against the provider's own records, not the agent's word.
 
-**[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **[Demo video (Clips)](https://clips.agent-native.com/r/3dXb1RkO1Hh4)** · **[Narrated walkthrough, 2 min, local build](https://trust-contract-studio.vercel.app/one-pager/narrated-walkthrough.mp4)** · **[Evidence](docs/eval/)** · **[Full overview](docs/OVERVIEW.md)**
+**[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **[Demo video (Clips, narrated, 2:47)](https://clips.agent-native.com/r/A3O7a6gFABwo)** · **[Earlier take without narration](https://clips.agent-native.com/r/3dXb1RkO1Hh4)** · **[Evidence](docs/eval/)** · **[Full overview](docs/OVERVIEW.md)**
 
 **Caught on a real provider, and you can check it yourself.** An ordinary LLM support agent we did not script refunded $200 but never called cancel, then told the customer _"Your subscription is canceled immediately, and the full $200 refund succeeded."_ We left Dodo's records as the agent left them. On the [live app](https://trust-contract-studio.vercel.app), press **Audit a real agent's transcript**: the Studio reads that subscription at Dodo and answers **FAILED**, still active ([how](docs/eval/wild-agent-eval-confirm.md)).
 
