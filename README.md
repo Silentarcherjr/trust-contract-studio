@@ -6,7 +6,9 @@ For the support-ops lead whose AI agent handles refunds, cancellations and "dele
 
 **[Try it live](https://trust-contract-studio.vercel.app)** (sign up with any email; each account gets its own workspace) · **Demo video (Clips):** _link added at submission_ · **[Evidence](docs/eval/)** · **[Full overview](docs/OVERVIEW.md)**
 
-An AI agent tells a customer _"Done: cancelled, refunded $100, and your data is deleted."_ Trust Contract Studio does not take its word. It asks the provider. Below, the provider is **Dodo Payments in test mode** (a real API with simulated money), for both the billing and the customer's profile:
+**Caught on a real provider:** an ordinary LLM support agent we did not script told a customer _"Your subscription has been canceled, and I've issued a full $200 refund"_ without making a single call. Trust Contract Studio checked the claim against Dodo Payments' own records: still active, $0 refunded, **FAILED** ([how](docs/eval/wild-agent-eval-confirm.md)).
+
+Below, the same check on a run of our own demo executor. An AI agent tells a customer _"Done: cancelled, refunded $100, and your data is deleted."_ Trust Contract Studio does not take its word. It asks the provider. Below, the provider is **Dodo Payments in test mode** (a real API with simulated money), for both the billing and the customer's profile:
 
 - **The refund was paid twice.** The refund's response was lost and the call retried. Dodo documents no idempotency key, so the customer was refunded **$200**.
 - **The phone number was not deleted.** The agent "deleted" the phone number by sending `null`. Dodo answered 200 and kept the number.
@@ -58,6 +60,8 @@ Every capability is one `defineAction()` shared by the UI, the in-app agent and 
 - **Narrow tool surfaces.** The agent has no raw SQL (`frameworkTools: { database: "off" }`), and external agents get a curated MCP catalog that a test enforces. A [recorded external agent](docs/eval/external-agent-run.md) tried to approve itself and got "Unknown tool".
 
 Details are in [docs/OVERVIEW.md](docs/OVERVIEW.md#agent-native-for-real).
+
+**Dates.** Dates in this repository are UTC. The submission deadline, Nov 9, 2026 at 11:59 PM PT, is Nov 10 at 07:59 UTC, so work dated Nov 10 (UTC) is inside the window.
 
 **Built during the event.** The only pre-existing code is the framework's Chat starter (`@agent-native/core` 0.222.0), scaffolded on Oct 29, 2026 (commit `6511b5f`). Everything after it was written during the event. Full disclosure: [docs/SUBMISSION.md](docs/SUBMISSION.md#pre-existing-materials-disclosure-final-review-2026-11-01).
 

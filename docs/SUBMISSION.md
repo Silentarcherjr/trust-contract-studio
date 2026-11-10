@@ -1,5 +1,7 @@
 # Submission
 
+Dates in this repository are UTC. The deadline (Nov 9, 2026, 11:59 PM PT) is Nov 10, 07:59 UTC.
+
 Deadline: **November 9, 2026, 11:59 PM PT**. Submission requires the owner's explicit approval.
 
 ## Project description (draft for the submission form)

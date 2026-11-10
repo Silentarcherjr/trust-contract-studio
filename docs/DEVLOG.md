@@ -1,6 +1,6 @@
 # Development log
 
-Living log so progress survives context resets. Newest entries first.
+Living log so progress survives context resets. Newest entries first. Dates are UTC; the deadline (Nov 9, 11:59 PM PT) is Nov 10, 07:59 UTC.
 
 ## 2026-11-10: A natural overclaim, caught
 
