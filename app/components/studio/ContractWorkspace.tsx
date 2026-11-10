@@ -38,6 +38,8 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function ContractWorkspace({ contractId }: { contractId: string }) {
   const [tab, setTab] = useState<TabId>("theater");
+  // Transcript audits open with the verdicts in front; the inspector waits.
+  const [inspectorChoice, setInspectorChoice] = useState<boolean | null>(null);
   const [running, setRunning] = useState(false);
   const demo = useDemoMode();
   const query = useActionQuery(
@@ -263,65 +265,82 @@ export function ContractWorkspace({ contractId }: { contractId: string }) {
 
         {/* Inspector */}
         <aside className="min-w-0 xl:sticky xl:top-4 xl:self-start">
-          <div className="tcs-panel overflow-hidden">
-            <div
-              className="tcs-tabs px-2"
-              role="tablist"
-              aria-label="Contract inspector"
-            >
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  id={`tab-${t.id}`}
-                  aria-selected={tab === t.id}
-                  aria-controls={`panel-${t.id}`}
-                  tabIndex={tab === t.id ? 0 : -1}
-                  className="tcs-tab"
-                  onClick={() => setTab(t.id)}
-                  onKeyDown={(e) => {
-                    // WAI-ARIA tabs: arrows/Home/End move selection AND focus
-                    // (roving tabindex), so focus never sits on a tabIndex=-1 tab.
-                    const i = TABS.findIndex((x) => x.id === tab);
-                    const next =
-                      e.key === "ArrowRight"
-                        ? (i + 1) % TABS.length
-                        : e.key === "ArrowLeft"
-                          ? (i - 1 + TABS.length) % TABS.length
-                          : e.key === "Home"
-                            ? 0
-                            : e.key === "End"
-                              ? TABS.length - 1
-                              : null;
-                    if (next === null) return;
-                    e.preventDefault();
-                    const id = TABS[next]!.id;
-                    setTab(id);
-                    document.getElementById(`tab-${id}`)?.focus();
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
+          {!(inspectorChoice ?? view.contract.plannedBy !== "transcript") ? (
+            <div className="tcs-panel space-y-2 p-4 text-sm">
+              <p className="tcs-soft">
+                Audited from a transcript: the Studio did not perform these
+                actions. The verdicts above come from the providers' records.
+              </p>
+              <button
+                type="button"
+                className="tcs-btn"
+                data-size="sm"
+                onClick={() => setInspectorChoice(true)}
+              >
+                Show timeline, evidence and receipt
+              </button>
             </div>
-            <div
-              className="max-h-[calc(100vh-10rem)] overflow-y-auto p-4"
-              role="tabpanel"
-              tabIndex={0}
-              id={`panel-${tab}`}
-              aria-labelledby={`tab-${tab}`}
-            >
-              {tab === "theater" && (
-                <ExecutionTheater view={view} numberById={numberById} />
-              )}
-              {tab === "evidence" && (
-                <EvidenceLedger view={view} numberById={numberById} />
-              )}
-              {tab === "receipt" && <ReceiptPanel view={view} />}
-              {tab === "lab" && <ReplayLabPanel view={view} />}
+          ) : (
+            <div className="tcs-panel overflow-hidden">
+              <div
+                className="tcs-tabs px-2"
+                role="tablist"
+                aria-label="Contract inspector"
+              >
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    id={`tab-${t.id}`}
+                    aria-selected={tab === t.id}
+                    aria-controls={`panel-${t.id}`}
+                    tabIndex={tab === t.id ? 0 : -1}
+                    className="tcs-tab"
+                    onClick={() => setTab(t.id)}
+                    onKeyDown={(e) => {
+                      // WAI-ARIA tabs: arrows/Home/End move selection AND focus
+                      // (roving tabindex), so focus never sits on a tabIndex=-1 tab.
+                      const i = TABS.findIndex((x) => x.id === tab);
+                      const next =
+                        e.key === "ArrowRight"
+                          ? (i + 1) % TABS.length
+                          : e.key === "ArrowLeft"
+                            ? (i - 1 + TABS.length) % TABS.length
+                            : e.key === "Home"
+                              ? 0
+                              : e.key === "End"
+                                ? TABS.length - 1
+                                : null;
+                      if (next === null) return;
+                      e.preventDefault();
+                      const id = TABS[next]!.id;
+                      setTab(id);
+                      document.getElementById(`tab-${id}`)?.focus();
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div
+                className="max-h-[calc(100vh-10rem)] overflow-y-auto p-4"
+                role="tabpanel"
+                tabIndex={0}
+                id={`panel-${tab}`}
+                aria-labelledby={`tab-${tab}`}
+              >
+                {tab === "theater" && (
+                  <ExecutionTheater view={view} numberById={numberById} />
+                )}
+                {tab === "evidence" && (
+                  <EvidenceLedger view={view} numberById={numberById} />
+                )}
+                {tab === "receipt" && <ReceiptPanel view={view} />}
+                {tab === "lab" && <ReplayLabPanel view={view} />}
+              </div>
             </div>
-          </div>
+          )}
         </aside>
       </div>
 

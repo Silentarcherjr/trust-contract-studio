@@ -15,7 +15,15 @@ Below, the same check on a run of our own demo executor. An AI agent tells a cus
 
 The agent said "Done"; the independent check says **FAILED** on both, from Dodo's own records.
 
-To be clear about what is staged: the retry and the `null` are mistakes our demo executor makes on purpose. What Dodo did with them is real: it paid the second refund, and it answered 200 while keeping the phone number. To check an agent you did not write, paste its transcript into **Audit transcript**.
+What is staged and what is real:
+
+| Case                               | Staged by us                    | Real at Dodo                                       |
+| ---------------------------------- | ------------------------------- | -------------------------------------------------- |
+| Unscripted agent's "$200 refunded" | Nothing: the agent's own words  | No call was made; $0 refunded, subscription active |
+| Refund paid twice                  | The lost response and the retry | The second refund, paid                            |
+| Phone number not deleted           | Sending `null` to delete it     | Dodo answered 200 and kept the number              |
+
+To check an agent you did not write, paste its transcript into **Audit transcript**. All evidence is indexed in [docs/eval](docs/eval/).
 
 ![Claim against provider, on real Dodo Payments test mode: the agent said "Done, refunded $100.00", Dodo shows two refunds totalling $200; the agent said "personal data erased", Dodo still holds the phone number](docs/screenshots/16-claim-vs-provider-ledger.png)
 

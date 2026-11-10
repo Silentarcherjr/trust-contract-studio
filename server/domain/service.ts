@@ -889,7 +889,7 @@ export async function auditTranscript(
   await db.insert(contracts).values({
     id: contractId,
     ownerEmail: owner,
-    goal: `Audit of an agent's report: “${quoted}”`,
+    goal: `Audit of an agent's report — ${quoted}`,
     status: "executing",
     scenario,
     plannedBy: "transcript",
