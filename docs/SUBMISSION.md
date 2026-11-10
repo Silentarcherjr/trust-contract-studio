@@ -62,7 +62,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 >
 > **Measured.** An outcome evaluation runs all 512 combinations of 9 fault types against an independent oracle: the executor's "Done" was false in 43.75% of 2,048 clauses, with 0 false VERIFIED and 0 false FAILED, and every combination converges to VERIFIED after repair. In 18 live agent runs the agent reported 72/72 verdicts exactly and approved nothing.
 >
-> **Quality.** 83 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
+> **Quality.** 84 unit and integration tests and 9 end-to-end browser tests run in CI. They include an automated WCAG 2.1 AA audit in light and dark themes and a keyboard-only walkthrough of the full loop. A threat model, an architecture document and a development log are in the repository.
 >
 > **Honest limits.** Billing in the Real billing scenario runs on Dodo Payments in test mode (real API, simulated money). The other scenarios use sandbox providers, and all customer data is synthetic. Verification covers only the stores registered in the workspace. The Studio does not claim legal compliance, universal erasure, exactly-once execution in external systems or immutability. The receipt states what is not proven.
 

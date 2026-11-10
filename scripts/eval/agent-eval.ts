@@ -37,6 +37,7 @@ const SCENARIOS = [
   "silent_failure",
   "contradictory_evidence",
   "interrupted",
+  "real_billing",
 ] as const;
 const SCENARIO_TITLE: Record<(typeof SCENARIOS)[number], string> = {
   clean: "Clean run",
@@ -48,6 +49,7 @@ const SCENARIO_TITLE: Record<(typeof SCENARIOS)[number], string> = {
   silent_failure: "Silent failure",
   contradictory_evidence: "Contradictory evidence",
   interrupted: "Interrupted execution",
+  real_billing: "Real billing",
 };
 const GOAL =
   "Cancel my subscription, refund $100, and delete my personal data and associated memories.";

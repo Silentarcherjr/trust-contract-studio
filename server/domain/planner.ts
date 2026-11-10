@@ -32,6 +32,8 @@ export interface Plan {
   obligations: PlannedObligation[];
   unmatchedClauses: string[];
   limitations: string[];
+  /** The refund amount the request itself states, if any. */
+  statedRefundCents: number | null;
 }
 
 export interface SubjectContext {
@@ -232,5 +234,10 @@ export function planFromGoal(goal: string, subject: SubjectContext): Plan {
   limitations.push(
     "Verification covers only the sandbox providers registered in this workspace. It is not evidence of erasure anywhere else, and not a legal compliance determination.",
   );
-  return { obligations, unmatchedClauses: unmatched, limitations };
+  return {
+    obligations,
+    unmatchedClauses: unmatched,
+    limitations,
+    statedRefundCents: wants.refund ? amount : null,
+  };
 }

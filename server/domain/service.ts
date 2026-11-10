@@ -15,6 +15,7 @@ import {
   type ObligationKind,
   type Scenario,
   type Verdict,
+  formatCents,
   last,
 } from "../../shared/domain.js";
 import type { Db } from "../db/index.js";
@@ -64,6 +65,7 @@ import {
 } from "./integrity.js";
 import {
   loadSubject,
+  parseAmountCents,
   planFromGoal,
   type PlannedObligation,
   type SubjectContext,
@@ -674,6 +676,32 @@ export async function listContracts(db: Db, owner: string) {
 // ---------------------------------------------------------------------------
 // Drafting & editing (Promise Canvas)
 // ---------------------------------------------------------------------------
+/**
+ * An authored refund clause must refund what its own title and the request
+ * say. A clause titled "Refund $100" whose terms refund $200 is refused at
+ * drafting, before a person can approve the wrong terms by mistake.
+ */
+function assertRefundMatchesWords(
+  p: PlannedObligation,
+  statedInRequest: number | null,
+) {
+  if (p.kind !== "refund_charge") return;
+  const terms = Number(p.params.amountCents);
+  const inTitle = parseAmountCents(p.title);
+  for (const [where, cents] of [
+    ["its title", inTitle],
+    ["the request", statedInRequest],
+  ] as const) {
+    if (cents !== null && cents !== terms)
+      throw new ContractError(
+        `The refund clause's terms refund ${formatCents(terms)}, but ${where} says ${formatCents(cents)}. Set amountCents to match, or change the wording if the person asked for a different amount.`,
+        "refund_amount_mismatch",
+        422,
+        { termsCents: terms, statedCents: cents, source: where },
+      );
+  }
+}
+
 export async function draftContract(
   db: Db,
   actor: Actor,
@@ -690,13 +718,24 @@ export async function draftContract(
   const templatePlan = planFromGoal(input.goal, subject);
   if (input.obligations?.length) {
     plannedBy = actor.caller === "tool" ? "agent" : "person";
-    planned = input.obligations.map((d) => ({
-      kind: d.kind,
-      title: d.title ?? KIND_INFO[d.kind].label,
-      params: { ...defaultsFor(d.kind, subject), ...d.params },
-      dependsOn: d.dependsOn ?? [],
-    }));
-    limitations = templatePlan.limitations;
+    const stated = templatePlan.statedRefundCents;
+    planned = input.obligations.map((d) => {
+      const defaults = defaultsFor(d.kind, subject);
+      // An authored refund with no amount takes the amount the request states,
+      // not the whole charge.
+      if (d.kind === "refund_charge" && stated !== null)
+        defaults.amountCents = stated;
+      return {
+        kind: d.kind,
+        title: d.title ?? KIND_INFO[d.kind].label,
+        params: { ...defaults, ...d.params },
+        dependsOn: d.dependsOn ?? [],
+      };
+    });
+    for (const p of planned) assertRefundMatchesWords(p, stated);
+    limitations = templatePlan.limitations.filter(
+      (l) => !(stated !== null && l.startsWith("No refund amount")),
+    );
   } else {
     plannedBy = "template";
     planned = templatePlan.obligations;

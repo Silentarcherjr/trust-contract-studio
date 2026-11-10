@@ -76,6 +76,60 @@ describe("one action, two callers", () => {
     expect(view.obligations[0]!.params.amountCents).toBe(5000);
   });
 
+  it("an authored refund whose terms disagree with its title or the request is refused before approval", async () => {
+    await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
+    const goal = "Cancel my subscription, refund $100, and delete my data.";
+    // Title says $100, terms refund $250: refused.
+    await expect(
+      draftContract.run(
+        {
+          goal,
+          obligations: [
+            {
+              kind: "refund_charge",
+              title: "Refund $100",
+              params: { amountCents: 25_000 },
+              dependsOn: [],
+            },
+          ],
+        },
+        ctx("tool"),
+      ),
+    ).rejects.toMatchObject({ errorCode: "refund_amount_mismatch" });
+    // Untitled, but the request says $100 and the terms say $50: refused.
+    await expect(
+      draftContract.run(
+        {
+          goal,
+          obligations: [
+            {
+              kind: "refund_charge",
+              params: { amountCents: 5000 },
+              dependsOn: [],
+            },
+          ],
+        },
+        ctx("tool"),
+      ),
+    ).rejects.toMatchObject({ errorCode: "refund_amount_mismatch" });
+    // No amount in the terms: it takes the request's $100, not the charge.
+    const view = await draftContract.run(
+      {
+        goal,
+        obligations: [
+          {
+            kind: "refund_charge",
+            title: "Refund $100",
+            params: {},
+            dependsOn: [],
+          },
+        ],
+      },
+      ctx("tool"),
+    );
+    expect(view.obligations[0]!.params.amountCents).toBe(10_000);
+  });
+
   it("the agent can execute only after a person approved, and the execute action is shared", async () => {
     await resetDemo.run({ scenario: "clean" }, ctx("frontend"));
     let view = await draftContract.run({ goal: DEMO_GOAL }, ctx("tool"));
