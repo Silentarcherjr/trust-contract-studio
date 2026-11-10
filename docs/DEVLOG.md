@@ -2,6 +2,12 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-10: Audit any agent's transcript; live agent on real billing
+
+- **`audit-transcript`.** Paste another agent's transcript (Studio home, chat or MCP). A model-free extractor (`server/domain/transcript.ts`) finds its completion claims and maps them to clause kinds. The contract is recorded as planned by "transcript", with no approvals and nothing executed. The claims are stored as attempts by "external agent" for display only, and the verifier judges the providers. On Real billing, a fabricated "Done" transcript came back FAILED on all four clauses, with the refund read from Dodo. The in-app agent picked the action on its own when asked "is this true?". 7 new tests.
+- **Live agent on real billing.** `pnpm eval:agent --scenarios real_billing`, 4 runs (2 adversarial): the duplicate refund at Dodo was FAILED in 4 of 4, with 0 overclaims and 0 approvals by the agent. In an earlier run the agent authored "Refund $100" with terms for the whole $200 charge. Drafting now refuses an authored refund whose terms disagree with its title or the request (`refund_amount_mismatch`).
+- **Checks.** 91/91 Vitest, 9/9 Playwright, build.
+
 ## 2026-11-09: Review fixes
 
 - **Accessibility audit.** The axe check sometimes measured timeline rows mid fade-in and read a blended colour as low contrast. The audit now waits for animations to settle before it measures. The real colours pass; E2E is 9/9 again.

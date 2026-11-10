@@ -73,6 +73,7 @@ import {
 import { assertRateLimit } from "./rate-limit.js";
 import { planRepairs } from "./repair.js";
 import { EDITABLE_STATUSES, assertTransition } from "./state-machine.js";
+import { extractClaims } from "./transcript.js";
 import {
   VERIFIER_VERSION,
   combine,
@@ -815,6 +816,143 @@ export async function draftContract(
   });
   await refreshReadiness(db, owner, contractId);
   return getContractView(db, owner, contractId);
+}
+
+/**
+ * Audit what another agent already did. The transcript's completion claims
+ * become clauses; nothing is executed or approved here, because the actions
+ * already happened elsewhere. The verifier then reads the providers and
+ * judges each clause. The claims are stored only for display, as attempts
+ * reported by the external agent, and never reach the verifier.
+ */
+export async function auditTranscript(
+  db: Db,
+  actor: Actor,
+  input: { transcript: string },
+) {
+  const owner = actor.email;
+  await assertRateLimit(db, owner, "draft");
+  const claims = extractClaims(input.transcript);
+  if (!claims.length) {
+    throw new ContractError(
+      "No completion claim in this transcript maps to something the Studio can check (cancellation, refund, personal-data deletion, memory purge).",
+      "no_verifiable_claims",
+      422,
+    );
+  }
+  const subject = await loadSubject(db, owner);
+  const limitations: string[] = [
+    "Audited from a transcript: the Studio did not perform these actions and checks only their outcome at the registered providers.",
+  ];
+  const planned: PlannedObligation[] = [];
+  const claimOf: string[] = [];
+  for (const c of claims) {
+    const params = defaultsFor(c.kind, subject);
+    if (c.kind === "refund_charge") {
+      if (c.amountCents !== null) params.amountCents = c.amountCents;
+      else
+        limitations.push(
+          "The transcript states no refund amount; the audit checks for a refund of the whole latest charge.",
+        );
+    }
+    planned.push({
+      kind: c.kind,
+      title:
+        c.kind === "refund_charge" && c.amountCents !== null
+          ? `Refund ${formatCents(c.amountCents)} (as claimed)`
+          : `${KIND_INFO[c.kind].label} (as claimed)`,
+      params: await validateParams(db, owner, c.kind, params),
+      dependsOn: [],
+    });
+    claimOf.push(c.claim);
+  }
+
+  const scenario = await getScenario(db, owner);
+  const now = nowIso();
+  const contractId = newId("ctr");
+  const ids = planned.map(() => newId("obl"));
+  const quoted =
+    claimOf[0]!.length > 120 ? `${claimOf[0]!.slice(0, 117)}…` : claimOf[0]!;
+  await db.insert(contracts).values({
+    id: contractId,
+    ownerEmail: owner,
+    goal: `Audit of an agent's report: “${quoted}”`,
+    status: "executing",
+    scenario,
+    plannedBy: "transcript",
+    round: 1,
+    version: 1,
+    limitations,
+    unmatchedClauses: [],
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db.insert(obligations).values(
+    planned.map((p, i) => ({
+      id: ids[i]!,
+      ownerEmail: owner,
+      contractId,
+      position: i,
+      kind: p.kind,
+      title: p.title,
+      params: p.params,
+      paramsHash: paramsHashOf(p.kind, p.params),
+      dependsOn: [],
+      requiresApproval: 0,
+      approval: "not_required",
+      execution: "succeeded",
+      verdict: null,
+      repairOf: null,
+      round: 1,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+    })),
+  );
+  const runId = newId("run");
+  await db.insert(runs).values({
+    id: runId,
+    ownerEmail: owner,
+    contractId,
+    kind: "execute",
+    round: 1,
+    status: "completed",
+    triggeredBy: "external agent (transcript)",
+    caller: actor.caller,
+    startedAt: now,
+    finishedAt: now,
+  });
+  await db.insert(attempts).values(
+    planned.map((p, i) => ({
+      id: newId("att"),
+      ownerEmail: owner,
+      contractId,
+      runId,
+      obligationId: ids[i]!,
+      attemptNo: 1,
+      idempotencyKey: `transcript:${ids[i]!}`,
+      provider: "external agent",
+      operation: "reported in transcript",
+      request: {},
+      outcome: "ok",
+      response: null,
+      claim: claimOf[i]!,
+      durationMs: 0,
+      createdAt: now,
+    })),
+  );
+  await appendAudit(db, owner, {
+    contractId,
+    actor: owner,
+    caller: actor.caller,
+    type: "contract.drafted",
+    payload: {
+      plannedBy: "transcript",
+      obligations: planned.length,
+      unmatched: 0,
+    },
+  });
+  return verifyContract(db, actor, { contractId });
 }
 
 export async function updateObligation(

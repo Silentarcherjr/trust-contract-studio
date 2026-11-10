@@ -14,6 +14,7 @@ export const MCP_CONNECTOR_CATALOG = [
   "add-obligation",
   "execute-contract",
   "verify-contract",
+  "audit-transcript",
   "propose-repair",
   "export-receipt",
   "get-receipt",

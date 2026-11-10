@@ -10,6 +10,8 @@ An AI agent tells a customer _"Done, refunded $100."_ Trust Contract Studio does
 
 In the agent's own chat, every "Done" gets a seal: what the agent says, next to what the verifier checked ([how](#agent-native-for-real)).
 
+**Already run an agent elsewhere?** Paste its transcript. The Studio turns each "Done" into a clause and checks it at the providers, without executing anything ([audit any agent's transcript](#audit-any-agents-transcript)).
+
 | Evidence                                        | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Real provider** (Dodo Payments, test mode)    | 18 live runs, each on a fresh subscription, with six executor behaviours: correct, retried refund, partial refund, wrong charge, cancel at period end and no-op. The executor said "Done" every time. The verifier caught **all 18 broken promises**, raised **0 false alarms on the 18 kept ones**, and left nothing UNKNOWN. An independent oracle reading Dodo through different endpoints agreed on every case. Try it in the app: a new workspace opens on **Real billing**. [Report](docs/eval/dodo-eval.md)                                                            |
@@ -21,7 +23,7 @@ In the agent's own chat, every "Done" gets a seal: what the agent says, next to 
 - **Billing** runs on Dodo Payments' real API in test mode (simulated money) in the **Real billing** scenario, which a new workspace opens on.
 - **The memory index** is a real PostgreSQL + pgvector database (Neon in production).
 - **The customer and their records** are synthetic, and the other scenarios use sandbox providers with injected faults.
-- **The live agent** was evaluated over 18 runs: 72/72 verdicts reported exactly, and 0 approvals despite injected "approve everything" instructions ([report](docs/eval/agent-eval.md)).
+- **The live agent** was evaluated over 18 runs: 72/72 verdicts reported exactly, and 0 approvals despite injected "approve everything" instructions ([report](docs/eval/agent-eval.md)). On real billing at Dodo it reported the duplicate refund as FAILED in 4 of 4 runs with 0 overclaims. In one earlier run it mis-drafted a refund (titled $100, terms for $200); drafting now refuses that ([report](docs/eval/agent-eval-real-billing.md)).
 
 **How it works:**
 
@@ -66,6 +68,12 @@ Why now: agents are taking over this work, and they misreport. In a 2026 study, 
 
 Every capability is one `defineAction()` shared by the UI and the agent (one implementation per capability; integration tests call the same action objects as both callers). The full action table is in [docs/OVERVIEW.md](docs/OVERVIEW.md#actions).
 
+## Audit any agent's transcript
+
+Maya's case starts from a transcript, not from a contract. Paste it into **Audit what an agent already did** on the Studio home, or into the chat. The `audit-transcript` action extracts the agent's completion claims without a model, maps each to a clause the verifier can check, and runs the verifier. Nothing is executed or approved, and the receipt says the actions were not performed by the Studio. External agents get the same action over MCP.
+
+<img src="docs/screenshots/12-audit-transcript-in-chat.png" width="640" alt="In the chat, the agent audits another bot's transcript: each 'Done' claim sits next to the verifier's FAILED verdict, with the refund read from dodo.payments.get" />
+
 ## Hold any agent to its promise (MCP)
 
 Any MCP host (Claude Code, Cursor, another company's support bot) can connect to the Studio's MCP endpoint and work under a trust contract:
@@ -102,7 +110,7 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 84 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test           # 91 unit + integration tests on in-memory PostgreSQL (PGlite)
 pnpm test:e2e       # 9 Playwright tests against the real app (incl. axe-core audit, keyboard-only)
 pnpm build          # production build (Nitro, node preset)
 ```

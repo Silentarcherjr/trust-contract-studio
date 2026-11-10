@@ -143,7 +143,11 @@ export function ExecutionTheater({
           <span className="tcs-mono"> {at.operation}</span> ·{" "}
           {clause(at.obligationId)} · attempt {at.attemptNo} ·{" "}
           <span className={at.outcome === "ok" ? "" : "font-semibold"}>
-            {at.outcome === "ok" ? "200 OK" : at.outcome}
+            {at.provider === "external agent"
+              ? "not performed by the Studio"
+              : at.outcome === "ok"
+                ? "200 OK"
+                : at.outcome}
           </span>
           {res &&
             typeof res.amountCents === "number" &&

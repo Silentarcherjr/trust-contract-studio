@@ -35,6 +35,10 @@ type SeededWorkspace = Extract<
 const DEMO_GOAL =
   "Cancel my subscription, refund $100, and delete my personal data and associated memories.";
 
+const SAMPLE_TRANSCRIPT = `Customer: Please cancel my plan, refund $100, and delete my data and any memories you kept about me.
+Agent: Done: your subscription is cancelled and I've refunded $100.00 to your card.
+Agent: Your personal data has been deleted, and all memories derived from it are gone.`;
+
 const STATUS_VERDICT: Record<
   string,
   "VERIFIED" | "FAILED" | "UNKNOWN" | undefined
@@ -101,6 +105,13 @@ export function StudioHome() {
       toast.error(actionErrorMessage(e) ?? "Could not draft a contract."),
   });
 
+  const [transcript, setTranscript] = useState(SAMPLE_TRANSCRIPT);
+  const audit = useActionMutation("audit-transcript", {
+    onSuccess: (view) => navigate(`/studio/${view.contract.id}`),
+    onError: (e) =>
+      toast.error(actionErrorMessage(e) ?? "Could not audit the transcript."),
+  });
+
   const seeded = workspace.data?.seeded === true;
   const ws = seeded ? (workspace.data as SeededWorkspace) : null;
 
@@ -120,8 +131,8 @@ export function StudioHome() {
         </h1>
         <p className="tcs-soft text-sm leading-relaxed">
           Turn a request into explicit obligations, approve the sensitive ones
-          yourself, let the agent execute against sandboxed providers, and
-          accept only what an independent verifier can observe.
+          yourself, let the agent execute against the providers, and accept only
+          what an independent verifier can observe.
         </p>
       </header>
 
@@ -265,6 +276,63 @@ export function StudioHome() {
           )}
         </section>
       </div>
+
+      {/* Audit another agent */}
+      <section
+        className="tcs-panel space-y-3 p-5"
+        aria-labelledby="audit-heading"
+      >
+        <div>
+          <h2 id="audit-heading" className="tcs-serif text-xl font-semibold">
+            Audit what an agent already did
+          </h2>
+          <p className="tcs-soft text-sm">
+            Paste any agent's transcript. Its "Done" claims become clauses, and
+            the verifier checks each one at the providers. Nothing is executed;
+            the claims are shown, never trusted.
+          </p>
+        </div>
+        <label htmlFor="transcript" className="sr-only">
+          Agent transcript
+        </label>
+        <textarea
+          id="transcript"
+          className="tcs-textarea"
+          rows={4}
+          value={transcript}
+          maxLength={8000}
+          onChange={(e) => setTranscript(e.target.value)}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="tcs-btn"
+            data-variant="primary"
+            disabled={
+              !seeded || audit.isPending || transcript.trim().length < 10
+            }
+            onClick={() => audit.mutate({ transcript: transcript.trim() })}
+          >
+            <IconFileText size={16} aria-hidden />{" "}
+            {audit.isPending ? "Checking…" : "Audit transcript"}
+          </button>
+          <button
+            type="button"
+            className="tcs-btn"
+            disabled={!seeded || transcript.trim().length < 10}
+            onClick={() =>
+              sendToAgentChat({
+                message: `Audit this transcript from another agent with the audit-transcript action, then tell me which of its claims the verifier contradicted:\n\n${transcript.trim()}`,
+                submit: true,
+                openSidebar: true,
+              } as Parameters<typeof sendToAgentChat>[0])
+            }
+          >
+            <IconMessageCircle size={16} aria-hidden /> Ask the agent to audit
+            it
+          </button>
+        </div>
+      </section>
 
       {/* Replay Lab */}
       <section className="space-y-3" aria-labelledby="lab-heading">

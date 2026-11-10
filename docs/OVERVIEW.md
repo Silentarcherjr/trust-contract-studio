@@ -68,6 +68,7 @@ Every capability is a `defineAction()` in [`actions/`](../actions). The React UI
 | `decide-approval`                                 | ✓   | **✗** | `uiOnly` (framework-proven UI request), `agentTool: false`, `mcpTool: false`; the service rejects every non-human caller |
 | `execute-contract`                                | ✓   | ✓     | Runs only obligations with a matching human approval                                                                     |
 | `verify-contract`, `propose-repair`               | ✓   | ✓     |                                                                                                                          |
+| `audit-transcript`                                | ✓   | ✓     | Another agent's "Done" claims become clauses; nothing executes; the verifier checks the providers. Also on MCP           |
 | `export-receipt`, `check-receipt`                 | ✓   | ✓     |                                                                                                                          |
 | `reset-demo`                                      | ✓   | gated | Framework `needsApproval: true`: the agent loop pauses for a person                                                      |
 | `tamper-evidence`                                 | ✓   | ✗     | Replay Lab drill only                                                                                                    |

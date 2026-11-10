@@ -105,6 +105,7 @@ export const PRIMARY_KINDS = [
   "erase_personal_data",
   "purge_derived_memories",
 ] as const satisfies readonly ObligationKind[];
+export type PrimaryKind = (typeof PRIMARY_KINDS)[number];
 
 export type ObligationParams<K extends ObligationKind = ObligationKind> =
   z.infer<(typeof obligationParamsSchemas)[K]>;
