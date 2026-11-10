@@ -123,17 +123,15 @@ All application code in this repository after commit `6511b5f` (Oct 29, 2026, 05
 
 ## Checklist
 
-- [x] Private GitHub repository with application, README, architecture, devlog, tests, CI, `.env.example`
-- [x] Working end-to-end demo flow (local)
-- [x] Test report with actual results
-- [x] Threat model
-- [x] CI green on GitHub Actions (latest: run 41259795887, commit `d4f2075`)
-- [x] Live agent conversation tested with an LLM (`docs/LIVE_AGENT_RUN.md`, 0.51 Builder credits)
-- [x] Preview deployment on Vercel + Neon, protected (Vercel Authentication on all deployments)
-- [ ] Open the deployment to the public near the deadline (owner decision)
-- [x] Clips script (`docs/DEMO_SCRIPT.md`)
-- [ ] Public Clips recording (~90 s: request → obligations → approval → failure the agent missed → repair → re-verify → receipt)
+- [x] Public GitHub repository with the application, README, architecture, devlog, tests, CI workflow and `.env.example`
+- [x] Working end-to-end flow on the live app (Vercel + Neon), including Real billing on Dodo Payments test mode
+- [x] Test report with actual results (`docs/TEST_REPORT.md`): typecheck, lint, format, 98/98 Vitest, 9/9 Playwright, build
+- [x] Threat model (`docs/THREAT_MODEL.md`)
+- [x] Live agent tested with an LLM (`docs/eval/agent-eval.md`, `docs/eval/agent-eval-real-billing.md`)
+- [x] Evidence index (`docs/eval/README.md`)
+- [x] Clips script (`docs/DEMO_SCRIPT.md`) and an automated take (`pnpm demo:real-take`)
+- [ ] Public Clips recording
 - [x] Screenshots (`docs/screenshots/`)
-- [x] Project description for the submission form (draft above, needs owner review)
-- [x] Final disclosure review (above, needs owner sign-off, especially the AI-assistance row)
-- [ ] Owner approval to submit
+- [x] Project description for the submission form (above), reviewed by the owner
+- [x] Pre-existing materials disclosure (above), reviewed and approved by the owner, including the AI-assistance row
+- [ ] Deployment opened to the public and the form submitted
