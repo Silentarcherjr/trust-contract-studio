@@ -70,7 +70,7 @@ Every number below was measured and is documented in `docs/TEST_REPORT.md` and `
 
 **Built with:** Agent-Native (`@agent-native/core` 0.222.0, toolkit, agentkit), React 19, React Router 8, Drizzle ORM, PostgreSQL / PGlite, pgvector (Neon in production), zod, Vitest, Playwright, axe-core.
 
-**Links:** Clips video: _to add after recording_. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: https://github.com/Silentarcherjr/trust-contract-studio. Live app: https://trust-contract-studio.vercel.app (Vercel + Neon Postgres).
+**Links:** Clips video: https://clips.agent-native.com/r/3dXb1RkO1Hh4. Slides: one-pager ready in `docs/one-pager/` (self-contained HTML + one image); it needs a public URL before it can go in the optional slides field. Repository: https://github.com/Silentarcherjr/trust-contract-studio. Live app: https://trust-contract-studio.vercel.app (Vercel + Neon Postgres).
 
 ## Pre-existing materials disclosure (final review: 2026-11-01)
 
@@ -130,7 +130,7 @@ All application code in this repository after commit `6511b5f` (Oct 29, 2026, 05
 - [x] Live agent tested with an LLM (`docs/eval/agent-eval.md`, `docs/eval/agent-eval-real-billing.md`)
 - [x] Evidence index (`docs/eval/README.md`)
 - [x] Clips script (`docs/DEMO_SCRIPT.md`) and an automated take (`pnpm demo:real-take`)
-- [ ] Public Clips recording
+- [x] Public Clips recording (https://clips.agent-native.com/r/3dXb1RkO1Hh4)
 - [x] Screenshots (`docs/screenshots/`)
 - [x] Project description for the submission form (above), reviewed by the owner
 - [x] Pre-existing materials disclosure (above), reviewed and approved by the owner, including the AI-assistance row
