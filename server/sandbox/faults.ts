@@ -45,6 +45,7 @@ export const SCENARIO_FAULTS: Record<Scenario, FaultKey[]> = {
   disguised_copy: ["memory.reembed_untracked"],
   // The retry happens for real at Dodo; only the lost response is simulated.
   real_billing: ["billing.refund_lost_response"],
+  real_billing_clean: [],
 };
 
 /**

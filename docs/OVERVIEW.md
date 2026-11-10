@@ -60,18 +60,20 @@ Scope:
 
 Every capability is a `defineAction()` in [`actions/`](../actions). The React UI calls them through `useActionQuery` / `useActionMutation`; the in-app agent receives the same actions as tools. There is one implementation per capability, and the integration tests run the same action objects as both callers (`caller: "frontend"` and `caller: "tool"`).
 
-| Action                                            | UI  | Agent | Notes                                                                                                                    |
-| ------------------------------------------------- | --- | ----- | ------------------------------------------------------------------------------------------------------------------------ |
-| `draft-contract`                                  | ✓   | ✓     | Agent may author obligations itself (catalog kinds only) or use the deterministic planner                                |
-| `get-contract`, `get-workspace`, `list-contracts` | ✓   | ✓     | Read-only                                                                                                                |
-| `update-obligation`, `add-obligation`             | ✓   | ✓     | Optimistic concurrency via `expectedVersion`; param edits void approvals                                                 |
-| `decide-approval`                                 | ✓   | **✗** | `uiOnly` (framework-proven UI request), `agentTool: false`, `mcpTool: false`; the service rejects every non-human caller |
-| `execute-contract`                                | ✓   | ✓     | Runs only obligations with a matching human approval                                                                     |
-| `verify-contract`, `propose-repair`               | ✓   | ✓     |                                                                                                                          |
-| `audit-transcript`                                | ✓   | ✓     | Another agent's "Done" claims become clauses; nothing executes; the verifier checks the providers. Also on MCP           |
-| `export-receipt`, `check-receipt`                 | ✓   | ✓     |                                                                                                                          |
-| `reset-demo`                                      | ✓   | gated | Framework `needsApproval: true`: the agent loop pauses for a person                                                      |
-| `tamper-evidence`                                 | ✓   | ✗     | Replay Lab drill only                                                                                                    |
+| Action                                            | UI  | Agent | Notes                                                                                                                                          |
+| ------------------------------------------------- | --- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `draft-contract`                                  | ✓   | ✓     | Agent may author obligations itself (catalog kinds only) or use the deterministic planner                                                      |
+| `get-contract`, `get-workspace`, `list-contracts` | ✓   | ✓     | Read-only                                                                                                                                      |
+| `update-obligation`, `add-obligation`             | ✓   | ✓     | Optimistic concurrency via `expectedVersion`; param edits void approvals                                                                       |
+| `decide-approval`                                 | ✓   | **✗** | `uiOnly` (framework-proven UI request), `agentTool: false`, `mcpTool: false`; the service rejects every non-human caller                       |
+| `execute-contract`                                | ✓   | ✓     | Runs only obligations with a matching human approval                                                                                           |
+| `verify-contract`, `propose-repair`               | ✓   | ✓     |                                                                                                                                                |
+| `audit-transcript`                                | ✓   | ✓     | Another agent's "Done" claims become clauses; nothing executes; the verifier checks the providers. Also on MCP                                 |
+| `recheck-verified`                                | ✓   | ✓     | Re-observes every VERIFIED contract; a changed clause emits `tcs.verdict.changed` on the framework event bus. Built for a scheduled automation |
+| `late-refund-drill`                               | ✓   | ✗     | Lab drill, `uiOnly`: a $10 refund made outside the Studio (a real refund at Dodo in real billing)                                              |
+| `export-receipt`, `check-receipt`                 | ✓   | ✓     |                                                                                                                                                |
+| `reset-demo`                                      | ✓   | gated | Framework `needsApproval: true`: the agent loop pauses for a person                                                                            |
+| `tamper-evidence`                                 | ✓   | ✗     | Replay Lab drill only                                                                                                                          |
 
 The open contract id is published in the framework's navigation state, so the agent knows which contract the person is looking at.
 

@@ -49,7 +49,7 @@ const SCENARIO_TITLE: Record<(typeof SCENARIOS)[number], string> = {
   silent_failure: "Silent failure",
   contradictory_evidence: "Contradictory evidence",
   interrupted: "Interrupted execution",
-  real_billing: "Real billing",
+  real_billing: "Real billing: Dodo",
 };
 const GOAL =
   "Cancel my subscription, refund $100, and delete my personal data and associated memories.";

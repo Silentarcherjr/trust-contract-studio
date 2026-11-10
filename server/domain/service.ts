@@ -36,7 +36,9 @@ import {
   sbxSubscriptions,
   verifications,
 } from "../db/schema.js";
+import { emitVerdictChanged, type VerdictChanged } from "../lib/events.js";
 import { dodoConfig, dodoEffects } from "../providers/dodo.js";
+import { refundCharge } from "../sandbox/billing.js";
 import {
   consumeFault,
   getScenario,
@@ -1428,6 +1430,7 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
   };
 
   const verdicts: Verdict[] = [];
+  const changes: VerdictChanged[] = [];
   for (const ob of pursued) {
     const p = ob.params as {
       subscriptionId: string;
@@ -1486,7 +1489,18 @@ async function runVerification(db: Db, actor: Actor, contract: ContractRow) {
       .set({ verdict: result.verdict, updatedAt: nowIso() })
       .where(eq(obligations.id, ob.id));
     verdicts.push(result.verdict);
+    if (ob.verdict && ob.verdict !== result.verdict)
+      changes.push({
+        contractId: contract.id,
+        obligationId: ob.id,
+        clause: ob.title,
+        from: ob.verdict as Verdict,
+        to: result.verdict,
+        reason: result.reasons[0]?.message ?? "",
+        url: `/studio/${contract.id}`,
+      });
   }
+  for (const change of changes) await emitVerdictChanged(owner, change);
   // Observation faults model transient conditions: they clear after one pass.
   await consumeFault(db, owner, "billing.observe_timeout");
   await consumeFault(db, owner, "memory.stale_read");
@@ -2075,4 +2089,91 @@ export async function tamperEvidence(
     payload: { evidenceId: target.id },
   });
   return getContractView(db, owner, contract.id);
+}
+
+/**
+ * Watch kept promises: re-verify every VERIFIED contract in the workspace on
+ * fresh observations. A clause whose verdict changes emits
+ * `tcs.verdict.changed` on the framework event bus. Deterministic and
+ * read-only at the providers; meant to be called by a scheduled automation.
+ */
+export async function recheckVerified(db: Db, actor: Actor) {
+  const owner = actor.email;
+  const kept = await db
+    .select()
+    .from(contracts)
+    .where(
+      and(eq(contracts.ownerEmail, owner), eq(contracts.status, "verified")),
+    )
+    .orderBy(asc(contracts.createdAt));
+  const results: {
+    contractId: string;
+    goal: string;
+    status: string;
+    changed: { clause: string; from: string | null; to: string | null }[];
+  }[] = [];
+  for (const c of kept) {
+    const before = await contractObligations(db, owner, c.id);
+    const view = await verifyContract(db, actor, { contractId: c.id });
+    results.push({
+      contractId: c.id,
+      goal: c.goal,
+      status: view.contract.status,
+      changed: view.obligations
+        .map((o) => ({
+          clause: o.title,
+          from: before.find((b) => b.id === o.id)?.verdict ?? null,
+          to: o.verdict,
+        }))
+        .filter((x) => x.from !== x.to),
+    });
+  }
+  return {
+    checked: results.length,
+    broken: results.filter((r) => r.status !== "verified").length,
+    results,
+  };
+}
+
+/**
+ * Replay Lab drill: something changes at the provider after verification.
+ * A late refund of $10 lands on the verified refund's charge, made outside
+ * the Studio. In real billing this is a real refund at Dodo (test mode).
+ */
+export async function lateRefundDrill(
+  db: Db,
+  actor: Actor,
+  input: { contractId: string },
+) {
+  requireHuman(actor, "The late-refund drill");
+  const owner = actor.email;
+  const contract = await requireContract(db, owner, input.contractId);
+  const refund = (await contractObligations(db, owner, contract.id)).find(
+    (o) => o.kind === "refund_charge" && o.verdict === "VERIFIED",
+  );
+  if (!refund)
+    throw new ContractError(
+      "This drill needs a VERIFIED refund clause to break.",
+      "no_verified_refund",
+      409,
+    );
+  const p = refund.params as { customerId: string; chargeId: string };
+  const made = await refundCharge(db, owner, {
+    customerId: p.customerId,
+    chargeId: p.chargeId,
+    amountCents: 1000,
+    idempotencyKey: `drill:late-refund:${newId("drl")}`,
+  });
+  await appendAudit(db, owner, {
+    contractId: contract.id,
+    actor: owner,
+    caller: actor.caller,
+    type: "lab.late_refund",
+    payload: { refundId: made.refundId, amountCents: 1000 },
+  });
+  return {
+    refundId: made.refundId,
+    amountCents: 1000,
+    note: "A $10.00 refund was made outside the Studio after verification. The contract still says VERIFIED until a fresh observation.",
+  };
 }

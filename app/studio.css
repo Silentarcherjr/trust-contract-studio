@@ -287,6 +287,8 @@
   font-size: 0.875rem;
   line-height: 1.45;
   color: hsl(var(--tcs-agent));
+  /* Provider ids in claims are long unbroken tokens. */
+  overflow-wrap: anywhere;
 }
 .tcs-claim::before {
   content: "“";

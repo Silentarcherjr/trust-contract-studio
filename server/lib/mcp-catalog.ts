@@ -15,6 +15,7 @@ export const MCP_CONNECTOR_CATALOG = [
   "execute-contract",
   "verify-contract",
   "audit-transcript",
+  "recheck-verified",
   "propose-repair",
   "export-receipt",
   "get-receipt",
@@ -24,5 +25,6 @@ export const MCP_CONNECTOR_CATALOG = [
 export const NEVER_EXTERNAL = [
   "decide-approval",
   "tamper-evidence",
+  "late-refund-drill",
   "reset-demo",
 ] as const;

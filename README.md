@@ -10,6 +10,8 @@ An AI agent tells a customer _"Done, refunded $100."_ Trust Contract Studio does
 
 In the agent's own chat, every "Done" gets a seal: what the agent says, next to what the verifier checked ([how](#agent-native-for-real)).
 
+**"Done" stays watched.** A scheduled framework automation re-checks every kept promise. When a refund is changed at Dodo after it was VERIFIED, the clause turns FAILED and a `tcs.verdict.changed` event fires ([watch kept promises](#watch-kept-promises)).
+
 **Already run an agent elsewhere?** Paste its transcript. The Studio turns each "Done" into a clause and checks it at the providers, without executing anything ([audit any agent's transcript](#audit-any-agents-transcript)).
 
 | Evidence                                        | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -74,6 +76,18 @@ Maya's case starts from a transcript, not from a contract. Paste it into **Audit
 
 <img src="docs/screenshots/12-audit-transcript-in-chat.png" width="640" alt="In the chat, the agent audits another bot's transcript: each 'Done' claim sits next to the verifier's FAILED verdict, with the refund read from dodo.payments.get" />
 
+## Watch kept promises
+
+A verdict is a snapshot, but the provider can change afterwards. `recheck-verified` re-observes every VERIFIED contract. When a clause's verdict changes, the Studio emits `tcs.verdict.changed` on the framework event bus, so an event automation can report it. Ask the agent to "watch my kept promises" and it creates a scheduled automation with the framework's `manage-automations`.
+
+To see it on the real provider:
+
+1. Reset **Real billing, clean run**, then draft, approve and execute. All four clauses come back VERIFIED at Dodo.
+2. In the Lab, **Make a late refund**. This makes a real $10 refund at Dodo, outside the Studio.
+3. Press **Re-check kept promises**. The refund clause turns FAILED: "Promised $100.00 but 2 live refunds total $110.00".
+
+<img src="docs/screenshots/13-kept-promise-breaks-dodo.png" width="640" alt="A contract that was VERIFIED at Dodo turns FAILED after a late $10 refund made outside the Studio: promised $100.00 but 2 live refunds total $110.00" />
+
 ## Hold any agent to its promise (MCP)
 
 Any MCP host (Claude Code, Cursor, another company's support bot) can connect to the Studio's MCP endpoint and work under a trust contract:
@@ -110,7 +124,7 @@ In the Studio: pick a scenario in the **Adversarial Replay Lab** → **Reset san
 pnpm typecheck      # TypeScript (strict, exactOptionalPropertyTypes)
 pnpm lint           # oxlint
 pnpm format:check   # oxfmt
-pnpm test           # 91 unit + integration tests on in-memory PostgreSQL (PGlite)
+pnpm test           # 93 unit + integration tests on in-memory PostgreSQL (PGlite)
 pnpm test:e2e       # 9 Playwright tests against the real app (incl. axe-core audit, keyboard-only)
 pnpm build          # production build (Nitro, node preset)
 ```

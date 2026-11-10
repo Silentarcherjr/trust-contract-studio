@@ -2,6 +2,14 @@
 
 Living log so progress survives context resets. Newest entries first.
 
+## 2026-11-10: Kept promises are watched
+
+- **Event.** `tcs.verdict.changed` is registered on the framework event bus (`server/lib/events.ts`). Verification emits it, awaited, whenever a clause's verdict changes on a fresh observation.
+- **`recheck-verified`.** Re-verifies every VERIFIED contract in the workspace. It is on MCP and is meant for a scheduled automation. Asked to "watch my kept promises", the live agent created an hourly automation with `manage-automations` (screenshot 14).
+- **Drill.** `late-refund-drill` (`uiOnly`, not on any agent surface) makes a $10 refund on the verified charge outside the Studio. Run live on **Real billing, clean run** (a new fault-free Dodo scenario): all four clauses VERIFIED, a real $10 refund at Dodo, then the re-check turned the refund clause FAILED ("2 live refunds total $110.00").
+- **UI.** Long provider ids in claims now wrap.
+- **Checks.** 93/93 Vitest, 9/9 Playwright, build.
+
 ## 2026-11-10: Audit any agent's transcript; live agent on real billing
 
 - **`audit-transcript`.** Paste another agent's transcript (Studio home, chat or MCP). A model-free extractor (`server/domain/transcript.ts`) finds its completion claims and maps them to clause kinds. The contract is recorded as planned by "transcript", with no approvals and nothing executed. The claims are stored as attempts by "external agent" for display only, and the verifier judges the providers. On Real billing, a fabricated "Done" transcript came back FAILED on all four clauses, with the refund read from Dodo. The in-app agent picked the action on its own when asked "is this true?". 7 new tests.

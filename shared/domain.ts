@@ -174,6 +174,7 @@ export const SCENARIOS = [
   "interrupted",
   "disguised_copy",
   "real_billing",
+  "real_billing_clean",
 ] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 
@@ -278,10 +279,24 @@ export const SCENARIO_INFO: Record<Scenario, ScenarioInfo> = {
       purge_derived_memories: "VERIFIED",
     },
   },
+  real_billing_clean: {
+    title: "Real billing, clean run",
+    summary:
+      "Billing on Dodo Payments in test mode with no injected fault: every clause should be VERIFIED. Use it to watch a kept promise over time: the Lab's late-refund drill then makes a real refund at Dodo, outside the Studio.",
+    expected: {
+      cancel_subscription: "VERIFIED",
+      refund_charge: "VERIFIED",
+      erase_personal_data: "VERIFIED",
+      purge_derived_memories: "VERIFIED",
+    },
+  },
 };
 
 /** Scenarios whose billing runs against a real provider (test mode). */
-export const REAL_BILLING_SCENARIOS: readonly Scenario[] = ["real_billing"];
+export const REAL_BILLING_SCENARIOS: readonly Scenario[] = [
+  "real_billing",
+  "real_billing_clean",
+];
 
 // ---------------------------------------------------------------------------
 // Input schema for agent- or user-authored obligations.

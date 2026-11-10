@@ -32,6 +32,7 @@ const AUDIT_TITLES: Record<string, string> = {
   "repair.proposed": "Repair proposed",
   "receipt.exported": "Proof receipt exported",
   "lab.evidence_tampered": "Evidence forged (drill)",
+  "lab.late_refund": "Late refund made outside the Studio (drill)",
 };
 
 function actorFor(caller: string, actor: string): Actor {
@@ -86,6 +87,8 @@ export function ExecutionTheater({
       );
     } else if (a.type === "contract.drafted") {
       detail = `${String(p.obligations)} obligations · planned by ${String(p.plannedBy)}`;
+    } else if (a.type === "lab.late_refund") {
+      detail = `${formatCents(Number(p.amountCents))} · refund ${String(p.refundId)} · the contract still reads VERIFIED until a fresh observation`;
     } else if (a.type === "repair.proposed") {
       detail = `${(p.proposals as unknown[]).length} repair clause(s) awaiting approval`;
     }
@@ -96,6 +99,7 @@ export function ExecutionTheater({
       tone:
         a.type === "approval.refused_non_human" ||
         a.type === "lab.evidence_tampered" ||
+        a.type === "lab.late_refund" ||
         a.type === "execution.interrupted"
           ? "failed"
           : undefined,

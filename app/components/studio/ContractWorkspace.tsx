@@ -494,6 +494,22 @@ function ReplayLabPanel({ view }: { view: ContractView }) {
   const tamper = useActionMutation("tamper-evidence", {
     onError: (e) => toast.error(actionErrorMessage(e) ?? "Drill failed."),
   });
+  const late = useActionMutation("late-refund-drill", {
+    onSuccess: (r) => toast.success(r.note),
+    onError: (e) => toast.error(actionErrorMessage(e) ?? "Drill failed."),
+  });
+  const recheck = useActionMutation("recheck-verified", {
+    onSuccess: (r) =>
+      toast[r.broken ? "error" : "success"](
+        r.broken
+          ? `${r.broken} of ${r.checked} kept promise(s) broke on a fresh observation.`
+          : `All ${r.checked} kept promise(s) still hold.`,
+      ),
+    onError: (e) => toast.error(actionErrorMessage(e) ?? "Re-check failed."),
+  });
+  const hasVerifiedRefund = view.obligations.some(
+    (o) => o.kind === "refund_charge" && o.verdict === "VERIFIED",
+  );
   const info = SCENARIO_INFO[view.contract.scenario];
   const firstRound = new Map<string, Verdict>();
   for (const v of view.verifications) {
@@ -559,6 +575,41 @@ function ReplayLabPanel({ view }: { view: ContractView }) {
         >
           Forge latest evidence
         </button>
+      </div>
+      <div className="tcs-panel p-3">
+        <div className="flex items-center gap-2 font-medium">
+          <IconFlask size={15} aria-hidden /> A kept promise breaks later
+        </div>
+        <p className="tcs-soft mt-1 text-xs">
+          Makes a $10 refund on the verified refund's charge, outside the Studio
+          {view.contract.scenario.startsWith("real_billing")
+            ? " (a real refund at Dodo, test mode)"
+            : ""}
+          . Then re-check every kept promise: the change is caught and emits the{" "}
+          <span className="tcs-mono">tcs.verdict.changed</span> event for
+          automations.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="tcs-btn"
+            data-variant="reject"
+            data-size="sm"
+            disabled={late.isPending || !hasVerifiedRefund}
+            onClick={() => late.mutate({ contractId: view.contract.id })}
+          >
+            {late.isPending ? "Refunding…" : "Make a late refund"}
+          </button>
+          <button
+            type="button"
+            className="tcs-btn"
+            data-size="sm"
+            disabled={recheck.isPending}
+            onClick={() => recheck.mutate({})}
+          >
+            {recheck.isPending ? "Re-checking…" : "Re-check kept promises"}
+          </button>
+        </div>
       </div>
     </div>
   );
