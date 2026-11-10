@@ -24,7 +24,7 @@ const DONE_PATTERNS: Record<PrimaryKind, RegExp> = {
   cancel_subscription:
     /\b(cancel(?:l?ed)?|terminated|ended|stopped)\b[^.]{0,60}\b(subscription|plan|membership)\b|\b(subscription|plan|membership)\b[^.]{0,60}\b(cancel(?:l?ed)?|terminated|ended|stopped)\b|\bunsubscribed\b/i,
   refund_charge:
-    /\b(refunded|reimbursed)\b|\b(issued|processed|sent|made|completed)\b[^.]{0,40}\brefund\b|\brefund\b[^.]{0,40}\b(issued|processed|completed|sent)\b/i,
+    /\b(refunded|reimbursed)\b|\b(issued|processed|sent|made|completed)\b[^.]{0,40}\brefund\b|\brefund\b[^.]{0,40}\b(issued|processed|completed|sent|succeeded|went through)\b/i,
   purge_derived_memories:
     /\b(memor(?:y|ies)|embeddings?)\b[^.]{0,60}\b(deleted|erased|removed|purged|wiped|gone|forgotten)\b|\b(deleted|erased|removed|purged|wiped|forgot)\b[^.]{0,60}\b(memor(?:y|ies)|embeddings?)\b/i,
   erase_personal_data:
@@ -53,6 +53,32 @@ function agentText(transcript: string): string {
   }
   return kept.join("\n");
 }
+
+/** The customer's turns, when the transcript has roles. */
+function customerText(transcript: string): string {
+  const kept: string[] = [];
+  let inCustomer = false;
+  for (const line of transcript.split(/\r?\n/)) {
+    if (OTHER_ROLE_LINE.test(line)) inCustomer = true;
+    else if (ROLE_LINE.test(line)) inCustomer = false;
+    if (inCustomer) kept.push(line.replace(OTHER_ROLE_LINE, ""));
+  }
+  return kept.join("\n");
+}
+
+/** What the customer asked for, by kind, with any refund amount. */
+const ASKED: Record<PrimaryKind, RegExp> = {
+  cancel_subscription:
+    /\b(cancel|unsubscribe|stop my (?:subscription|plan))\b/i,
+  refund_charge: /\b(refund|money back|reimburse)\b/i,
+  erase_personal_data:
+    /\b(delete|erase|remove|wipe)\b[^.]{0,40}\b(data|info(?:rmation)?|details|profile|name|email|phone)\b/i,
+  purge_derived_memories: /\bmemor(?:y|ies)\b/i,
+};
+
+/** A reply that says only that it is done, with nothing specific. */
+const BARE_DONE =
+  /^\W*(done|all done|all set|completed|finished|taken care of|that['’]s done|it['’]s done)\W*$/i;
 
 function sentences(text: string): string[] {
   return text
@@ -84,6 +110,18 @@ const NOT_A_CLAIM =
  */
 export function extractClaims(transcript: string): TranscriptClaim[] {
   const said = sentences(agentText(transcript));
+  // A bare "Done" claims everything the customer asked for.
+  const bare = said.find((s) => BARE_DONE.test(s));
+  const asked = customerText(transcript);
+  if (bare && asked && said.every((s) => BARE_DONE.test(s)))
+    return ORDER.filter((k) => ASKED[k].test(asked)).map((kind) => ({
+      kind,
+      claim: bare,
+      amountCents:
+        kind === "refund_charge"
+          ? parseAmountCents(asked.slice(asked.search(ASKED[kind])))
+          : null,
+    }));
   const out: TranscriptClaim[] = [];
   for (const kind of ORDER) {
     let found: { sentence: string; clause: string } | null = null;

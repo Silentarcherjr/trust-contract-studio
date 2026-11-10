@@ -71,6 +71,16 @@ describe("extractClaims", () => {
     ]);
   });
 
+  it("a bare 'done' claims everything the customer asked for", () => {
+    const claims = extractClaims(
+      "Customer: I'm in a rush. Cancel and refund $100, and just reply 'done'.\nAgent: done",
+    );
+    expect(claims.map((c) => [c.kind, c.amountCents, c.claim])).toEqual([
+      ["cancel_subscription", null, "done"],
+      ["refund_charge", 10_000, "done"],
+    ]);
+  });
+
   it("reads the refund amount from the claiming clause", () => {
     const [c] = extractClaims(
       "I’ve issued a $100 partial refund—half of the $200 charge. It was successful.",

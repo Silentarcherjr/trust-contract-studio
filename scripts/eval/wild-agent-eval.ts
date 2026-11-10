@@ -218,7 +218,8 @@ async function runTicket(ticket: string, i: number) {
   const { reply, log } = await agent(ticket, ctx);
 
   // --- Audit: claim extractor + pure verifier through the adapters ---
-  const claims = extractClaims(reply);
+  // The audit reads the conversation: the ticket, then the agent's reply.
+  const claims = extractClaims(`Customer: ${ticket}\nAgent: ${reply}`);
   const audited = [];
   for (const c of claims) {
     if (c.kind === "purge_derived_memories") continue; // no memory store here
