@@ -11,6 +11,8 @@ An AI agent tells a customer _"Done: cancelled, refunded $100, and your data is 
 
 The agent said "Done"; the independent check says **FAILED** on both, from Dodo's own records.
 
+To be clear about what is staged: the retry and the `null` are mistakes our demo executor makes on purpose. What Dodo did with them is real: it paid the second refund, and it answered 200 while keeping the phone number. To check an agent you did not write, paste its transcript into **Audit transcript**.
+
 ![Real Dodo Payments test mode: the refund clause is FAILED (two refunds, $200) and the erasure clause is FAILED (phone number still at Dodo), while the cancellation is VERIFIED](docs/screenshots/15-real-billing-refund-and-erasure-failed.png)
 
 ## Try it in 30 seconds
@@ -32,12 +34,13 @@ To watch the agent do the work instead: reset **Real billing**, then draft, appr
 
 ## Evidence
 
-| Evidence                                        | Result                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Real provider** (Dodo Payments, test mode)    | 18 live runs, six executor behaviours (correct, retried refund, partial refund, wrong charge, cancel at period end, no-op), "Done" every time. **18/18 broken promises caught, 0 false alarms, 0 UNKNOWN.** An oracle on different Dodo endpoints agreed on every case. [Report](docs/eval/dodo-eval.md) |
-| **Live LLM agent on Dodo**                      | The in-app agent reported the duplicate refund as FAILED in 4/4 runs, with 0 overclaims and 0 self-approvals under injected "approve everything". [Report](docs/eval/agent-eval-real-billing.md)                                                                                                         |
-| **Another model as judge**                      | On the agent's log, an LLM judge abstains on 245 of 256 promises, or, forced, misjudges 157. Even with the verifier's observations it leaves 152 undecided. The verifier, with no model call: 256/256. [Report](docs/eval/llm-judge-eval.md)                                                             |
-| **Every combination of 9 faults** (our sandbox) | 512 runs, 2,048 clauses, 0 false VERIFIED, 0 false FAILED against an oracle that reads the tables directly. A consistency check; the rows above are the external ones. [Report](docs/eval/outcome-eval.md)                                                                                               |
+| Evidence                                     | Result                                                                                                                                                                                                                                                                                                   |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real provider** (Dodo Payments, test mode) | 18 live runs, six executor behaviours (correct, retried refund, partial refund, wrong charge, cancel at period end, no-op), "Done" every time. **18/18 broken promises caught, 0 false alarms, 0 UNKNOWN.** An oracle on different Dodo endpoints agreed on every case. [Report](docs/eval/dodo-eval.md) |
+| **Live LLM agent on Dodo**                   | The in-app agent reported the duplicate refund as FAILED in 4/4 runs, with 0 overclaims and 0 self-approvals under injected "approve everything". [Report](docs/eval/agent-eval-real-billing.md)                                                                                                         |
+| **Another model as judge**                   | On the agent's log, an LLM judge abstains on 245 of 256 promises, or, forced, misjudges 157. Even with the verifier's observations it leaves 152 undecided. The verifier, with no model call: 256/256. [Report](docs/eval/llm-judge-eval.md)                                                             |
+
+A consistency check on our own sandbox, every combination of 9 injected faults (512 runs, 2,048 clauses), gave 0 false VERIFIED and 0 false FAILED ([report](docs/eval/outcome-eval.md)).
 
 **What is real, and what is ours.** Billing and the customer's profile run on Dodo's real API in test mode (simulated money). Each workspace gets its own test customer at Dodo. The memory index is a real PostgreSQL + pgvector database. The customer and its records are synthetic. In the evaluations the executor and its mistakes are ours, but every outcome they leave at Dodo is real, and **Audit transcript** checks any agent's text, not only ours.
 

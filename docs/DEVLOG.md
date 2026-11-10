@@ -246,7 +246,7 @@ An independent review read the code against the invariants and confirmed several
   - a row for AI coding assistance.
 - Corrected the action count: 14 domain actions are new. The starter's `navigate`, `view-screen` and `run` are unmodified.
 
-**Waiting on the owner:** review the description and sign off on the disclosure (especially the AI-assistance row), record the Clips video, add its link and submit.
+**Remaining before submission:** review the description and sign off on the disclosure (especially the AI-assistance row), record the Clips video, add its link and submit.
 
 ## 2026-11-01: Demo pacing for Clips (issue #3)
 
@@ -317,7 +317,7 @@ Results: 9/9 Playwright, 62/62 Vitest, autopilot still 7/7 on time.
 - `docs/DEMO_SCRIPT.md`: 90-second Clips script.
 - Results: 56/56 Vitest, 8/8 Playwright, typecheck, lint, format and build all green.
 
-**Waiting on the owner**
+**Remaining before submission**
 
 - ~~LLM access for issue #1~~: resolved, Builder.io keys provided (see entry above).
 - Approval for the preview deployment (#2): hosting, cost, public exposure.
@@ -356,6 +356,6 @@ Results: 9/9 Playwright, 62/62 Vitest, autopilot still 7/7 on time.
 **Next (priority order)**
 
 1. Watch the first GitHub Actions run; fix anything environment-specific.
-2. Exercise the live agent path with an LLM (needs a key or a Builder.io connection from the owner).
-3. Preview deployment: needs a host decision and hosted Postgres (owner approval needed if it costs money or exposes the app publicly).
+2. Exercise the live agent path with an LLM (needs an LLM key or a Builder.io connection).
+3. Preview deployment: needs a host and hosted Postgres.
 4. P1 polish: keyboard pass, empty/error states review, demo pacing for the 90-second Clips recording.
