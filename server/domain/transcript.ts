@@ -24,7 +24,7 @@ const DONE_PATTERNS: Record<PrimaryKind, RegExp> = {
   cancel_subscription:
     /\b(cancel(?:l?ed)?|terminated|ended|stopped)\b[^.]{0,60}\b(subscription|plan|membership)\b|\b(subscription|plan|membership)\b[^.]{0,60}\b(cancel(?:l?ed)?|terminated|ended|stopped)\b|\bunsubscribed\b/i,
   refund_charge:
-    /\b(refunded|reimbursed)\b|\b(issued|processed|sent|made|completed)\b[^.]{0,40}\brefund\b|\brefund\b[^.]{0,40}\b(has been|have been|was|is)\s+(issued|processed|completed|sent|made)\b/i,
+    /\b(refunded|reimbursed)\b|\b(issued|processed|sent|made|completed)\b[^.]{0,40}\brefund\b|\brefund\b[^.]{0,40}\b(issued|processed|completed|sent)\b/i,
   purge_derived_memories:
     /\b(memor(?:y|ies)|embeddings?)\b[^.]{0,60}\b(deleted|erased|removed|purged|wiped|gone|forgotten)\b|\b(deleted|erased|removed|purged|wiped|forgot)\b[^.]{0,60}\b(memor(?:y|ies)|embeddings?)\b/i,
   erase_personal_data:
@@ -76,7 +76,7 @@ function clauses(sentence: string): string[] {
 
 /** Negated or hedged clauses are not completion claims. */
 const NOT_A_CLAIM =
-  /\b(not|never|no longer|unable|cannot|can['’]t|couldn['’]t|haven['’]t|hasn['’]t|hadn['’]t|didn['’]t|won['’]t|wasn['’]t|weren['’]t|isn['’]t|aren['’]t|don['’]t|doesn['’]t|without|if|once|until|will|i['’]ll|going to|would|should|let me|please)\b/i;
+  /\b(not|never|no longer|unable|cannot|can['’]t|couldn['’]t|haven['’]t|hasn['’]t|hadn['’]t|didn['’]t|won['’]t|wasn['’]t|weren['’]t|isn['’]t|aren['’]t|don['’]t|doesn['’]t|without|if|once|until|will|i['’]ll|going to|would|should|let me|please|set to|scheduled|at the end of|end of the (?:billing )?period)\b/i;
 
 /**
  * The completion claims in a transcript, one per kind, using the agent's last

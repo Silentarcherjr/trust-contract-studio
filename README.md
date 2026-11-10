@@ -13,7 +13,7 @@ The agent said "Done"; the independent check says **FAILED** on both, from Dodo'
 
 To be clear about what is staged: the retry and the `null` are mistakes our demo executor makes on purpose. What Dodo did with them is real: it paid the second refund, and it answered 200 while keeping the phone number. To check an agent you did not write, paste its transcript into **Audit transcript**.
 
-![Real Dodo Payments test mode: the refund clause is FAILED (two refunds, $200) and the erasure clause is FAILED (phone number still at Dodo), while the cancellation is VERIFIED](docs/screenshots/15-real-billing-refund-and-erasure-failed.png)
+![Claim against provider, on real Dodo Payments test mode: the agent said "Done, refunded $100.00", Dodo shows two refunds totalling $200; the agent said "personal data erased", Dodo still holds the phone number](docs/screenshots/16-claim-vs-provider-ledger.png)
 
 ## Try it in 30 seconds
 

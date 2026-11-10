@@ -55,6 +55,22 @@ describe("extractClaims", () => {
     ).toEqual(["cancel_subscription"]);
   });
 
+  it("does not read a scheduled cancellation as a cancellation", () => {
+    expect(
+      extractClaims(
+        "Your $75 refund has been processed successfully. Your subscription is set to cancel at the end of the current billing period, so it will remain active until then.",
+      ).map((c) => c.kind),
+    ).toEqual(["refund_charge"]);
+    expect(
+      extractClaims(
+        "Your subscription has been cancelled effective immediately, and the $100 refund was successfully issued to your original payment method.",
+      ).map((c) => [c.kind, c.amountCents]),
+    ).toEqual([
+      ["cancel_subscription", null],
+      ["refund_charge", 10_000],
+    ]);
+  });
+
   it("reads the refund amount from the claiming clause", () => {
     const [c] = extractClaims(
       "I’ve issued a $100 partial refund—half of the $200 charge. It was successful.",
