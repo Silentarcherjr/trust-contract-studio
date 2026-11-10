@@ -36,7 +36,7 @@ Every number below was measured and is documented in `docs/eval/README.md` and `
 >
 > **Agent-Native:** every capability is one `defineAction()` shared by the UI, the in-app agent and external agents over MCP. Approval is `uiOnly` (agents and MCP never get it), a chat renderer puts a seal on every "Done", the watch is a framework event plus an automation the agent creates, and the agent has no raw SQL. 98 unit/integration tests, 9 Playwright tests (axe, keyboard-only).
 >
-> **Demo video:** recorded live on the app (Dodo test mode) with browser automation, no narration. A narrated 2-minute walkthrough (same app, recorded the same way, voice by Gemini TTS) is linked from the README and the one-pager. Evidence: `docs/eval` in the repository.
+> **Demo video:** recorded live on the app (Dodo test mode) with browser automation, no narration. A narrated 2-minute walkthrough is linked from the README and the one-pager: it was recorded with browser automation on a local build of the same code (billing on Dodo test mode, local PGlite database), with a Gemini TTS voice. Evidence: `docs/eval` in the repository.
 >
 > **Team:** Proof of Done — Silentarcherjr (GitHub), design and development, with Claude Code as AI coding assistant.
 >
